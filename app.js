@@ -364,6 +364,7 @@ const searchResults = document.getElementById("searchResults");
 const toggleHeatsBtn = document.getElementById("toggleHeatsBtn");
 const highlightedContainer = document.getElementById("highlightedContainer");
 const raceTabs = document.getElementById("raceTabs");
+const showHeatsCheckbox = document.getElementById("showHeatsCheckbox");
 
 const HEATS_COLLAPSED_KEY = "kartingHeatsCollapsed.v1";
 let heatsCollapsed = localStorage.getItem(HEATS_COLLAPSED_KEY) !== "false"; // collapsed by default
@@ -399,6 +400,15 @@ let heats = loadHeats();
 let highlights = loadHighlights();
 let activeRace = loadActiveRace();
 let qualifying = loadQualifying();
+
+const SHOW_HEATS_KEY = "kartingShowHeatColumns.v1";
+let showHeatColumns = localStorage.getItem(SHOW_HEATS_KEY) !== "false"; // shown by default
+showHeatsCheckbox.checked = showHeatColumns;
+showHeatsCheckbox.addEventListener("change", () => {
+  showHeatColumns = showHeatsCheckbox.checked;
+  localStorage.setItem(SHOW_HEATS_KEY, String(showHeatColumns));
+  render();
+});
 
 function toggleHighlight(key) {
   if (highlights.has(key)) {
@@ -709,12 +719,16 @@ function renderClassifications(classifications) {
   for (const { className, heatCols, drivers, hasQualifying } of classifications) {
     const block = document.createElement("section");
     block.className = "panel class-block";
-    const colCount = 5 + heatCols.length; // Pos, Rijder, #, heats..., Totaal, Heats
-    const heatHeaderCells = heatCols.map((h) => `<th class="num" title="${h.eventName || ""}">${h.heatLabel}</th>`).join("");
+    const colCount = 5 + (showHeatColumns ? heatCols.length : 0); // Pos, Rijder, #, heats..., Totaal, Heats
+    const heatHeaderCells = showHeatColumns
+      ? heatCols.map((h) => `<th class="num" title="${h.eventName || ""}">${h.heatLabel}</th>`).join("")
+      : "";
     const rowsHtml = drivers.map((d) => {
-      const heatCells = heatCols
-        .map((h) => `<td class="num">${d.perHeat[h.id] !== undefined ? d.perHeat[h.id] : "–"}</td>`)
-        .join("");
+      const heatCells = showHeatColumns
+        ? heatCols
+            .map((h) => `<td class="num">${d.perHeat[h.id] !== undefined ? d.perHeat[h.id] : "–"}</td>`)
+            .join("")
+        : "";
       const isHighlighted = highlights.has(d.key);
       const qualifiesA = drivers.length > A_FINAL_CUTOFF && d.pos <= A_FINAL_CUTOFF;
       const posTitleParts = [];

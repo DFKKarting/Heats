@@ -182,6 +182,19 @@ main {
 
 #search-card { margin-bottom: 16px; }
 
+.show-heats-toggle {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 12px;
+  color: #ccc;
+  font-size: .88rem;
+  font-weight: 600;
+  cursor: pointer;
+  user-select: none;
+}
+.show-heats-toggle input { accent-color: #f54242; width: 16px; height: 16px; cursor: pointer; }
+
 .search-results { margin-top: 12px; display: flex; flex-direction: column; gap: 8px; text-align: left; }
 .search-result-row {
   display: flex;
