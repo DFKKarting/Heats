@@ -271,21 +271,6 @@ table.classification td.name-cell { text-align: left; white-space: nowrap; }
 .star-btn:hover { color: #ffd54a; transform: scale(1.2); }
 .star-btn.starred { color: #ffd54a; text-shadow: 0 0 8px rgba(255, 213, 74, 0.7); }
 
-.qualify-badge {
-  display: inline-block;
-  margin-left: 6px;
-  background: linear-gradient(135deg, #42f54e, #1a9c2c);
-  color: #06210a;
-  font-family: 'Orbitron', sans-serif;
-  font-weight: 800;
-  font-size: 0.72em;
-  line-height: 1;
-  padding: 3px 5px;
-  border-radius: 4px;
-  vertical-align: middle;
-  box-shadow: 0 0 6px rgba(66, 245, 78, 0.5);
-}
-
 table.classification tbody tr.qualifies-a {
   background-color: rgba(66, 245, 78, 0.08);
   box-shadow: inset 3px 0 0 0 #42f54e;

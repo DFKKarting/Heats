@@ -499,7 +499,7 @@ function renderClassifications(classifications) {
       const isHighlighted = highlights.has(d.key);
       const qualifiesA = drivers.length > A_FINAL_CUTOFF && d.pos <= A_FINAL_CUTOFF;
       let html = `<tr class="${isHighlighted ? "highlighted" : ""} ${qualifiesA ? "qualifies-a" : ""}" data-key="${d.key.replace(/"/g, "&quot;")}">
-          <td class="pos">${d.pos}${qualifiesA ? '<span class="qualify-badge" title="Kwalificeert voor de A-finale">A</span>' : ""}</td>
+          <td class="pos" title="${qualifiesA ? "Kwalificeert voor de A-finale" : ""}">${d.pos}</td>
           <td class="name-cell">
             <button type="button" class="star-btn ${isHighlighted ? "starred" : ""}" title="Highlight rijder" aria-label="Highlight ${d.fullName}">${isHighlighted ? "★" : "☆"}</button>
             ${d.fullName}
