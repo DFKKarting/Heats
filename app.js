@@ -8,6 +8,7 @@ pdfjsLib.GlobalWorkerOptions.workerSrc =
 const STORAGE_KEY = "kartingHeats.v1";
 const HIGHLIGHT_KEY = "kartingHighlights.v1";
 const ACTIVE_RACE_KEY = "kartingActiveRace.v1";
+const A_FINAL_CUTOFF = 36;
 
 const COL = {
   RANK: [16, 25],
@@ -489,15 +490,16 @@ function renderClassifications(classifications) {
   for (const { className, heatCols, drivers } of classifications) {
     const block = document.createElement("section");
     block.className = "panel class-block";
+    const colCount = 5 + heatCols.length; // Pos, Rijder, #, heats..., Totaal, Heats
     const heatHeaderCells = heatCols.map((h) => `<th class="num" title="${h.eventName || ""}">${h.heatLabel}</th>`).join("");
-    const bodyRows = drivers
-      .map((d) => {
-        const heatCells = heatCols
-          .map((h) => `<td class="num">${d.perHeat[h.id] !== undefined ? d.perHeat[h.id] : "–"}</td>`)
-          .join("");
-        const isHighlighted = highlights.has(d.key);
-        return `<tr class="${isHighlighted ? "highlighted" : ""}" data-key="${d.key.replace(/"/g, "&quot;")}">
-          <td class="pos">${d.pos}</td>
+    const rowsHtml = drivers.map((d) => {
+      const heatCells = heatCols
+        .map((h) => `<td class="num">${d.perHeat[h.id] !== undefined ? d.perHeat[h.id] : "–"}</td>`)
+        .join("");
+      const isHighlighted = highlights.has(d.key);
+      const qualifiesA = drivers.length > A_FINAL_CUTOFF && d.pos <= A_FINAL_CUTOFF;
+      let html = `<tr class="${isHighlighted ? "highlighted" : ""} ${qualifiesA ? "qualifies-a" : ""}" data-key="${d.key.replace(/"/g, "&quot;")}">
+          <td class="pos">${d.pos}${qualifiesA ? '<span class="qualify-badge" title="Kwalificeert voor de A-finale">A</span>' : ""}</td>
           <td class="name-cell">
             <button type="button" class="star-btn ${isHighlighted ? "starred" : ""}" title="Highlight rijder" aria-label="Highlight ${d.fullName}">${isHighlighted ? "★" : "☆"}</button>
             ${d.fullName}
@@ -507,8 +509,12 @@ function renderClassifications(classifications) {
           <td class="num total">${d.total}</td>
           <td class="num">${d.heatsCount}</td>
         </tr>`;
-      })
-      .join("");
+      if (d.pos === A_FINAL_CUTOFF && drivers.length > A_FINAL_CUTOFF) {
+        html += `<tr class="cutoff-row"><td colspan="${colCount}">A-finale grens — top ${A_FINAL_CUTOFF}</td></tr>`;
+      }
+      return html;
+    });
+    const bodyRows = rowsHtml.join("");
 
     const isCollapsed = collapsedClasses.has(className);
     block.innerHTML = `
