@@ -87,6 +87,33 @@ main {
 
 .heats-list.collapsed { display: none; }
 
+.race-tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+.race-tab {
+  background: rgba(20, 20, 20, 0.55);
+  color: #ccc;
+  border: 1px solid rgba(245, 66, 66, 0.4);
+  padding: 10px 20px;
+  font-family: 'Orbitron', sans-serif;
+  font-weight: 700;
+  letter-spacing: 1px;
+  font-size: 0.85em;
+  text-transform: uppercase;
+  cursor: pointer;
+  border-radius: 8px 8px 0 0;
+  transition: transform 0.15s ease, background 0.15s ease, color 0.15s ease;
+}
+.race-tab:hover { color: white; background: rgba(245, 66, 66, 0.25); }
+.race-tab.active {
+  background: linear-gradient(135deg, #f54242, #a52a2a);
+  color: white;
+  border-color: #f54242;
+  box-shadow: 0 -2px 10px rgba(245, 66, 66, 0.35);
+}
+
 .dropzone {
   border: 2px dashed rgba(245, 66, 66, 0.5);
   border-radius: 10px;

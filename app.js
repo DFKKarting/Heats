@@ -7,6 +7,7 @@ pdfjsLib.GlobalWorkerOptions.workerSrc =
 
 const STORAGE_KEY = "kartingHeats.v1";
 const HIGHLIGHT_KEY = "kartingHighlights.v1";
+const ACTIVE_RACE_KEY = "kartingActiveRace.v1";
 
 const COL = {
   RANK: [16, 25],
@@ -37,6 +38,32 @@ function loadHighlights() {
 
 function saveHighlights(set) {
   localStorage.setItem(HIGHLIGHT_KEY, JSON.stringify([...set]));
+}
+
+function loadActiveRace() {
+  return localStorage.getItem(ACTIVE_RACE_KEY) || null;
+}
+
+function saveActiveRace(eventName) {
+  if (eventName) {
+    localStorage.setItem(ACTIVE_RACE_KEY, eventName);
+  } else {
+    localStorage.removeItem(ACTIVE_RACE_KEY);
+  }
+}
+
+function deriveRaceLabel(eventName) {
+  if (!eventName) return "Onbekende race";
+  const m = eventName.match(/^(.*?)\s+Round\s+(\d+)/i);
+  if (m) {
+    const initials = m[1]
+      .split(/\s+/)
+      .filter((w) => /^[A-Z]/.test(w))
+      .map((w) => w[0])
+      .join("");
+    if (initials) return `${initials} R${m[2]}`;
+  }
+  return eventName;
 }
 
 function within(x, [lo, hi]) {
@@ -170,7 +197,7 @@ async function parsePdfFile(file) {
   const { eventName, className, heatLabel } = parseTitleBlock(items, tableTopY);
 
   return {
-    id: `${className}::${heatLabel}`,
+    id: `${eventName}::${className}::${heatLabel}`,
     className,
     heatLabel,
     eventName,
@@ -192,6 +219,7 @@ const searchInput = document.getElementById("searchInput");
 const searchResults = document.getElementById("searchResults");
 const toggleHeatsBtn = document.getElementById("toggleHeatsBtn");
 const highlightedContainer = document.getElementById("highlightedContainer");
+const raceTabs = document.getElementById("raceTabs");
 
 const HEATS_COLLAPSED_KEY = "kartingHeatsCollapsed.v1";
 let heatsCollapsed = localStorage.getItem(HEATS_COLLAPSED_KEY) !== "false"; // collapsed by default
@@ -212,6 +240,7 @@ applyHeatsCollapsedState();
 
 let heats = loadHeats();
 let highlights = loadHighlights();
+let activeRace = loadActiveRace();
 
 function toggleHighlight(key) {
   if (highlights.has(key)) {
@@ -223,7 +252,45 @@ function toggleHighlight(key) {
   render();
 }
 
-searchInput.addEventListener("input", () => renderSearchResults(computeClassifications()));
+function getRaces() {
+  const byRace = new Map();
+  for (const h of heats) {
+    if (!byRace.has(h.eventName)) byRace.set(h.eventName, { firstSeen: h.uploadedAt, count: 0 });
+    const r = byRace.get(h.eventName);
+    r.count += 1;
+    if (h.uploadedAt < r.firstSeen) r.firstSeen = h.uploadedAt;
+  }
+  return [...byRace.entries()]
+    .map(([eventName, info]) => ({ eventName, label: deriveRaceLabel(eventName), ...info }))
+    .sort((a, b) => a.firstSeen.localeCompare(b.firstSeen));
+}
+
+function activeHeats() {
+  return heats.filter((h) => h.eventName === activeRace);
+}
+
+function renderRaceTabs(races) {
+  if (!races.length) {
+    raceTabs.innerHTML = "";
+    return;
+  }
+  raceTabs.innerHTML = "";
+  for (const r of races) {
+    const btn = document.createElement("button");
+    btn.type = "button";
+    btn.className = "race-tab" + (r.eventName === activeRace ? " active" : "");
+    btn.textContent = r.label;
+    btn.title = r.eventName;
+    btn.addEventListener("click", () => {
+      activeRace = r.eventName;
+      saveActiveRace(activeRace);
+      render();
+    });
+    raceTabs.appendChild(btn);
+  }
+}
+
+searchInput.addEventListener("input", () => renderSearchResults(computeClassifications(activeHeats())));
 
 function setStatus(msg, kind) {
   parseStatus.textContent = msg;
@@ -238,18 +305,24 @@ async function handleFiles(fileList) {
   }
   setStatus(`Bezig met inlezen van ${files.length} bestand(en)...`);
   let okCount = 0;
+  let lastEventName = null;
   const errors = [];
   for (const file of files) {
     try {
       const parsed = await parsePdfFile(file);
       heats = heats.filter((h) => h.id !== parsed.id);
       heats.push(parsed);
+      lastEventName = parsed.eventName;
       okCount++;
     } catch (e) {
       errors.push(`${file.name}: ${e.message}`);
     }
   }
   saveHeats(heats);
+  if (lastEventName) {
+    activeRace = lastEventName;
+    saveActiveRace(activeRace);
+  }
   render();
   if (errors.length) {
     setStatus(`${okCount} heat(s) geladen. Fout bij: ${errors.join(" | ")}`, "err");
@@ -280,12 +353,14 @@ dropzone.addEventListener("drop", (e) => {
 });
 
 resetBtn.addEventListener("click", () => {
-  if (!heats.length) return;
-  if (!confirm("Alle geladen heats en klassementen wissen?")) return;
-  heats = [];
+  const current = activeHeats();
+  if (!current.length) return;
+  const label = deriveRaceLabel(activeRace);
+  if (!confirm(`Alle heats van ${label} wissen?`)) return;
+  heats = heats.filter((h) => h.eventName !== activeRace);
   saveHeats(heats);
   render();
-  setStatus("Alles gewist.", "ok");
+  setStatus(`Heats van ${label} gewist.`, "ok");
 });
 
 function removeHeat(id) {
@@ -294,12 +369,12 @@ function removeHeat(id) {
   render();
 }
 
-function renderHeatsList() {
-  if (!heats.length) {
-    heatsList.innerHTML = '<p class="empty-hint">Nog geen heats geladen.</p>';
+function renderHeatsList(heatsSubset) {
+  if (!heatsSubset.length) {
+    heatsList.innerHTML = '<p class="empty-hint">Nog geen heats geladen voor deze race.</p>';
     return;
   }
-  const sorted = [...heats].sort((a, b) => a.className.localeCompare(b.className) || a.heatLabel.localeCompare(b.heatLabel));
+  const sorted = [...heatsSubset].sort((a, b) => a.className.localeCompare(b.className) || a.heatLabel.localeCompare(b.heatLabel));
   heatsList.innerHTML = "";
   for (const h of sorted) {
     const row = document.createElement("div");
@@ -316,9 +391,9 @@ function renderHeatsList() {
   }
 }
 
-function computeClassifications() {
+function computeClassifications(heatsSubset) {
   const byClass = new Map();
-  for (const h of heats) {
+  for (const h of heatsSubset) {
     if (!byClass.has(h.className)) byClass.set(h.className, []);
     byClass.get(h.className).push(h);
   }
@@ -355,7 +430,7 @@ function computeClassifications() {
 
 function renderClassifications(classifications) {
   classificationsContainer.innerHTML = "";
-  if (!heats.length) return;
+  if (!classifications.length) return;
 
   for (const { className, heatCols, drivers } of classifications) {
     const block = document.createElement("section");
@@ -499,8 +574,16 @@ function renderHighlighted(classifications) {
 }
 
 function render() {
-  const classifications = computeClassifications();
-  renderHeatsList();
+  const races = getRaces();
+  if (!races.some((r) => r.eventName === activeRace)) {
+    activeRace = races.length ? races[races.length - 1].eventName : null;
+    saveActiveRace(activeRace);
+  }
+  renderRaceTabs(races);
+
+  const currentHeats = activeHeats();
+  const classifications = computeClassifications(currentHeats);
+  renderHeatsList(currentHeats);
   renderHighlighted(classifications);
   renderClassifications(classifications);
   renderSearchResults(classifications);
