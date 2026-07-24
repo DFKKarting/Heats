@@ -188,6 +188,8 @@ const parseStatus = document.getElementById("parseStatus");
 const heatsList = document.getElementById("heatsList");
 const classificationsContainer = document.getElementById("classificationsContainer");
 const resetBtn = document.getElementById("resetBtn");
+const searchInput = document.getElementById("searchInput");
+const searchResults = document.getElementById("searchResults");
 
 let heats = loadHeats();
 let highlights = loadHighlights();
@@ -199,8 +201,10 @@ function toggleHighlight(key) {
     highlights.add(key);
   }
   saveHighlights(highlights);
-  renderClassifications();
+  render();
 }
+
+searchInput.addEventListener("input", () => renderSearchResults(computeClassifications()));
 
 function setStatus(msg, kind) {
   parseStatus.textContent = msg;
@@ -293,16 +297,14 @@ function renderHeatsList() {
   }
 }
 
-function renderClassifications() {
-  classificationsContainer.innerHTML = "";
-  if (!heats.length) return;
-
+function computeClassifications() {
   const byClass = new Map();
   for (const h of heats) {
     if (!byClass.has(h.className)) byClass.set(h.className, []);
     byClass.get(h.className).push(h);
   }
 
+  const classifications = [];
   for (const [className, classHeats] of [...byClass.entries()].sort((a, b) => a[0].localeCompare(b[0]))) {
     const heatCols = classHeats
       .slice()
@@ -323,22 +325,31 @@ function renderClassifications() {
       }
     }
 
-    const drivers = [...driverMap.values()].sort(
-      (a, b) => a.total - b.total || b.heatsCount - a.heatsCount || a.fullName.localeCompare(b.fullName)
-    );
+    const drivers = [...driverMap.values()]
+      .sort((a, b) => a.total - b.total || b.heatsCount - a.heatsCount || a.fullName.localeCompare(b.fullName))
+      .map((d, idx) => ({ ...d, pos: idx + 1, key: `${className}::${d.fullName}` }));
 
+    classifications.push({ className, heatCols, drivers });
+  }
+  return classifications;
+}
+
+function renderClassifications(classifications) {
+  classificationsContainer.innerHTML = "";
+  if (!heats.length) return;
+
+  for (const { className, heatCols, drivers } of classifications) {
     const block = document.createElement("section");
     block.className = "panel class-block";
     const heatHeaderCells = heatCols.map((h) => `<th class="num" title="${h.eventName || ""}">${h.heatLabel}</th>`).join("");
     const bodyRows = drivers
-      .map((d, idx) => {
+      .map((d) => {
         const heatCells = heatCols
           .map((h) => `<td class="num">${d.perHeat[h.id] !== undefined ? d.perHeat[h.id] : "–"}</td>`)
           .join("");
-        const key = `${className}::${d.fullName}`;
-        const isHighlighted = highlights.has(key);
-        return `<tr class="${isHighlighted ? "highlighted" : ""}" data-key="${key.replace(/"/g, "&quot;")}">
-          <td class="pos">${idx + 1}</td>
+        const isHighlighted = highlights.has(d.key);
+        return `<tr class="${isHighlighted ? "highlighted" : ""}" data-key="${d.key.replace(/"/g, "&quot;")}">
+          <td class="pos">${d.pos}</td>
           <td class="name-cell">
             <button type="button" class="star-btn ${isHighlighted ? "starred" : ""}" title="Highlight rijder" aria-label="Highlight ${d.fullName}">${isHighlighted ? "★" : "☆"}</button>
             ${d.fullName}
@@ -379,9 +390,49 @@ function renderClassifications() {
   }
 }
 
+function renderSearchResults(classifications) {
+  const query = searchInput.value.trim().toLowerCase();
+  if (!query) {
+    searchResults.innerHTML = "";
+    return;
+  }
+
+  const matches = [];
+  for (const { className, drivers } of classifications) {
+    for (const d of drivers) {
+      if (d.fullName.toLowerCase().includes(query)) {
+        matches.push({ ...d, className });
+      }
+    }
+  }
+
+  if (!matches.length) {
+    searchResults.innerHTML = '<p class="empty-hint">Geen rijder gevonden.</p>';
+    return;
+  }
+
+  searchResults.innerHTML = "";
+  for (const m of matches) {
+    const isHighlighted = highlights.has(m.key);
+    const row = document.createElement("div");
+    row.className = "search-result-row";
+    row.innerHTML = `
+      <div class="sr-info">
+        <span class="sr-name">${m.fullName}</span>
+        <span class="sr-meta">${m.className} · P${m.pos} · ${m.total} punten</span>
+      </div>
+      <button type="button" class="star-btn ${isHighlighted ? "starred" : ""}" title="Highlight rijder" aria-label="Highlight ${m.fullName}">${isHighlighted ? "★" : "☆"}</button>
+    `;
+    row.querySelector(".star-btn").addEventListener("click", () => toggleHighlight(m.key));
+    searchResults.appendChild(row);
+  }
+}
+
 function render() {
+  const classifications = computeClassifications();
   renderHeatsList();
-  renderClassifications();
+  renderClassifications(classifications);
+  renderSearchResults(classifications);
 }
 
 render();

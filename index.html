@@ -10,6 +10,7 @@
 </head>
 <body>
 <div class="top-banner">
+  <img src="DFK ZWT.png" alt="DFK Kart Racing Team" />
   <h1>Karting Klassement</h1>
 </div>
 <p class="subtitle">Upload heat-resultaten (PDF) en krijg automatisch een opgeteld klassement per klasse.</p>
@@ -24,6 +25,12 @@
       <input type="file" id="fileInput" accept="application/pdf" multiple hidden />
     </div>
     <div id="parseStatus" class="status"></div>
+  </section>
+
+  <section class="panel" id="search-card">
+    <h2>Zoek rijder</h2>
+    <input type="text" id="searchInput" class="search-input" placeholder="Typ een naam..." autocomplete="off" />
+    <div id="searchResults" class="search-results"></div>
   </section>
 
   <section class="panel" id="heats-card">
