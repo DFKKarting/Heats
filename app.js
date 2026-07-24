@@ -594,7 +594,7 @@ function renderHighlighted(classifications) {
   const followed = [];
   for (const { className, drivers } of classifications) {
     for (const d of drivers) {
-      if (highlights.has(d.key)) followed.push({ ...d, className });
+      if (highlights.has(d.key)) followed.push({ ...d, className, classDriverCount: drivers.length });
     }
   }
 
@@ -606,18 +606,19 @@ function renderHighlighted(classifications) {
   followed.sort((a, b) => a.className.localeCompare(b.className) || a.pos - b.pos);
 
   const bodyRows = followed
-    .map(
-      (d) => `<tr>
+    .map((d) => {
+      const qualifiesA = d.classDriverCount > A_FINAL_CUTOFF && d.pos <= A_FINAL_CUTOFF;
+      return `<tr class="${qualifiesA ? "qualifies-a" : ""}">
         <td class="name-cell">
           <button type="button" class="star-btn starred" title="Highlight verwijderen" aria-label="Highlight ${d.fullName} verwijderen">★</button>
           ${d.fullName}
         </td>
         <td>${d.className}</td>
-        <td class="num pos">${d.pos}</td>
+        <td class="num pos" title="${qualifiesA ? "Kwalificeert voor de A-finale" : ""}">${d.pos}</td>
         <td class="num total">${d.total}</td>
         <td class="num">${d.heatsCount}</td>
-      </tr>`
-    )
+      </tr>`;
+    })
     .join("");
 
   highlightedContainer.innerHTML = `
