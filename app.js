@@ -250,6 +250,19 @@ toggleHeatsBtn.addEventListener("click", () => {
 
 applyHeatsCollapsedState();
 
+const CLASS_COLLAPSED_KEY = "kartingClassCollapsed.v1";
+let collapsedClasses = new Set(JSON.parse(localStorage.getItem(CLASS_COLLAPSED_KEY)) || []);
+
+function toggleClassCollapsed(className) {
+  if (collapsedClasses.has(className)) {
+    collapsedClasses.delete(className);
+  } else {
+    collapsedClasses.add(className);
+  }
+  localStorage.setItem(CLASS_COLLAPSED_KEY, JSON.stringify([...collapsedClasses]));
+  render();
+}
+
 let heats = loadHeats();
 let highlights = loadHighlights();
 let activeRace = loadActiveRace();
@@ -497,25 +510,33 @@ function renderClassifications(classifications) {
       })
       .join("");
 
+    const isCollapsed = collapsedClasses.has(className);
     block.innerHTML = `
-      <h2>${className}</h2>
-      <p class="class-meta">Klassement over ${heatCols.length} heat(s) — punten opgeteld, laagste totaal bovenaan. Klik de ster om een rijder te highlighten.</p>
-      <div style="overflow-x:auto;">
-        <table class="classification">
-          <thead>
-            <tr>
-              <th>Pos</th>
-              <th>Rijder</th>
-              <th class="num">#</th>
-              ${heatHeaderCells}
-              <th class="num">Totaal</th>
-              <th class="num">Heats</th>
-            </tr>
-          </thead>
-          <tbody>${bodyRows}</tbody>
-        </table>
+      <div class="panel-header">
+        <button type="button" class="panel-toggle class-toggle" aria-expanded="${!isCollapsed}">
+          <span class="chevron">${isCollapsed ? "▸" : "▾"}</span> <h2 style="display:inline">${className}</h2>
+        </button>
+      </div>
+      <div class="class-collapsible ${isCollapsed ? "collapsed" : ""}">
+        <p class="class-meta">Klassement over ${heatCols.length} heat(s) — punten opgeteld, laagste totaal bovenaan. Klik de ster om een rijder te highlighten.</p>
+        <div style="overflow-x:auto;">
+          <table class="classification">
+            <thead>
+              <tr>
+                <th>Pos</th>
+                <th>Rijder</th>
+                <th class="num">#</th>
+                ${heatHeaderCells}
+                <th class="num">Totaal</th>
+                <th class="num">Heats</th>
+              </tr>
+            </thead>
+            <tbody>${bodyRows}</tbody>
+          </table>
+        </div>
       </div>
     `;
+    block.querySelector(".class-toggle").addEventListener("click", () => toggleClassCollapsed(className));
     block.querySelectorAll(".star-btn").forEach((btn) => {
       btn.addEventListener("click", () => {
         toggleHighlight(btn.closest("tr").dataset.key);

@@ -210,6 +210,9 @@ main {
 
 .class-block { text-align: left; }
 .class-block .class-meta { color: #ccc; font-size: .88rem; margin: -6px 0 14px; }
+.class-block .panel-header { margin-bottom: 0; }
+.class-collapsible.collapsed { display: none; }
+.class-collapsible:not(.collapsed) { margin-top: 14px; }
 
 table.classification {
   width: 100%;
