@@ -111,6 +111,16 @@ async function extractPageItems(page) {
   return items;
 }
 
+function parsePrintedAt(items) {
+  // The timing software stamps every export with "Printed: DD.MM.YYYY / HH:MM".
+  // A later stamp for the same heat means it's a newer, revised export.
+  const rawText = items.map((it) => it.text).join(" ");
+  const m = rawText.match(/Printed:\s*(\d{2})\.(\d{2})\.(\d{4})\s*\/\s*(\d{2}):(\d{2})/);
+  if (!m) return null;
+  const [, dd, mm, yyyy, hh, min] = m;
+  return `${yyyy}-${mm}-${dd}T${hh}:${min}:00`;
+}
+
 function parseTitleBlock(items, tableTopY) {
   const above = items.filter((it) => it.x < 350 && it.y < tableTopY - 15);
   const lines = clusterByY(above, 3).sort((a, b) => a.y - b.y);
@@ -195,6 +205,7 @@ async function parsePdfFile(file) {
     throw new Error("Kon geen resultatentabel herkennen in dit PDF.");
   }
   const { eventName, className, heatLabel } = parseTitleBlock(items, tableTopY);
+  const printedAt = parsePrintedAt(items);
 
   return {
     id: `${eventName}::${className}::${heatLabel}`,
@@ -203,6 +214,7 @@ async function parsePdfFile(file) {
     eventName,
     fileName: file.name,
     uploadedAt: new Date().toISOString(),
+    printedAt,
     rows,
   };
 }
@@ -296,6 +308,26 @@ function setStatus(msg, kind) {
   parseStatus.className = "status" + (kind ? ` ${kind}` : "");
 }
 
+// Merges a freshly parsed heat into `heats`. If a heat with the same id already
+// exists (same race/class/heat), the one with the latest "Printed" stamp from
+// the timing software wins - so an older revision uploaded after a newer one
+// (or in a different order) never overwrites the newer result.
+function mergeHeat(parsed) {
+  const idx = heats.findIndex((h) => h.id === parsed.id);
+  if (idx === -1) {
+    heats.push(parsed);
+    return "added";
+  }
+  const existing = heats[idx];
+  if (existing.printedAt && parsed.printedAt && parsed.printedAt < existing.printedAt) {
+    return "skipped-older-revision";
+  }
+  heats[idx] = parsed;
+  return existing.printedAt && parsed.printedAt && parsed.printedAt > existing.printedAt
+    ? "replaced-with-revision"
+    : "replaced";
+}
+
 async function handleFiles(fileList) {
   const files = Array.from(fileList).filter((f) => f.type === "application/pdf" || f.name.toLowerCase().endsWith(".pdf"));
   if (!files.length) {
@@ -304,13 +336,16 @@ async function handleFiles(fileList) {
   }
   setStatus(`Bezig met inlezen van ${files.length} bestand(en)...`);
   let okCount = 0;
+  let revisionCount = 0;
+  let skippedCount = 0;
   let lastEventName = null;
   const errors = [];
   for (const file of files) {
     try {
       const parsed = await parsePdfFile(file);
-      heats = heats.filter((h) => h.id !== parsed.id);
-      heats.push(parsed);
+      const outcome = mergeHeat(parsed);
+      if (outcome === "replaced-with-revision") revisionCount++;
+      if (outcome === "skipped-older-revision") skippedCount++;
       lastEventName = parsed.eventName;
       okCount++;
     } catch (e) {
@@ -323,10 +358,14 @@ async function handleFiles(fileList) {
     saveActiveRace(activeRace);
   }
   render();
+  const notes = [];
+  if (revisionCount) notes.push(`${revisionCount} revisie(s) automatisch overgenomen`);
+  if (skippedCount) notes.push(`${skippedCount} oudere revisie(s) genegeerd`);
+  const noteText = notes.length ? ` (${notes.join(", ")})` : "";
   if (errors.length) {
-    setStatus(`${okCount} heat(s) geladen. Fout bij: ${errors.join(" | ")}`, "err");
+    setStatus(`${okCount} heat(s) geladen${noteText}. Fout bij: ${errors.join(" | ")}`, "err");
   } else {
-    setStatus(`${okCount} heat(s) succesvol geladen.`, "ok");
+    setStatus(`${okCount} heat(s) succesvol geladen${noteText}.`, "ok");
   }
 }
 
@@ -385,7 +424,10 @@ function renderHeatsList(heatsSubset) {
       </div>
       <button class="btn-danger btn-small" type="button">Verwijderen</button>
     `;
-    row.querySelector("button").addEventListener("click", () => removeHeat(h.id));
+    row.querySelector("button").addEventListener("click", () => {
+      if (!confirm(`Heat "${h.className} — ${h.heatLabel}" verwijderen?`)) return;
+      removeHeat(h.id);
+    });
     heatsList.appendChild(row);
   }
 }
