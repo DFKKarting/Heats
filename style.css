@@ -270,6 +270,7 @@ table.classification tbody tr:first-child td.pos {
 table.classification td.total { font-weight: 700; color: #ff8080; }
 
 table.classification td.name-cell { text-align: left; white-space: nowrap; }
+table.classification td.name-cell .car-number { font-weight: 800; }
 
 .star-btn {
   background: none;

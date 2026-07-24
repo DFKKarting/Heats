@@ -839,7 +839,7 @@ function renderHighlighted(classifications) {
       return `<tr class="${qualifiesA ? "qualifies-a" : ""}">
         <td class="name-cell">
           <button type="button" class="star-btn starred" title="Highlight verwijderen" aria-label="Highlight ${d.fullName} verwijderen">★</button>
-          ${d.fullName}
+          ${d.fullName} <span class="car-number">#${d.car}</span>
         </td>
         <td>${d.className}</td>
         <td class="num pos" title="${qualifiesA ? "Kwalificeert voor de A-finale" : ""}">${d.pos}</td>
