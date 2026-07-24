@@ -364,7 +364,6 @@ const searchResults = document.getElementById("searchResults");
 const toggleHeatsBtn = document.getElementById("toggleHeatsBtn");
 const highlightedContainer = document.getElementById("highlightedContainer");
 const raceTabs = document.getElementById("raceTabs");
-const showHeatsCheckbox = document.getElementById("showHeatsCheckbox");
 
 const HEATS_COLLAPSED_KEY = "kartingHeatsCollapsed.v1";
 let heatsCollapsed = localStorage.getItem(HEATS_COLLAPSED_KEY) !== "false"; // collapsed by default
@@ -403,12 +402,6 @@ let qualifying = loadQualifying();
 
 const SHOW_HEATS_KEY = "kartingShowHeatColumns.v1";
 let showHeatColumns = localStorage.getItem(SHOW_HEATS_KEY) !== "false"; // shown by default
-showHeatsCheckbox.checked = showHeatColumns;
-showHeatsCheckbox.addEventListener("change", () => {
-  showHeatColumns = showHeatsCheckbox.checked;
-  localStorage.setItem(SHOW_HEATS_KEY, String(showHeatColumns));
-  render();
-});
 
 function toggleHighlight(key) {
   if (highlights.has(key)) {
@@ -719,7 +712,7 @@ function renderClassifications(classifications) {
   for (const { className, heatCols, drivers, hasQualifying } of classifications) {
     const block = document.createElement("section");
     block.className = "panel class-block";
-    const colCount = 5 + (showHeatColumns ? heatCols.length : 0); // Pos, Rijder, #, heats..., Totaal, Heats
+    const colCount = 4 + (showHeatColumns ? heatCols.length : 0); // Pos, Rijder, heats..., Totaal, Heats
     const heatHeaderCells = showHeatColumns
       ? heatCols.map((h) => `<th class="num" title="${h.eventName || ""}">${h.heatLabel}</th>`).join("")
       : "";
@@ -738,9 +731,8 @@ function renderClassifications(classifications) {
           <td class="pos" title="${posTitleParts.join(" · ")}">${d.pos}</td>
           <td class="name-cell">
             <button type="button" class="star-btn ${isHighlighted ? "starred" : ""}" title="Highlight rijder" aria-label="Highlight ${d.fullName}">${isHighlighted ? "★" : "☆"}</button>
-            ${d.fullName}
+            ${d.fullName} <span class="car-number">#${d.car}</span>
           </td>
-          <td class="num">${d.car}</td>
           ${heatCells}
           <td class="num total">${d.total}</td>
           <td class="num">${d.heatsCount}</td>
@@ -767,13 +759,16 @@ function renderClassifications(classifications) {
       <div class="class-collapsible ${isCollapsed ? "collapsed" : ""}">
         <p class="class-meta">Klassement over ${heatCols.length} heat(s) — punten opgeteld, laagste totaal bovenaan. Klik de ster om een rijder te highlighten.${hasQualifying ? " Bij gelijke punten beslist de qualifying (snelste tijd wint)." : ""}</p>
         ${unevenHeats ? '<p class="class-warning">⚠ Niet alle rijders hebben evenveel heats gereden — dit klassement is nog niet volledig.</p>' : ""}
+        <label class="show-heats-toggle">
+          <input type="checkbox" class="show-heats-checkbox" ${showHeatColumns ? "checked" : ""} />
+          Toon heat-kolommen
+        </label>
         <div style="overflow-x:auto;">
           <table class="classification">
             <thead>
               <tr>
                 <th>Pos</th>
                 <th>Rijder</th>
-                <th class="num">#</th>
                 ${heatHeaderCells}
                 <th class="num">Totaal</th>
                 <th class="num">Heats</th>
@@ -785,6 +780,11 @@ function renderClassifications(classifications) {
       </div>
     `;
     block.querySelector(".class-toggle").addEventListener("click", () => toggleClassCollapsed(className));
+    block.querySelector(".show-heats-checkbox").addEventListener("change", (e) => {
+      showHeatColumns = e.target.checked;
+      localStorage.setItem(SHOW_HEATS_KEY, String(showHeatColumns));
+      render();
+    });
     block.querySelectorAll(".star-btn").forEach((btn) => {
       btn.addEventListener("click", () => {
         toggleHighlight(btn.closest("tr").dataset.key);
