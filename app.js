@@ -515,6 +515,7 @@ function renderClassifications(classifications) {
       return html;
     });
     const bodyRows = rowsHtml.join("");
+    const unevenHeats = !drivers.every((d) => d.heatsCount === heatCols.length);
 
     const isCollapsed = collapsedClasses.has(className);
     block.innerHTML = `
@@ -525,6 +526,7 @@ function renderClassifications(classifications) {
       </div>
       <div class="class-collapsible ${isCollapsed ? "collapsed" : ""}">
         <p class="class-meta">Klassement over ${heatCols.length} heat(s) — punten opgeteld, laagste totaal bovenaan. Klik de ster om een rijder te highlighten.</p>
+        ${unevenHeats ? '<p class="class-warning">⚠ Niet alle rijders hebben evenveel heats gereden — dit klassement is nog niet volledig.</p>' : ""}
         <div style="overflow-x:auto;">
           <table class="classification">
             <thead>

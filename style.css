@@ -219,6 +219,17 @@ main {
 
 .class-block { text-align: left; }
 .class-block .class-meta { color: #ccc; font-size: .88rem; margin: -6px 0 14px; }
+
+.class-warning {
+  color: #ffb020;
+  background: rgba(255, 176, 32, 0.1);
+  border: 1px solid rgba(255, 176, 32, 0.5);
+  border-radius: 8px;
+  padding: 8px 12px;
+  font-size: .85rem;
+  font-weight: 600;
+  margin: -4px 0 14px;
+}
 .class-block .panel-header { margin-bottom: 0; }
 .class-collapsible.collapsed { display: none; }
 .class-collapsible:not(.collapsed) { margin-top: 14px; }
