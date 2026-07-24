@@ -515,7 +515,11 @@ function renderClassifications(classifications) {
       return html;
     });
     const bodyRows = rowsHtml.join("");
-    const unevenHeats = !drivers.every((d) => d.heatsCount === heatCols.length);
+    // Heats are rotating group-pairs (e.g. "Heat 1 E-F", "Heat 2 C-D") - a driver
+    // only appears in the heat numbers matching their own group, so comparing
+    // against the total number of uploaded heat files is wrong. What matters is
+    // whether drivers have raced a different number of heats *from each other*.
+    const unevenHeats = new Set(drivers.map((d) => d.heatsCount)).size > 1;
 
     const isCollapsed = collapsedClasses.has(className);
     block.innerHTML = `
