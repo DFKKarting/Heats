@@ -227,6 +227,9 @@ function parseRows(items) {
 
     if (!fullName) continue; // skip malformed/incomplete trailing rows
 
+    const anchorCode = collapseDoubled(anchors[i].text).toUpperCase();
+    const resultCode = /^[0-9]+$/.test(anchorCode) ? null : anchorCode;
+
     rows.push({
       rank: i + 1,
       car: carItem ? carItem.text : "",
@@ -234,6 +237,7 @@ function parseRows(items) {
       lastName: lastNameClean,
       fullName,
       points: pointsItem ? parseInt(pointsItem.text, 10) : null,
+      resultCode,
     });
   }
   return { rows, tableTopY: Math.min(...anchors.map((a) => a.y)) };
@@ -695,7 +699,7 @@ function computeClassifications(heatsSubset) {
           driverMap.set(row.fullName, { fullName: row.fullName, car: row.car, perHeat: {}, total: 0, heatsCount: 0 });
         }
         const d = driverMap.get(row.fullName);
-        d.perHeat[h.id] = row.points;
+        d.perHeat[h.id] = { points: row.points, code: row.resultCode };
         d.total += row.points;
         d.heatsCount += 1;
         d.car = row.car;
@@ -742,7 +746,12 @@ function renderClassifications(classifications) {
     const rowsHtml = drivers.map((d) => {
       const heatCells = showHeatColumns
         ? heatCols
-            .map((h) => `<td class="num">${d.perHeat[h.id] !== undefined ? d.perHeat[h.id] : "–"}</td>`)
+            .map((h) => {
+              const entry = d.perHeat[h.id];
+              if (!entry) return `<td class="num">–</td>`;
+              const codeTag = entry.code ? ` <span class="result-code">${entry.code}</span>` : "";
+              return `<td class="num">${entry.points}${codeTag}</td>`;
+            })
             .join("")
         : "";
       const isHighlighted = highlights.has(d.key);

@@ -285,6 +285,16 @@ table.classification td.total { font-weight: 700; color: #ff8080; }
 table.classification td.name-cell { text-align: left; white-space: nowrap; }
 table.classification td.name-cell .car-number { font-weight: 800; }
 
+.result-code {
+  display: inline-block;
+  font-size: 0.68em;
+  font-weight: 800;
+  letter-spacing: 0.5px;
+  color: #ff6b6b;
+  vertical-align: middle;
+  margin-left: 2px;
+}
+
 .star-btn {
   background: none;
   border: none;
