@@ -35,10 +35,12 @@
 
   <section class="panel" id="heats-card">
     <div class="panel-header">
-      <h2>Geladen heats</h2>
+      <button id="toggleHeatsBtn" class="panel-toggle" type="button" aria-expanded="false">
+        <span class="chevron">▸</span> <h2 style="display:inline">Geladen heats</h2>
+      </button>
       <button id="resetBtn" class="btn-outline" type="button">Alles wissen</button>
     </div>
-    <div id="heatsList" class="heats-list">
+    <div id="heatsList" class="heats-list collapsed">
       <p class="empty-hint">Nog geen heats geladen.</p>
     </div>
   </section>

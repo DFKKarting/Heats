@@ -190,6 +190,24 @@ const classificationsContainer = document.getElementById("classificationsContain
 const resetBtn = document.getElementById("resetBtn");
 const searchInput = document.getElementById("searchInput");
 const searchResults = document.getElementById("searchResults");
+const toggleHeatsBtn = document.getElementById("toggleHeatsBtn");
+
+const HEATS_COLLAPSED_KEY = "kartingHeatsCollapsed.v1";
+let heatsCollapsed = localStorage.getItem(HEATS_COLLAPSED_KEY) !== "false"; // collapsed by default
+
+function applyHeatsCollapsedState() {
+  heatsList.classList.toggle("collapsed", heatsCollapsed);
+  toggleHeatsBtn.setAttribute("aria-expanded", String(!heatsCollapsed));
+  toggleHeatsBtn.querySelector(".chevron").textContent = heatsCollapsed ? "▸" : "▾";
+}
+
+toggleHeatsBtn.addEventListener("click", () => {
+  heatsCollapsed = !heatsCollapsed;
+  localStorage.setItem(HEATS_COLLAPSED_KEY, String(heatsCollapsed));
+  applyHeatsCollapsedState();
+});
+
+applyHeatsCollapsedState();
 
 let heats = loadHeats();
 let highlights = loadHighlights();
