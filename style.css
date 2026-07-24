@@ -25,38 +25,12 @@ body {
   gap: 16px;
   padding-top: 28px;
 }
-.top-banner img { height: 70px; width: auto; filter: drop-shadow(0 2px 6px rgba(0,0,0,0.6)); }
-
-h1 {
-  font-family: 'Orbitron', 'Rajdhani', sans-serif;
-  color: #ff5252;
-  font-size: 2.4em;
-  font-weight: 800;
-  letter-spacing: 1px;
-  text-transform: uppercase;
-  text-shadow: 0 0 10px rgba(245, 66, 66, 0.6), 0 0 25px rgba(245, 66, 66, 0.35), 2px 2px 5px rgba(0,0,0,0.7);
-  margin: 0;
-}
+.top-banner img { height: 100px; width: auto; filter: drop-shadow(0 2px 6px rgba(0,0,0,0.6)); }
 
 .subtitle {
   color: #ccc;
   font-weight: 600;
-  margin: 6px 0 0;
-}
-
-.checkered-divider {
-  width: 80%;
-  max-width: 600px;
-  height: 10px;
-  margin: 16px auto 25px auto;
-  background-image:
-    linear-gradient(45deg, #000 25%, transparent 25%, transparent 75%, #000 75%, #000),
-    linear-gradient(45deg, #000 25%, #eee 25%, #eee 75%, #000 75%, #000);
-  background-size: 20px 20px;
-  background-position: 0 0, 10px 10px;
-  border-radius: 5px;
-  opacity: 0.85;
-  box-shadow: 0 2px 8px rgba(0,0,0,0.5);
+  margin: 12px 0 25px;
 }
 
 main {
@@ -266,7 +240,7 @@ table.classification tbody tr.highlighted:hover { background-color: rgba(255, 21
 table.classification tbody tr.highlighted td.name-cell { color: #ffd54a; font-weight: 700; }
 
 @media (max-width: 640px) {
-  h1 { font-size: 1.7em; }
+  .top-banner img { height: 70px; }
   table.classification { font-size: .8rem; }
   table.classification th, table.classification td { padding: 6px; }
 }
