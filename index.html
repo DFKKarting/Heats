@@ -23,21 +23,19 @@
       <input type="file" id="fileInput" accept="application/pdf" multiple hidden />
     </div>
     <div id="parseStatus" class="status"></div>
-  </section>
 
-  <div id="raceTabs" class="race-tabs"></div>
-
-  <section class="panel" id="heats-card">
-    <div class="panel-header">
+    <div class="heats-toggle-row">
       <button id="toggleHeatsBtn" class="panel-toggle" type="button" aria-expanded="false">
-        <span class="chevron">▸</span> <h2 style="display:inline">Geladen heats</h2>
+        <span class="chevron">▸</span> Geladen heats
       </button>
-      <button id="resetBtn" class="btn-outline" type="button">Alles wissen</button>
+      <button id="resetBtn" class="btn-outline btn-small" type="button">Alles wissen</button>
     </div>
     <div id="heatsList" class="heats-list collapsed">
       <p class="empty-hint">Nog geen heats geladen.</p>
     </div>
   </section>
+
+  <div id="raceTabs" class="race-tabs"></div>
 
   <section class="panel" id="highlighted-card">
     <h2>Gevolgde rijders</h2>
