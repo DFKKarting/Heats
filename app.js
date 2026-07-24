@@ -191,6 +191,7 @@ const resetBtn = document.getElementById("resetBtn");
 const searchInput = document.getElementById("searchInput");
 const searchResults = document.getElementById("searchResults");
 const toggleHeatsBtn = document.getElementById("toggleHeatsBtn");
+const highlightedContainer = document.getElementById("highlightedContainer");
 
 const HEATS_COLLAPSED_KEY = "kartingHeatsCollapsed.v1";
 let heatsCollapsed = localStorage.getItem(HEATS_COLLAPSED_KEY) !== "false"; // collapsed by default
@@ -446,9 +447,61 @@ function renderSearchResults(classifications) {
   }
 }
 
+function renderHighlighted(classifications) {
+  const followed = [];
+  for (const { className, drivers } of classifications) {
+    for (const d of drivers) {
+      if (highlights.has(d.key)) followed.push({ ...d, className });
+    }
+  }
+
+  if (!followed.length) {
+    highlightedContainer.innerHTML = '<p class="empty-hint">Nog geen rijders gehighlight. Klik op een ster om een rijder te volgen.</p>';
+    return;
+  }
+
+  followed.sort((a, b) => a.className.localeCompare(b.className) || a.pos - b.pos);
+
+  const bodyRows = followed
+    .map(
+      (d) => `<tr>
+        <td class="name-cell">
+          <button type="button" class="star-btn starred" title="Highlight verwijderen" aria-label="Highlight ${d.fullName} verwijderen">★</button>
+          ${d.fullName}
+        </td>
+        <td>${d.className}</td>
+        <td class="num pos">${d.pos}</td>
+        <td class="num total">${d.total}</td>
+        <td class="num">${d.heatsCount}</td>
+      </tr>`
+    )
+    .join("");
+
+  highlightedContainer.innerHTML = `
+    <div style="overflow-x:auto;">
+      <table class="classification">
+        <thead>
+          <tr>
+            <th>Rijder</th>
+            <th>Klasse</th>
+            <th class="num">Positie</th>
+            <th class="num">Punten</th>
+            <th class="num">Heats</th>
+          </tr>
+        </thead>
+        <tbody>${bodyRows}</tbody>
+      </table>
+    </div>
+  `;
+  followed.forEach((d, i) => {
+    highlightedContainer.querySelectorAll(".star-btn")[i].addEventListener("click", () => toggleHighlight(d.key));
+  });
+}
+
 function render() {
   const classifications = computeClassifications();
   renderHeatsList();
+  renderHighlighted(classifications);
   renderClassifications(classifications);
   renderSearchResults(classifications);
 }

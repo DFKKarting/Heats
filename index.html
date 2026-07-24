@@ -27,12 +27,6 @@
     <div id="parseStatus" class="status"></div>
   </section>
 
-  <section class="panel" id="search-card">
-    <h2>Zoek rijder</h2>
-    <input type="text" id="searchInput" class="search-input" placeholder="Typ een naam..." autocomplete="off" />
-    <div id="searchResults" class="search-results"></div>
-  </section>
-
   <section class="panel" id="heats-card">
     <div class="panel-header">
       <button id="toggleHeatsBtn" class="panel-toggle" type="button" aria-expanded="false">
@@ -43,6 +37,19 @@
     <div id="heatsList" class="heats-list collapsed">
       <p class="empty-hint">Nog geen heats geladen.</p>
     </div>
+  </section>
+
+  <section class="panel" id="highlighted-card">
+    <h2>Gevolgde rijders</h2>
+    <div id="highlightedContainer">
+      <p class="empty-hint">Nog geen rijders gehighlight. Klik op een ster om een rijder te volgen.</p>
+    </div>
+  </section>
+
+  <section class="panel" id="search-card">
+    <h2>Zoek rijder</h2>
+    <input type="text" id="searchInput" class="search-input" placeholder="Typ een naam..." autocomplete="off" />
+    <div id="searchResults" class="search-results"></div>
   </section>
 
   <section id="classificationsContainer"></section>
