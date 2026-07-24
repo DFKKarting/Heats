@@ -279,8 +279,7 @@ function renderRaceTabs(races) {
     const btn = document.createElement("button");
     btn.type = "button";
     btn.className = "race-tab" + (r.eventName === activeRace ? " active" : "");
-    btn.textContent = r.label;
-    btn.title = r.eventName;
+    btn.textContent = r.eventName;
     btn.addEventListener("click", () => {
       activeRace = r.eventName;
       saveActiveRace(activeRace);
