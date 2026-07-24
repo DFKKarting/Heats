@@ -170,6 +170,8 @@ main {
   box-shadow: 0 0 0 2px rgba(245, 66, 66, 0.25);
 }
 
+#search-card { margin-bottom: 16px; }
+
 .search-results { margin-top: 12px; display: flex; flex-direction: column; gap: 8px; text-align: left; }
 .search-result-row {
   display: flex;
@@ -202,6 +204,8 @@ main {
 .heat-row .heat-info { display: flex; flex-direction: column; }
 .heat-row .heat-title { font-weight: 700; font-family: 'Orbitron', sans-serif; font-size: 0.85em; letter-spacing: 0.5px; color: #ff8080; }
 .heat-row .heat-meta { color: #ccc; font-size: .82rem; margin-top: 2px; }
+
+#classificationsContainer { display: flex; flex-direction: column; gap: 28px; }
 
 .class-block { text-align: left; }
 .class-block .class-meta { color: #ccc; font-size: .88rem; margin: -6px 0 14px; }
