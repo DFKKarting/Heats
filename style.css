@@ -272,10 +272,8 @@ table.classification td.name-cell { text-align: left; white-space: nowrap; }
 .star-btn.starred { color: #ffd54a; text-shadow: 0 0 8px rgba(255, 213, 74, 0.7); }
 
 table.classification tbody tr.qualifies-a {
-  background-color: rgba(66, 245, 78, 0.08);
   box-shadow: inset 3px 0 0 0 #42f54e;
 }
-table.classification tbody tr.qualifies-a:hover { background-color: rgba(66, 245, 78, 0.16); }
 
 table.classification tbody tr.cutoff-row td {
   padding: 4px 10px;
