@@ -92,6 +92,29 @@ function within(x, [lo, hi]) {
   return x >= lo && x <= hi;
 }
 
+// The Rank column is rendered bold by double-drawing every character (e.g. "1" -> "11",
+// "DSQ" -> "DDSSQQ"). Collapse that back to the original text where it applies.
+function collapseDoubled(text) {
+  if (text.length % 2 !== 0) return text;
+  let result = "";
+  for (let i = 0; i < text.length; i += 2) {
+    if (text[i] !== text[i + 1]) return text;
+    result += text[i];
+  }
+  return result;
+}
+
+// A row is anchored either by a plain rank number, or by a non-finish code
+// (DSQ, DNF, DNS, ...) for drivers listed under "Not classified" - they still
+// have a Points value that must count towards the total.
+function isRowAnchorText(text) {
+  for (const candidate of new Set([text, collapseDoubled(text)])) {
+    if (/^[0-9]+$/.test(candidate)) return true;
+    if (/^(DSQ|DQ|DNF|DNS|EXC|NC)$/i.test(candidate)) return true;
+  }
+  return false;
+}
+
 function clusterByY(items, tolerance = 3) {
   const sorted = [...items].sort((a, b) => a.y - b.y || a.x - b.x);
   const lines = [];
@@ -160,7 +183,7 @@ function parseTitleBlock(items, tableTopY) {
 
 function parseRows(items) {
   const rankAnchors = items
-    .filter((it) => within(it.x, COL.RANK) && /^[0-9]+$/.test(it.text))
+    .filter((it) => within(it.x, COL.RANK) && isRowAnchorText(it.text))
     .sort((a, b) => a.y - b.y);
 
   // merge anchors that are effectively the same row (within 3pt)
