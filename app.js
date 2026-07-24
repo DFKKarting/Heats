@@ -6,6 +6,7 @@ pdfjsLib.GlobalWorkerOptions.workerSrc =
   "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js";
 
 const STORAGE_KEY = "kartingHeats.v1";
+const HIGHLIGHT_KEY = "kartingHighlights.v1";
 
 const COL = {
   RANK: [16, 25],
@@ -24,6 +25,18 @@ function loadHeats() {
 
 function saveHeats(heats) {
   localStorage.setItem(STORAGE_KEY, JSON.stringify(heats));
+}
+
+function loadHighlights() {
+  try {
+    return new Set(JSON.parse(localStorage.getItem(HIGHLIGHT_KEY)) || []);
+  } catch {
+    return new Set();
+  }
+}
+
+function saveHighlights(set) {
+  localStorage.setItem(HIGHLIGHT_KEY, JSON.stringify([...set]));
 }
 
 function within(x, [lo, hi]) {
@@ -177,6 +190,17 @@ const classificationsContainer = document.getElementById("classificationsContain
 const resetBtn = document.getElementById("resetBtn");
 
 let heats = loadHeats();
+let highlights = loadHighlights();
+
+function toggleHighlight(key) {
+  if (highlights.has(key)) {
+    highlights.delete(key);
+  } else {
+    highlights.add(key);
+  }
+  saveHighlights(highlights);
+  renderClassifications();
+}
 
 function setStatus(msg, kind) {
   parseStatus.textContent = msg;
@@ -311,9 +335,14 @@ function renderClassifications() {
         const heatCells = heatCols
           .map((h) => `<td class="num">${d.perHeat[h.id] !== undefined ? d.perHeat[h.id] : "–"}</td>`)
           .join("");
-        return `<tr>
+        const key = `${className}::${d.fullName}`;
+        const isHighlighted = highlights.has(key);
+        return `<tr class="${isHighlighted ? "highlighted" : ""}" data-key="${key.replace(/"/g, "&quot;")}">
           <td class="pos">${idx + 1}</td>
-          <td>${d.fullName}</td>
+          <td class="name-cell">
+            <button type="button" class="star-btn ${isHighlighted ? "starred" : ""}" title="Highlight rijder" aria-label="Highlight ${d.fullName}">${isHighlighted ? "★" : "☆"}</button>
+            ${d.fullName}
+          </td>
           <td class="num">${d.car}</td>
           ${heatCells}
           <td class="num total">${d.total}</td>
@@ -324,7 +353,7 @@ function renderClassifications() {
 
     block.innerHTML = `
       <h2>${className}</h2>
-      <p class="class-meta">Klassement over ${heatCols.length} heat(s) — punten opgeteld, laagste totaal bovenaan.</p>
+      <p class="class-meta">Klassement over ${heatCols.length} heat(s) — punten opgeteld, laagste totaal bovenaan. Klik de ster om een rijder te highlighten.</p>
       <div style="overflow-x:auto;">
         <table class="classification">
           <thead>
@@ -341,6 +370,11 @@ function renderClassifications() {
         </table>
       </div>
     `;
+    block.querySelectorAll(".star-btn").forEach((btn) => {
+      btn.addEventListener("click", () => {
+        toggleHighlight(btn.closest("tr").dataset.key);
+      });
+    });
     classificationsContainer.appendChild(block);
   }
 }

@@ -184,6 +184,29 @@ table.classification tbody tr:first-child td.pos {
 }
 table.classification td.total { font-weight: 700; color: #ff8080; }
 
+table.classification td.name-cell { text-align: left; white-space: nowrap; }
+
+.star-btn {
+  background: none;
+  border: none;
+  color: #666;
+  font-size: 1.1em;
+  line-height: 1;
+  cursor: pointer;
+  padding: 0 6px 0 0;
+  vertical-align: middle;
+  transition: color 0.15s ease, transform 0.15s ease;
+}
+.star-btn:hover { color: #ffd54a; transform: scale(1.2); }
+.star-btn.starred { color: #ffd54a; text-shadow: 0 0 8px rgba(255, 213, 74, 0.7); }
+
+table.classification tbody tr.highlighted {
+  background-color: rgba(255, 213, 74, 0.12);
+  box-shadow: inset 3px 0 0 0 #ffd54a;
+}
+table.classification tbody tr.highlighted:hover { background-color: rgba(255, 213, 74, 0.22); }
+table.classification tbody tr.highlighted td.name-cell { color: #ffd54a; font-weight: 700; }
+
 @media (max-width: 640px) {
   h1 { font-size: 1.7em; }
   table.classification { font-size: .8rem; }
