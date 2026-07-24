@@ -8,6 +8,7 @@ pdfjsLib.GlobalWorkerOptions.workerSrc =
 const STORAGE_KEY = "kartingHeats.v1";
 const HIGHLIGHT_KEY = "kartingHighlights.v1";
 const ACTIVE_RACE_KEY = "kartingActiveRace.v1";
+const QUALIFYING_KEY = "kartingQualifying.v1";
 const A_FINAL_CUTOFF = 36;
 
 const COL = {
@@ -15,6 +16,14 @@ const COL = {
   CAR: [48, 66],
   NAME: [70, 156],
   POINTS: [554, 585],
+};
+
+// Column layout of the "Total Qualifying Practice" PDF (different template from heat results).
+const QCOL = {
+  POS: [24, 40],
+  CAR: [44, 63],
+  NAME: [72, 168],
+  BESTTIME: [436, 470],
 };
 
 function loadHeats() {
@@ -27,6 +36,18 @@ function loadHeats() {
 
 function saveHeats(heats) {
   localStorage.setItem(STORAGE_KEY, JSON.stringify(heats));
+}
+
+function loadQualifying() {
+  try {
+    return JSON.parse(localStorage.getItem(QUALIFYING_KEY)) || [];
+  } catch {
+    return [];
+  }
+}
+
+function saveQualifying(qualifying) {
+  localStorage.setItem(QUALIFYING_KEY, JSON.stringify(qualifying));
 }
 
 function loadHighlights() {
@@ -195,12 +216,7 @@ function parseRows(items) {
   return { rows, tableTopY: Math.min(...anchors.map((a) => a.y)) };
 }
 
-async function parsePdfFile(file) {
-  const buf = await file.arrayBuffer();
-  const pdf = await pdfjsLib.getDocument({ data: buf }).promise;
-  const page = await pdf.getPage(1);
-  const items = await extractPageItems(page);
-
+function buildHeatRecord(file, items) {
   const { rows, tableTopY } = parseRows(items);
   if (!rows.length) {
     throw new Error("Kon geen resultatentabel herkennen in dit PDF.");
@@ -218,6 +234,121 @@ async function parsePdfFile(file) {
     printedAt,
     rows,
   };
+}
+
+// Parses one page of the "Total Qualifying Practice" PDF - a different template
+// from heat results: Pos. / No. / Driver / Equipment / Raceteam / Best Time / Pos. in Group / Group.
+function parseQualifyingRowsFromItems(items) {
+  const posAnchors = items
+    .filter((it) => within(it.x, QCOL.POS) && /^[0-9]+$/.test(it.text))
+    .sort((a, b) => a.y - b.y);
+
+  const anchors = [];
+  for (const a of posAnchors) {
+    if (anchors.length && Math.abs(anchors[anchors.length - 1].y - a.y) < 3) continue;
+    anchors.push(a);
+  }
+  if (!anchors.length) return [];
+
+  const rows = [];
+  for (let i = 0; i < anchors.length; i++) {
+    const y0 = anchors[i].y;
+    const y1 = i + 1 < anchors.length ? anchors[i + 1].y : y0 + 18;
+    const band = items.filter((it) => it.y >= y0 - 6 && it.y < y1 - 6);
+
+    const carItem = band.find((it) => within(it.x, QCOL.CAR) && /^[0-9]+$/.test(it.text));
+    const nameItems = band
+      .filter((it) => within(it.x, QCOL.NAME))
+      .sort((a, b) => a.y - b.y || a.x - b.x);
+
+    let firstName = "";
+    let lastName = "";
+    if (nameItems.length) {
+      const minY = Math.min(...nameItems.map((it) => it.y));
+      firstName = nameItems
+        .filter((it) => Math.abs(it.y - minY) < 3)
+        .sort((a, b) => a.x - b.x)
+        .map((it) => it.text)
+        .join(" ");
+      lastName = nameItems
+        .filter((it) => Math.abs(it.y - minY) >= 3)
+        .sort((a, b) => a.x - b.x)
+        .map((it) => it.text)
+        .join(" ");
+    }
+    const lastNameClean = lastName.replace(/\s*\([A-Za-z]\)\s*$/, "").trim();
+    const fullName = `${firstName} ${lastNameClean}`.replace(/\s+/g, " ").trim();
+    if (!fullName) continue;
+
+    const bestTimeItem = band.find((it) => within(it.x, QCOL.BESTTIME) && /^\d{1,2}:?\d{2}\.\d{3}$/.test(it.text));
+
+    rows.push({ car: carItem ? carItem.text : "", fullName, bestTime: bestTimeItem ? bestTimeItem.text : null });
+  }
+  return rows;
+}
+
+function parseQualifyingClassName(items, tableTopY, knownClassNames) {
+  const above = items.filter((it) => it.x < 300 && it.y < tableTopY - 8);
+  const lines = clusterByY(above, 3).sort((a, b) => a.y - b.y);
+  const classLine = (lines[1] ? lines[1].text : lines[0] ? lines[0].text : "").trim();
+  for (const known of knownClassNames) {
+    if (classLine.toLowerCase() === known.toLowerCase() || classLine.toLowerCase().startsWith(`${known.toLowerCase()} `)) {
+      return known;
+    }
+  }
+  // Fallback: this line is "<class name> <track>" with no delimiter (e.g. "X30 Senior Genk") -
+  // assume the last word is the track name.
+  const words = classLine.split(/\s+/).filter(Boolean);
+  if (words.length > 1) return words.slice(0, -1).join(" ");
+  return classLine || "Onbekende klasse";
+}
+
+async function parseQualifyingPdf(file, pdf, page1Items) {
+  const allRows = [];
+  let tableTopY = null;
+  for (let pageNum = 1; pageNum <= pdf.numPages; pageNum++) {
+    const items = pageNum === 1 ? page1Items : await extractPageItems(await pdf.getPage(pageNum));
+    if (pageNum === 1) {
+      const anchorYs = items.filter((it) => within(it.x, QCOL.POS) && /^[0-9]+$/.test(it.text)).map((it) => it.y);
+      tableTopY = anchorYs.length ? Math.min(...anchorYs) : null;
+    }
+    allRows.push(...parseQualifyingRowsFromItems(items));
+  }
+  if (!allRows.length) {
+    throw new Error("Kon geen qualifying-tabel herkennen in dit PDF.");
+  }
+  if (!activeRace) {
+    throw new Error("Upload eerst een heat-PDF voor deze race, dan kan de qualifying eraan gekoppeld worden.");
+  }
+  const entries = allRows.map((r, idx) => ({ ...r, pos: idx + 1 }));
+
+  const knownClassNames = [...new Set(heats.filter((h) => h.eventName === activeRace).map((h) => h.className))];
+  const className = tableTopY ? parseQualifyingClassName(page1Items, tableTopY, knownClassNames) : knownClassNames[0] || "Onbekende klasse";
+  const printedAt = parsePrintedAt(page1Items);
+  const eventName = activeRace;
+
+  return {
+    id: `${eventName}::${className}`,
+    className,
+    eventName,
+    fileName: file.name,
+    uploadedAt: new Date().toISOString(),
+    printedAt,
+    entries,
+  };
+}
+
+async function parseUploadedFile(file) {
+  const buf = await file.arrayBuffer();
+  const pdf = await pdfjsLib.getDocument({ data: buf }).promise;
+  const page1 = await pdf.getPage(1);
+  const items1 = await extractPageItems(page1);
+  const rawText1 = items1.map((it) => it.text).join(" ");
+
+  if (/Qualifying\s+Practice/i.test(rawText1)) {
+    return { docType: "qualifying", record: await parseQualifyingPdf(file, pdf, items1) };
+  }
+  return { docType: "heat", record: buildHeatRecord(file, items1) };
 }
 
 /* ---------------- UI ---------------- */
@@ -267,6 +398,7 @@ function toggleClassCollapsed(className) {
 let heats = loadHeats();
 let highlights = loadHighlights();
 let activeRace = loadActiveRace();
+let qualifying = loadQualifying();
 
 function toggleHighlight(key) {
   if (highlights.has(key)) {
@@ -275,6 +407,42 @@ function toggleHighlight(key) {
     highlights.add(key);
   }
   saveHighlights(highlights);
+  render();
+}
+
+// Same revision logic as mergeHeat: a qualifying upload with the same race+class
+// replaces the previous one only if it isn't an older revision.
+function mergeQualifying(parsed) {
+  const idx = qualifying.findIndex((q) => q.id === parsed.id);
+  if (idx === -1) {
+    qualifying.push(parsed);
+    return "added";
+  }
+  const existing = qualifying[idx];
+  if (existing.printedAt && parsed.printedAt && parsed.printedAt < existing.printedAt) {
+    return "skipped-older-revision";
+  }
+  qualifying[idx] = parsed;
+  return existing.printedAt && parsed.printedAt && parsed.printedAt > existing.printedAt
+    ? "replaced-with-revision"
+    : "replaced";
+}
+
+function getQualiPosMap(eventName, className) {
+  const q = qualifying.find((q) => q.eventName === eventName && q.className === className);
+  if (!q) return null;
+  const map = new Map();
+  for (const e of q.entries) map.set(e.fullName, e.pos);
+  return map;
+}
+
+function activeQualifying() {
+  return qualifying.filter((q) => q.eventName === activeRace);
+}
+
+function removeQualifying(id) {
+  qualifying = qualifying.filter((q) => q.id !== id);
+  saveQualifying(qualifying);
   render();
 }
 
@@ -349,24 +517,33 @@ async function handleFiles(fileList) {
     return;
   }
   setStatus(`Bezig met inlezen van ${files.length} bestand(en)...`);
-  let okCount = 0;
+  let heatCount = 0;
+  let qualiCount = 0;
   let revisionCount = 0;
   let skippedCount = 0;
   let lastEventName = null;
   const errors = [];
   for (const file of files) {
     try {
-      const parsed = await parsePdfFile(file);
-      const outcome = mergeHeat(parsed);
-      if (outcome === "replaced-with-revision") revisionCount++;
-      if (outcome === "skipped-older-revision") skippedCount++;
-      lastEventName = parsed.eventName;
-      okCount++;
+      const { docType, record } = await parseUploadedFile(file);
+      if (docType === "qualifying") {
+        const outcome = mergeQualifying(record);
+        if (outcome === "replaced-with-revision") revisionCount++;
+        if (outcome === "skipped-older-revision") skippedCount++;
+        qualiCount++;
+      } else {
+        const outcome = mergeHeat(record);
+        if (outcome === "replaced-with-revision") revisionCount++;
+        if (outcome === "skipped-older-revision") skippedCount++;
+        lastEventName = record.eventName;
+        heatCount++;
+      }
     } catch (e) {
       errors.push(`${file.name}: ${e.message}`);
     }
   }
   saveHeats(heats);
+  saveQualifying(qualifying);
   if (lastEventName) {
     activeRace = lastEventName;
     saveActiveRace(activeRace);
@@ -376,10 +553,14 @@ async function handleFiles(fileList) {
   if (revisionCount) notes.push(`${revisionCount} revisie(s) automatisch overgenomen`);
   if (skippedCount) notes.push(`${skippedCount} oudere revisie(s) genegeerd`);
   const noteText = notes.length ? ` (${notes.join(", ")})` : "";
+  const parts = [];
+  if (heatCount) parts.push(`${heatCount} heat(s)`);
+  if (qualiCount) parts.push(`${qualiCount} qualifying`);
+  const summary = parts.length ? parts.join(" en ") + " geladen" : "Niets geladen";
   if (errors.length) {
-    setStatus(`${okCount} heat(s) geladen${noteText}. Fout bij: ${errors.join(" | ")}`, "err");
+    setStatus(`${summary}${noteText}. Fout bij: ${errors.join(" | ")}`, "err");
   } else {
-    setStatus(`${okCount} heat(s) succesvol geladen${noteText}.`, "ok");
+    setStatus(`${summary}${noteText}.`, "ok");
   }
 }
 
@@ -406,13 +587,16 @@ dropzone.addEventListener("drop", (e) => {
 
 resetBtn.addEventListener("click", () => {
   const current = activeHeats();
-  if (!current.length) return;
+  const currentQuali = activeQualifying();
+  if (!current.length && !currentQuali.length) return;
   const label = deriveRaceLabel(activeRace);
-  if (!confirm(`Alle heats van ${label} wissen?`)) return;
+  if (!confirm(`Alle heats en qualifying van ${label} wissen?`)) return;
   heats = heats.filter((h) => h.eventName !== activeRace);
+  qualifying = qualifying.filter((q) => q.eventName !== activeRace);
   saveHeats(heats);
+  saveQualifying(qualifying);
   render();
-  setStatus(`Heats van ${label} gewist.`, "ok");
+  setStatus(`Heats en qualifying van ${label} gewist.`, "ok");
 });
 
 function removeHeat(id) {
@@ -421,8 +605,8 @@ function removeHeat(id) {
   render();
 }
 
-function renderHeatsList(heatsSubset) {
-  if (!heatsSubset.length) {
+function renderHeatsList(heatsSubset, qualifyingSubset) {
+  if (!heatsSubset.length && !qualifyingSubset.length) {
     heatsList.innerHTML = '<p class="empty-hint">Nog geen heats geladen voor deze race.</p>';
     return;
   }
@@ -444,9 +628,27 @@ function renderHeatsList(heatsSubset) {
     });
     heatsList.appendChild(row);
   }
+  for (const q of qualifyingSubset) {
+    const row = document.createElement("div");
+    row.className = "heat-row quali-row";
+    row.innerHTML = `
+      <div class="heat-info">
+        <span class="heat-title">🏁 Qualifying — ${q.className}</span>
+        <span class="heat-meta">${q.eventName || ""} · ${q.entries.length} rijders · ${q.fileName}</span>
+      </div>
+      <button class="btn-danger btn-small" type="button">Verwijderen</button>
+    `;
+    row.querySelector("button").addEventListener("click", () => {
+      if (!confirm(`Qualifying "${q.className}" verwijderen?`)) return;
+      removeQualifying(q.id);
+    });
+    heatsList.appendChild(row);
+  }
 }
 
 function computeClassifications(heatsSubset) {
+  const eventName = heatsSubset.length ? heatsSubset[0].eventName : activeRace;
+
   const byClass = new Map();
   for (const h of heatsSubset) {
     if (!byClass.has(h.className)) byClass.set(h.className, []);
@@ -474,11 +676,28 @@ function computeClassifications(heatsSubset) {
       }
     }
 
+    const qualiMap = getQualiPosMap(eventName, className);
     const drivers = [...driverMap.values()]
-      .sort((a, b) => a.total - b.total || b.heatsCount - a.heatsCount || a.fullName.localeCompare(b.fullName))
-      .map((d, idx) => ({ ...d, pos: idx + 1, key: `${className}::${d.fullName}` }));
+      .sort((a, b) => {
+        if (a.total !== b.total) return a.total - b.total;
+        if (qualiMap) {
+          const qa = qualiMap.get(a.fullName);
+          const qb = qualiMap.get(b.fullName);
+          if (qa !== undefined && qb !== undefined && qa !== qb) return qa - qb;
+          if (qa !== undefined && qb === undefined) return -1;
+          if (qb !== undefined && qa === undefined) return 1;
+        }
+        if (a.heatsCount !== b.heatsCount) return b.heatsCount - a.heatsCount;
+        return a.fullName.localeCompare(b.fullName);
+      })
+      .map((d, idx) => ({
+        ...d,
+        pos: idx + 1,
+        key: `${className}::${d.fullName}`,
+        qualiPos: qualiMap ? qualiMap.get(d.fullName) : undefined,
+      }));
 
-    classifications.push({ className, heatCols, drivers });
+    classifications.push({ className, heatCols, drivers, hasQualifying: !!qualiMap });
   }
   return classifications;
 }
@@ -487,7 +706,7 @@ function renderClassifications(classifications) {
   classificationsContainer.innerHTML = "";
   if (!classifications.length) return;
 
-  for (const { className, heatCols, drivers } of classifications) {
+  for (const { className, heatCols, drivers, hasQualifying } of classifications) {
     const block = document.createElement("section");
     block.className = "panel class-block";
     const colCount = 5 + heatCols.length; // Pos, Rijder, #, heats..., Totaal, Heats
@@ -498,8 +717,11 @@ function renderClassifications(classifications) {
         .join("");
       const isHighlighted = highlights.has(d.key);
       const qualifiesA = drivers.length > A_FINAL_CUTOFF && d.pos <= A_FINAL_CUTOFF;
+      const posTitleParts = [];
+      if (qualifiesA) posTitleParts.push("Kwalificeert voor de A-finale");
+      if (d.qualiPos !== undefined) posTitleParts.push(`Qualifying P${d.qualiPos}`);
       let html = `<tr class="${isHighlighted ? "highlighted" : ""} ${qualifiesA ? "qualifies-a" : ""}" data-key="${d.key.replace(/"/g, "&quot;")}">
-          <td class="pos" title="${qualifiesA ? "Kwalificeert voor de A-finale" : ""}">${d.pos}</td>
+          <td class="pos" title="${posTitleParts.join(" · ")}">${d.pos}</td>
           <td class="name-cell">
             <button type="button" class="star-btn ${isHighlighted ? "starred" : ""}" title="Highlight rijder" aria-label="Highlight ${d.fullName}">${isHighlighted ? "★" : "☆"}</button>
             ${d.fullName}
@@ -529,7 +751,7 @@ function renderClassifications(classifications) {
         </button>
       </div>
       <div class="class-collapsible ${isCollapsed ? "collapsed" : ""}">
-        <p class="class-meta">Klassement over ${heatCols.length} heat(s) — punten opgeteld, laagste totaal bovenaan. Klik de ster om een rijder te highlighten.</p>
+        <p class="class-meta">Klassement over ${heatCols.length} heat(s) — punten opgeteld, laagste totaal bovenaan. Klik de ster om een rijder te highlighten.${hasQualifying ? " Bij gelijke punten beslist de qualifying (snelste tijd wint)." : ""}</p>
         ${unevenHeats ? '<p class="class-warning">⚠ Niet alle rijders hebben evenveel heats gereden — dit klassement is nog niet volledig.</p>' : ""}
         <div style="overflow-x:auto;">
           <table class="classification">
@@ -658,7 +880,7 @@ function render() {
 
   const currentHeats = activeHeats();
   const classifications = computeClassifications(currentHeats);
-  renderHeatsList(currentHeats);
+  renderHeatsList(currentHeats, activeQualifying());
   renderHighlighted(classifications);
   renderClassifications(classifications);
   renderSearchResults(classifications);

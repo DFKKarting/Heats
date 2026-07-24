@@ -215,6 +215,9 @@ main {
 .heat-row .heat-title { font-weight: 700; font-family: 'Orbitron', sans-serif; font-size: 0.85em; letter-spacing: 0.5px; color: #ff8080; }
 .heat-row .heat-meta { color: #ccc; font-size: .82rem; margin-top: 2px; }
 
+.heat-row.quali-row { border-color: rgba(66, 245, 78, 0.4); }
+.heat-row.quali-row .heat-title { color: #42f54e; }
+
 #classificationsContainer { display: flex; flex-direction: column; gap: 28px; }
 
 .class-block { text-align: left; }
