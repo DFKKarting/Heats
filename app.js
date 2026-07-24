@@ -1,0 +1,353 @@
+/* Karting Klassement - client-side PDF result parser + cumulative classification
+   Tuned for the "Camp Company / MW Raceconsulting" timing PDF layout
+   (columns identified by fixed x-position ranges, in PDF points). */
+
+pdfjsLib.GlobalWorkerOptions.workerSrc =
+  "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js";
+
+const STORAGE_KEY = "kartingHeats.v1";
+
+const COL = {
+  RANK: [16, 25],
+  CAR: [48, 66],
+  NAME: [70, 156],
+  POINTS: [554, 585],
+};
+
+function loadHeats() {
+  try {
+    return JSON.parse(localStorage.getItem(STORAGE_KEY)) || [];
+  } catch {
+    return [];
+  }
+}
+
+function saveHeats(heats) {
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(heats));
+}
+
+function within(x, [lo, hi]) {
+  return x >= lo && x <= hi;
+}
+
+function clusterByY(items, tolerance = 3) {
+  const sorted = [...items].sort((a, b) => a.y - b.y || a.x - b.x);
+  const lines = [];
+  for (const it of sorted) {
+    let line = lines.find((l) => Math.abs(l.y - it.y) < tolerance);
+    if (!line) {
+      line = { y: it.y, items: [] };
+      lines.push(line);
+    }
+    line.items.push(it);
+  }
+  lines.sort((a, b) => a.y - b.y);
+  return lines.map((l) => ({
+    y: l.y,
+    text: l.items
+      .sort((a, b) => a.x - b.x)
+      .map((i) => i.text)
+      .join(" ")
+      .replace(/\s+/g, " ")
+      .trim(),
+  }));
+}
+
+async function extractPageItems(page) {
+  const viewport = page.getViewport({ scale: 1 });
+  const content = await page.getTextContent();
+  const seen = new Set();
+  const items = [];
+  for (const it of content.items) {
+    const text = it.str;
+    if (!text || !text.trim()) continue;
+    const x = it.transform[4];
+    const y = viewport.height - it.transform[5];
+    const key = `${Math.round(x)}|${Math.round(y)}|${text}`;
+    if (seen.has(key)) continue;
+    seen.add(key);
+    items.push({ text, x, y });
+  }
+  return items;
+}
+
+function parseTitleBlock(items, tableTopY) {
+  const above = items.filter((it) => it.x < 350 && it.y < tableTopY - 15);
+  const lines = clusterByY(above, 3).sort((a, b) => a.y - b.y);
+  const eventName = lines[0] ? lines[0].text : "";
+  const classLine = lines[1] ? lines[1].text : "";
+  let className = classLine;
+  let heatLabel = "";
+  const m = classLine.match(/^(.*?)\s*-\s*(Heat\s+\d+\s*[A-Za-z0-9\-]*)\s*$/i);
+  if (m) {
+    className = m[1].trim();
+    heatLabel = m[2].trim();
+  }
+  return { eventName, className: className || "Onbekende klasse", heatLabel: heatLabel || classLine || "Heat" };
+}
+
+function parseRows(items) {
+  const rankAnchors = items
+    .filter((it) => within(it.x, COL.RANK) && /^[0-9]+$/.test(it.text))
+    .sort((a, b) => a.y - b.y);
+
+  // merge anchors that are effectively the same row (within 3pt)
+  const anchors = [];
+  for (const a of rankAnchors) {
+    if (anchors.length && Math.abs(anchors[anchors.length - 1].y - a.y) < 3) continue;
+    anchors.push(a);
+  }
+  if (!anchors.length) return { rows: [], tableTopY: null };
+
+  const rows = [];
+  for (let i = 0; i < anchors.length; i++) {
+    const y0 = anchors[i].y;
+    const y1 = i + 1 < anchors.length ? anchors[i + 1].y : y0 + 16;
+    const band = items.filter((it) => it.y >= y0 - 6 && it.y < y1 - 6);
+
+    const carItem = band.find((it) => within(it.x, COL.CAR) && /^[0-9]+$/.test(it.text));
+    const nameItems = band
+      .filter((it) => within(it.x, COL.NAME))
+      .sort((a, b) => a.y - b.y || a.x - b.x);
+
+    let firstName = "";
+    let lastName = "";
+    if (nameItems.length) {
+      const minY = Math.min(...nameItems.map((it) => it.y));
+      firstName = nameItems
+        .filter((it) => Math.abs(it.y - minY) < 3)
+        .sort((a, b) => a.x - b.x)
+        .map((it) => it.text)
+        .join(" ");
+      lastName = nameItems
+        .filter((it) => Math.abs(it.y - minY) >= 3)
+        .sort((a, b) => a.x - b.x)
+        .map((it) => it.text)
+        .join(" ");
+    }
+    const lastNameClean = lastName.replace(/\s*\([A-Za-z]\)\s*$/, "").trim();
+    const fullName = `${firstName} ${lastNameClean}`.replace(/\s+/g, " ").trim();
+
+    const pointsItem = band.find((it) => within(it.x, COL.POINTS) && /^[0-9]+$/.test(it.text));
+
+    if (!fullName) continue; // skip malformed/incomplete trailing rows
+
+    rows.push({
+      rank: i + 1,
+      car: carItem ? carItem.text : "",
+      firstName,
+      lastName: lastNameClean,
+      fullName,
+      points: pointsItem ? parseInt(pointsItem.text, 10) : null,
+    });
+  }
+  return { rows, tableTopY: Math.min(...anchors.map((a) => a.y)) };
+}
+
+async function parsePdfFile(file) {
+  const buf = await file.arrayBuffer();
+  const pdf = await pdfjsLib.getDocument({ data: buf }).promise;
+  const page = await pdf.getPage(1);
+  const items = await extractPageItems(page);
+
+  const { rows, tableTopY } = parseRows(items);
+  if (!rows.length) {
+    throw new Error("Kon geen resultatentabel herkennen in dit PDF.");
+  }
+  const { eventName, className, heatLabel } = parseTitleBlock(items, tableTopY);
+
+  return {
+    id: `${className}::${heatLabel}`,
+    className,
+    heatLabel,
+    eventName,
+    fileName: file.name,
+    uploadedAt: new Date().toISOString(),
+    rows,
+  };
+}
+
+/* ---------------- UI ---------------- */
+
+const dropzone = document.getElementById("dropzone");
+const fileInput = document.getElementById("fileInput");
+const parseStatus = document.getElementById("parseStatus");
+const heatsList = document.getElementById("heatsList");
+const classificationsContainer = document.getElementById("classificationsContainer");
+const resetBtn = document.getElementById("resetBtn");
+
+let heats = loadHeats();
+
+function setStatus(msg, kind) {
+  parseStatus.textContent = msg;
+  parseStatus.className = "status" + (kind ? ` ${kind}` : "");
+}
+
+async function handleFiles(fileList) {
+  const files = Array.from(fileList).filter((f) => f.type === "application/pdf" || f.name.toLowerCase().endsWith(".pdf"));
+  if (!files.length) {
+    setStatus("Geen geldige PDF's geselecteerd.", "err");
+    return;
+  }
+  setStatus(`Bezig met inlezen van ${files.length} bestand(en)...`);
+  let okCount = 0;
+  const errors = [];
+  for (const file of files) {
+    try {
+      const parsed = await parsePdfFile(file);
+      heats = heats.filter((h) => h.id !== parsed.id);
+      heats.push(parsed);
+      okCount++;
+    } catch (e) {
+      errors.push(`${file.name}: ${e.message}`);
+    }
+  }
+  saveHeats(heats);
+  render();
+  if (errors.length) {
+    setStatus(`${okCount} heat(s) geladen. Fout bij: ${errors.join(" | ")}`, "err");
+  } else {
+    setStatus(`${okCount} heat(s) succesvol geladen.`, "ok");
+  }
+}
+
+dropzone.addEventListener("click", () => fileInput.click());
+fileInput.addEventListener("change", (e) => handleFiles(e.target.files));
+
+["dragenter", "dragover"].forEach((evt) =>
+  dropzone.addEventListener(evt, (e) => {
+    e.preventDefault();
+    dropzone.classList.add("dragover");
+  })
+);
+["dragleave", "drop"].forEach((evt) =>
+  dropzone.addEventListener(evt, (e) => {
+    e.preventDefault();
+    dropzone.classList.remove("dragover");
+  })
+);
+dropzone.addEventListener("drop", (e) => {
+  if (e.dataTransfer.files && e.dataTransfer.files.length) {
+    handleFiles(e.dataTransfer.files);
+  }
+});
+
+resetBtn.addEventListener("click", () => {
+  if (!heats.length) return;
+  if (!confirm("Alle geladen heats en klassementen wissen?")) return;
+  heats = [];
+  saveHeats(heats);
+  render();
+  setStatus("Alles gewist.", "ok");
+});
+
+function removeHeat(id) {
+  heats = heats.filter((h) => h.id !== id);
+  saveHeats(heats);
+  render();
+}
+
+function renderHeatsList() {
+  if (!heats.length) {
+    heatsList.innerHTML = '<p class="empty-hint">Nog geen heats geladen.</p>';
+    return;
+  }
+  const sorted = [...heats].sort((a, b) => a.className.localeCompare(b.className) || a.heatLabel.localeCompare(b.heatLabel));
+  heatsList.innerHTML = "";
+  for (const h of sorted) {
+    const row = document.createElement("div");
+    row.className = "heat-row";
+    row.innerHTML = `
+      <div class="heat-info">
+        <span class="heat-title">${h.className} — ${h.heatLabel}</span>
+        <span class="heat-meta">${h.eventName || ""} · ${h.rows.length} rijders · ${h.fileName}</span>
+      </div>
+      <button class="btn-danger btn-small" type="button">Verwijderen</button>
+    `;
+    row.querySelector("button").addEventListener("click", () => removeHeat(h.id));
+    heatsList.appendChild(row);
+  }
+}
+
+function renderClassifications() {
+  classificationsContainer.innerHTML = "";
+  if (!heats.length) return;
+
+  const byClass = new Map();
+  for (const h of heats) {
+    if (!byClass.has(h.className)) byClass.set(h.className, []);
+    byClass.get(h.className).push(h);
+  }
+
+  for (const [className, classHeats] of [...byClass.entries()].sort((a, b) => a[0].localeCompare(b[0]))) {
+    const heatCols = classHeats
+      .slice()
+      .sort((a, b) => a.heatLabel.localeCompare(b.heatLabel, undefined, { numeric: true }));
+
+    const driverMap = new Map(); // fullName -> { fullName, perHeat: {id: points}, total, heatsCount }
+    for (const h of heatCols) {
+      for (const row of h.rows) {
+        if (row.points === null) continue;
+        if (!driverMap.has(row.fullName)) {
+          driverMap.set(row.fullName, { fullName: row.fullName, car: row.car, perHeat: {}, total: 0, heatsCount: 0 });
+        }
+        const d = driverMap.get(row.fullName);
+        d.perHeat[h.id] = row.points;
+        d.total += row.points;
+        d.heatsCount += 1;
+        d.car = row.car;
+      }
+    }
+
+    const drivers = [...driverMap.values()].sort(
+      (a, b) => a.total - b.total || b.heatsCount - a.heatsCount || a.fullName.localeCompare(b.fullName)
+    );
+
+    const block = document.createElement("section");
+    block.className = "panel class-block";
+    const heatHeaderCells = heatCols.map((h) => `<th class="num" title="${h.eventName || ""}">${h.heatLabel}</th>`).join("");
+    const bodyRows = drivers
+      .map((d, idx) => {
+        const heatCells = heatCols
+          .map((h) => `<td class="num">${d.perHeat[h.id] !== undefined ? d.perHeat[h.id] : "–"}</td>`)
+          .join("");
+        return `<tr>
+          <td class="pos">${idx + 1}</td>
+          <td>${d.fullName}</td>
+          <td class="num">${d.car}</td>
+          ${heatCells}
+          <td class="num total">${d.total}</td>
+          <td class="num">${d.heatsCount}</td>
+        </tr>`;
+      })
+      .join("");
+
+    block.innerHTML = `
+      <h2>${className}</h2>
+      <p class="class-meta">Klassement over ${heatCols.length} heat(s) — punten opgeteld, laagste totaal bovenaan.</p>
+      <div style="overflow-x:auto;">
+        <table class="classification">
+          <thead>
+            <tr>
+              <th>Pos</th>
+              <th>Rijder</th>
+              <th class="num">#</th>
+              ${heatHeaderCells}
+              <th class="num">Totaal</th>
+              <th class="num">Heats</th>
+            </tr>
+          </thead>
+          <tbody>${bodyRows}</tbody>
+        </table>
+      </div>
+    `;
+    classificationsContainer.appendChild(block);
+  }
+}
+
+function render() {
+  renderHeatsList();
+  renderClassifications();
+}
+
+render();
