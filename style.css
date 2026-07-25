@@ -295,6 +295,23 @@ table.classification td.name-cell .car-number { font-weight: 800; }
   margin-left: 2px;
 }
 
+table.classification td.results-cell {
+  text-align: left;
+  white-space: normal;
+  min-width: 220px;
+}
+.result-chip {
+  display: inline-block;
+  background: rgba(0, 0, 0, 0.3);
+  border: 1px solid rgba(245, 66, 66, 0.3);
+  border-radius: 4px;
+  padding: 2px 6px;
+  font-size: 0.78em;
+  color: #ddd;
+  white-space: nowrap;
+  margin: 2px 4px 2px 0;
+}
+
 .star-btn {
   background: none;
   border: none;

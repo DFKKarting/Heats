@@ -699,7 +699,7 @@ function computeClassifications(heatsSubset) {
           driverMap.set(row.fullName, { fullName: row.fullName, car: row.car, perHeat: {}, total: 0, heatsCount: 0 });
         }
         const d = driverMap.get(row.fullName);
-        d.perHeat[h.id] = { points: row.points, code: row.resultCode };
+        d.perHeat[h.id] = { points: row.points, code: row.resultCode, heatPos: row.rank };
         d.total += row.points;
         d.heatsCount += 1;
         d.car = row.car;
@@ -739,20 +739,19 @@ function renderClassifications(classifications) {
   for (const { className, heatCols, drivers, hasQualifying } of classifications) {
     const block = document.createElement("section");
     block.className = "panel class-block";
-    const colCount = 4 + (showHeatColumns ? heatCols.length : 0); // Pos, Rijder, heats..., Totaal, Heats
-    const heatHeaderCells = showHeatColumns
-      ? heatCols.map((h) => `<th class="num" title="${h.eventName || ""}">${h.heatLabel}</th>`).join("")
-      : "";
+    const colCount = 4 + (showHeatColumns ? 1 : 0); // Pos, Rijder, [Resultaten], Totaal, Heats
+    const resultsHeaderCell = showHeatColumns ? `<th>Resultaten per heat</th>` : "";
     const rowsHtml = drivers.map((d) => {
-      const heatCells = showHeatColumns
-        ? heatCols
+      const resultsCell = showHeatColumns
+        ? `<td class="results-cell">${heatCols
+            .filter((h) => d.perHeat[h.id])
             .map((h) => {
               const entry = d.perHeat[h.id];
-              if (!entry) return `<td class="num">–</td>`;
+              const heatNum = (h.heatLabel.match(/(\d+)/) || [, h.heatLabel])[1];
               const codeTag = entry.code ? ` <span class="result-code">${entry.code}</span>` : "";
-              return `<td class="num">${entry.points}${codeTag}</td>`;
+              return `<span class="result-chip" title="${h.heatLabel}">H${heatNum}: P${entry.heatPos} · ${entry.points}p${codeTag}</span>`;
             })
-            .join("")
+            .join("")}</td>`
         : "";
       const isHighlighted = highlights.has(d.key);
       const qualifiesA = drivers.length > A_FINAL_CUTOFF && d.pos <= A_FINAL_CUTOFF;
@@ -765,7 +764,7 @@ function renderClassifications(classifications) {
             <button type="button" class="star-btn ${isHighlighted ? "starred" : ""}" title="Highlight rijder" aria-label="Highlight ${d.fullName}">${isHighlighted ? "★" : "☆"}</button>
             ${d.fullName} <span class="car-number">#${d.car}</span>
           </td>
-          ${heatCells}
+          ${resultsCell}
           <td class="num total">${d.total}</td>
           <td class="num">${d.heatsCount}</td>
         </tr>`;
@@ -793,7 +792,7 @@ function renderClassifications(classifications) {
         ${unevenHeats ? '<p class="class-warning">⚠ Niet alle rijders hebben evenveel heats gereden — dit klassement is nog niet volledig.</p>' : ""}
         <label class="show-heats-toggle">
           <input type="checkbox" class="show-heats-checkbox" ${showHeatColumns ? "checked" : ""} />
-          Toon heat-kolommen
+          Toon resultaten per heat
         </label>
         <div style="overflow-x:auto;">
           <table class="classification">
@@ -801,7 +800,7 @@ function renderClassifications(classifications) {
               <tr>
                 <th>Pos</th>
                 <th>Rijder</th>
-                ${heatHeaderCells}
+                ${resultsHeaderCell}
                 <th class="num">Totaal</th>
                 <th class="num">Heats</th>
               </tr>
