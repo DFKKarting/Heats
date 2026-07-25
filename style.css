@@ -302,16 +302,17 @@ table.classification td.results-cell {
 }
 .result-chip {
   display: inline-flex;
-  flex-direction: column;
-  align-items: flex-start;
-  gap: 2px;
+  flex-direction: row;
+  align-items: center;
+  gap: 6px;
   background: rgba(0, 0, 0, 0.35);
   border: 1px solid rgba(245, 66, 66, 0.35);
-  border-radius: 6px;
-  padding: 6px 10px;
-  margin: 3px 6px 3px 0;
-  vertical-align: top;
+  border-radius: 5px;
+  padding: 3px 8px;
+  margin: 2px 4px 2px 0;
+  vertical-align: middle;
   white-space: nowrap;
+  line-height: 1.4;
 }
 .result-chip .chip-heat {
   font-family: 'Orbitron', sans-serif;
@@ -322,15 +323,15 @@ table.classification td.results-cell {
   color: #ff8080;
 }
 .result-chip .chip-pos {
-  font-size: 0.85em;
+  font-size: 0.82em;
   color: #ccc;
 }
 .result-chip .chip-pts {
-  font-size: 0.85em;
+  font-size: 0.82em;
   font-weight: 700;
   color: #f54242;
 }
-.result-chip .result-code { margin-left: 0; margin-top: 1px; }
+.result-chip .result-code { margin-left: 0; }
 
 .star-btn {
   background: none;
