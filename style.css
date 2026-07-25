@@ -307,36 +307,15 @@ table.classification td.results-cell {
   max-width: 300px;
 }
 .result-chip {
-  display: inline-flex;
-  flex-direction: row;
-  align-items: center;
-  gap: 6px;
+  display: inline-block;
   background: rgba(0, 0, 0, 0.35);
   border: 1px solid rgba(245, 66, 66, 0.35);
   border-radius: 5px;
-  padding: 3px 8px;
-  vertical-align: middle;
+  padding: 3px 7px;
+  font-size: 0.78em;
+  color: #ddd;
   white-space: nowrap;
-  line-height: 1.4;
 }
-.result-chip .chip-heat {
-  font-family: 'Orbitron', sans-serif;
-  font-size: 0.68em;
-  font-weight: 700;
-  letter-spacing: 0.5px;
-  text-transform: uppercase;
-  color: #ff8080;
-}
-.result-chip .chip-pos {
-  font-size: 0.82em;
-  color: #ccc;
-}
-.result-chip .chip-pts {
-  font-size: 0.82em;
-  font-weight: 700;
-  color: #f54242;
-}
-.result-chip .result-code { margin-left: 0; }
 
 .star-btn {
   background: none;
