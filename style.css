@@ -298,7 +298,13 @@ table.classification td.name-cell .car-number { font-weight: 800; }
 table.classification td.results-cell {
   text-align: left;
   white-space: normal;
-  min-width: 260px;
+}
+.results-wrap {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  width: 300px;
+  max-width: 300px;
 }
 .result-chip {
   display: inline-flex;
@@ -309,7 +315,6 @@ table.classification td.results-cell {
   border: 1px solid rgba(245, 66, 66, 0.35);
   border-radius: 5px;
   padding: 3px 8px;
-  margin: 2px 4px 2px 0;
   vertical-align: middle;
   white-space: nowrap;
   line-height: 1.4;

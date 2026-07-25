@@ -743,7 +743,7 @@ function renderClassifications(classifications) {
     const resultsHeaderCell = showHeatColumns ? `<th>Resultaten per heat</th>` : "";
     const rowsHtml = drivers.map((d) => {
       const resultsCell = showHeatColumns
-        ? `<td class="results-cell">${heatCols
+        ? `<td class="results-cell"><div class="results-wrap">${heatCols
             .filter((h) => d.perHeat[h.id])
             .map((h) => {
               const entry = d.perHeat[h.id];
@@ -756,7 +756,7 @@ function renderClassifications(classifications) {
                 ${codeTag}
               </span>`;
             })
-            .join("")}</td>`
+            .join("")}</div></td>`
         : "";
       const isHighlighted = highlights.has(d.key);
       const qualifiesA = drivers.length > A_FINAL_CUTOFF && d.pos <= A_FINAL_CUTOFF;
