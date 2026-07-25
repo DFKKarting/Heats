@@ -749,7 +749,7 @@ function renderClassifications(classifications) {
               const entry = d.perHeat[h.id];
               const heatNum = (h.heatLabel.match(/(\d+)/) || [, h.heatLabel])[1];
               const codeTag = entry.code ? ` <span class="result-code">${entry.code}</span>` : "";
-              return `<span class="result-chip" title="${h.heatLabel}">H${heatNum} - P${entry.heatPos} - ${entry.points}p${codeTag}</span>`;
+              return `<span class="result-chip" title="${h.heatLabel}">H${heatNum} - P${entry.heatPos}${codeTag}</span>`;
             })
             .join("")}</div></td>`
         : "";
