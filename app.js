@@ -88,6 +88,16 @@ function deriveRaceLabel(eventName) {
   return eventName;
 }
 
+// Different documents for the same physical event sometimes title themselves
+// slightly differently (e.g. "IAME Benelux Round 1" vs "IAME Series Benelux
+// Round 1 Mariembourg"). Group races by round number instead of exact string
+// match so they don't fragment into duplicate tabs.
+function deriveRaceKey(eventName) {
+  if (!eventName) return "unknown-race";
+  const m = eventName.match(/Round\s+(\d+)/i);
+  return m ? `round-${m[1]}` : eventName.trim().toLowerCase();
+}
+
 function within(x, [lo, hi]) {
   return x >= lo && x <= hi;
 }
@@ -173,7 +183,7 @@ function parseTitleBlock(items, tableTopY) {
   const classLine = lines[1] ? lines[1].text : "";
   let className = classLine;
   let heatLabel = "";
-  const m = classLine.match(/^(.*?)\s*-\s*(Heat\s+\d+\s*[A-Za-z0-9\-]*)\s*$/i);
+  const m = classLine.match(/^(.*?)\s*-\s*(Heat\s+\d+\s*[A-Za-z0-9\-]*(?:\s+Revision\s+\d+)?)\s*$/i);
   if (m) {
     className = m[1].trim();
     heatLabel = m[2].trim();
@@ -250,12 +260,14 @@ function buildHeatRecord(file, items) {
   }
   const { eventName, className, heatLabel } = parseTitleBlock(items, tableTopY);
   const printedAt = parsePrintedAt(items);
+  const raceKey = deriveRaceKey(eventName);
 
   return {
-    id: `${eventName}::${className}::${heatLabel}`,
+    id: `${raceKey}::${className}::${heatLabel}`,
     className,
     heatLabel,
     eventName,
+    raceKey,
     fileName: file.name,
     uploadedAt: new Date().toISOString(),
     printedAt,
@@ -330,6 +342,27 @@ function parseQualifyingClassName(items, tableTopY, knownClassNames) {
   return classLine || "Onbekende klasse";
 }
 
+// Qualifying PDFs title their event slightly differently from heat PDFs (e.g.
+// "Iame Series Benelux Round 4" vs "IAME Series Benelux Round 4 Genk"), so we
+// can't match on exact eventName text. Match on the round number against races
+// we already know about instead - this works regardless of which race tab is
+// currently active, which matters for background auto-import.
+function findRaceForQualifying(page1Items) {
+  const rawText = page1Items.map((it) => it.text).join(" ");
+  const m = rawText.match(/Round\s+(\d+)/i);
+  const key = m ? `round-${m[1]}` : null;
+  if (key) {
+    const match = heats.find((h) => (h.raceKey || deriveRaceKey(h.eventName)) === key);
+    if (match) return { eventName: match.eventName, raceKey: match.raceKey || deriveRaceKey(match.eventName) };
+  }
+  if (activeRace) {
+    const match = heats.find((h) => (h.raceKey || deriveRaceKey(h.eventName)) === activeRace);
+    if (match) return { eventName: match.eventName, raceKey: activeRace };
+  }
+  if (heats.length) return { eventName: heats[0].eventName, raceKey: heats[0].raceKey || deriveRaceKey(heats[0].eventName) };
+  return null;
+}
+
 async function parseQualifyingPdf(file, pdf, page1Items) {
   const allRows = [];
   let tableTopY = null;
@@ -344,20 +377,22 @@ async function parseQualifyingPdf(file, pdf, page1Items) {
   if (!allRows.length) {
     throw new Error("Kon geen qualifying-tabel herkennen in dit PDF.");
   }
-  if (!activeRace) {
+  const race = findRaceForQualifying(page1Items);
+  if (!race) {
     throw new Error("Upload eerst een heat-PDF voor deze race, dan kan de qualifying eraan gekoppeld worden.");
   }
+  const { eventName, raceKey } = race;
   const entries = allRows.map((r, idx) => ({ ...r, pos: idx + 1 }));
 
-  const knownClassNames = [...new Set(heats.filter((h) => h.eventName === activeRace).map((h) => h.className))];
+  const knownClassNames = [...new Set(heats.filter((h) => (h.raceKey || deriveRaceKey(h.eventName)) === raceKey).map((h) => h.className))];
   const className = tableTopY ? parseQualifyingClassName(page1Items, tableTopY, knownClassNames) : knownClassNames[0] || "Onbekende klasse";
   const printedAt = parsePrintedAt(page1Items);
-  const eventName = activeRace;
 
   return {
-    id: `${eventName}::${className}`,
+    id: `${raceKey}::${className}`,
     className,
     eventName,
+    raceKey,
     fileName: file.name,
     uploadedAt: new Date().toISOString(),
     printedAt,
@@ -458,8 +493,8 @@ function mergeQualifying(parsed) {
     : "replaced";
 }
 
-function getQualiPosMap(eventName, className) {
-  const q = qualifying.find((q) => q.eventName === eventName && q.className === className);
+function getQualiPosMap(raceKey, className) {
+  const q = qualifying.find((q) => (q.raceKey || deriveRaceKey(q.eventName)) === raceKey && q.className === className);
   if (!q) return null;
   const map = new Map();
   for (const e of q.entries) map.set(e.fullName, e.pos);
@@ -467,7 +502,7 @@ function getQualiPosMap(eventName, className) {
 }
 
 function activeQualifying() {
-  return qualifying.filter((q) => q.eventName === activeRace);
+  return qualifying.filter((q) => (q.raceKey || deriveRaceKey(q.eventName)) === activeRace);
 }
 
 function removeQualifying(id) {
@@ -477,20 +512,27 @@ function removeQualifying(id) {
 }
 
 function getRaces() {
-  const byRace = new Map();
+  const byKey = new Map();
   for (const h of heats) {
-    if (!byRace.has(h.eventName)) byRace.set(h.eventName, { firstSeen: h.uploadedAt, count: 0 });
-    const r = byRace.get(h.eventName);
+    const key = h.raceKey || deriveRaceKey(h.eventName);
+    if (!byKey.has(key)) byKey.set(key, { firstSeen: h.uploadedAt, count: 0, eventNames: new Map() });
+    const r = byKey.get(key);
     r.count += 1;
     if (h.uploadedAt < r.firstSeen) r.firstSeen = h.uploadedAt;
+    r.eventNames.set(h.eventName, (r.eventNames.get(h.eventName) || 0) + 1);
   }
-  return [...byRace.entries()]
-    .map(([eventName, info]) => ({ eventName, label: deriveRaceLabel(eventName), ...info }))
+  return [...byKey.entries()]
+    .map(([raceKey, info]) => {
+      // Different documents for the same race can title themselves slightly
+      // differently - use the longest (most descriptive) variant seen as the label.
+      const eventName = [...info.eventNames.keys()].sort((a, b) => b.length - a.length)[0];
+      return { raceKey, eventName, label: deriveRaceLabel(eventName), firstSeen: info.firstSeen, count: info.count };
+    })
     .sort((a, b) => a.firstSeen.localeCompare(b.firstSeen));
 }
 
 function activeHeats() {
-  return heats.filter((h) => h.eventName === activeRace);
+  return heats.filter((h) => (h.raceKey || deriveRaceKey(h.eventName)) === activeRace);
 }
 
 function renderRaceTabs(races) {
@@ -502,10 +544,10 @@ function renderRaceTabs(races) {
   for (const r of races) {
     const btn = document.createElement("button");
     btn.type = "button";
-    btn.className = "race-tab" + (r.eventName === activeRace ? " active" : "");
+    btn.className = "race-tab" + (r.raceKey === activeRace ? " active" : "");
     btn.textContent = r.eventName;
     btn.addEventListener("click", () => {
-      activeRace = r.eventName;
+      activeRace = r.raceKey;
       saveActiveRace(activeRace);
       render();
     });
@@ -551,7 +593,7 @@ async function handleFiles(fileList) {
   let qualiCount = 0;
   let revisionCount = 0;
   let skippedCount = 0;
-  let lastEventName = null;
+  let lastRaceKey = null;
   const errors = [];
   for (const file of files) {
     try {
@@ -565,7 +607,7 @@ async function handleFiles(fileList) {
         const outcome = mergeHeat(record);
         if (outcome === "replaced-with-revision") revisionCount++;
         if (outcome === "skipped-older-revision") skippedCount++;
-        lastEventName = record.eventName;
+        lastRaceKey = record.raceKey;
         heatCount++;
       }
     } catch (e) {
@@ -574,8 +616,8 @@ async function handleFiles(fileList) {
   }
   saveHeats(heats);
   saveQualifying(qualifying);
-  if (lastEventName) {
-    activeRace = lastEventName;
+  if (lastRaceKey) {
+    activeRace = lastRaceKey;
     saveActiveRace(activeRace);
   }
   render();
@@ -619,10 +661,11 @@ resetBtn.addEventListener("click", () => {
   const current = activeHeats();
   const currentQuali = activeQualifying();
   if (!current.length && !currentQuali.length) return;
-  const label = deriveRaceLabel(activeRace);
+  const activeRaceInfo = getRaces().find((r) => r.raceKey === activeRace);
+  const label = activeRaceInfo ? activeRaceInfo.label : "deze race";
   if (!confirm(`Alle heats en qualifying van ${label} wissen?`)) return;
-  heats = heats.filter((h) => h.eventName !== activeRace);
-  qualifying = qualifying.filter((q) => q.eventName !== activeRace);
+  heats = heats.filter((h) => (h.raceKey || deriveRaceKey(h.eventName)) !== activeRace);
+  qualifying = qualifying.filter((q) => (q.raceKey || deriveRaceKey(q.eventName)) !== activeRace);
   saveHeats(heats);
   saveQualifying(qualifying);
   render();
@@ -677,7 +720,7 @@ function renderHeatsList(heatsSubset, qualifyingSubset) {
 }
 
 function computeClassifications(heatsSubset) {
-  const eventName = heatsSubset.length ? heatsSubset[0].eventName : activeRace;
+  const raceKey = heatsSubset.length ? heatsSubset[0].raceKey || deriveRaceKey(heatsSubset[0].eventName) : activeRace;
 
   const byClass = new Map();
   for (const h of heatsSubset) {
@@ -706,7 +749,7 @@ function computeClassifications(heatsSubset) {
       }
     }
 
-    const qualiMap = getQualiPosMap(eventName, className);
+    const qualiMap = getQualiPosMap(raceKey, className);
     const drivers = [...driverMap.values()]
       .sort((a, b) => {
         if (a.total !== b.total) return a.total - b.total;
@@ -917,8 +960,8 @@ function renderHighlighted(classifications) {
 
 function render() {
   const races = getRaces();
-  if (!races.some((r) => r.eventName === activeRace)) {
-    activeRace = races.length ? races[races.length - 1].eventName : null;
+  if (!races.some((r) => r.raceKey === activeRace)) {
+    activeRace = races.length ? races[races.length - 1].raceKey : null;
     saveActiveRace(activeRace);
   }
   renderRaceTabs(races);
@@ -930,5 +973,66 @@ function render() {
   renderClassifications(classifications);
   renderSearchResults(classifications);
 }
+
+// Background auto-import: server.py watches the Sportity results channel and
+// drops new heat/qualifying PDFs into _incoming/. Poll for them here and parse
+// them the exact same way a manual upload would. Silently does nothing if
+// server.py isn't running (e.g. a plain `python -m http.server`).
+const INCOMING_POLL_INTERVAL_MS = 30000;
+
+async function pollIncomingFiles() {
+  let files;
+  try {
+    const res = await fetch("/api/incoming");
+    if (!res.ok) return;
+    files = await res.json();
+  } catch {
+    return;
+  }
+  if (!files || !files.length) return;
+
+  const processed = [];
+  let heatCount = 0;
+  let qualiCount = 0;
+  for (const name of files) {
+    try {
+      const fileRes = await fetch("/_incoming/" + encodeURIComponent(name));
+      const blob = await fileRes.blob();
+      const file = new File([blob], name, { type: "application/pdf" });
+      const { docType, record } = await parseUploadedFile(file);
+      if (docType === "qualifying") {
+        mergeQualifying(record);
+        qualiCount++;
+      } else {
+        mergeHeat(record);
+        heatCount++;
+      }
+      processed.push(name);
+    } catch (e) {
+      console.warn(`Auto-import mislukt voor ${name}, probeer later opnieuw:`, e);
+    }
+  }
+
+  if (heatCount || qualiCount) {
+    saveHeats(heats);
+    saveQualifying(qualifying);
+    render();
+    const parts = [];
+    if (heatCount) parts.push(`${heatCount} heat(s)`);
+    if (qualiCount) parts.push(`${qualiCount} qualifying`);
+    setStatus(`Automatisch opgehaald van Sportity: ${parts.join(" en ")}.`, "ok");
+  }
+
+  if (processed.length) {
+    fetch("/api/incoming/processed", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ files: processed }),
+    }).catch(() => {});
+  }
+}
+
+setInterval(pollIncomingFiles, INCOMING_POLL_INTERVAL_MS);
+pollIncomingFiles();
 
 render();
