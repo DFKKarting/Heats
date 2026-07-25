@@ -426,6 +426,55 @@ const searchResults = document.getElementById("searchResults");
 const toggleHeatsBtn = document.getElementById("toggleHeatsBtn");
 const highlightedContainer = document.getElementById("highlightedContainer");
 const raceTabs = document.getElementById("raceTabs");
+const heatModalOverlay = document.getElementById("heatModalOverlay");
+const heatModalBody = document.getElementById("heatModalBody");
+const heatModalClose = document.getElementById("heatModalClose");
+
+function showHeatModal(heatId) {
+  const heat = heats.find((h) => h.id === heatId);
+  if (!heat) return;
+
+  const rows = [...heat.rows]
+    .sort((a, b) => a.rank - b.rank)
+    .map(
+      (row) => `<tr>
+        <td class="pos">${row.resultCode || row.rank}</td>
+        <td class="name-cell">${row.fullName} <span class="car-number">#${row.car}</span></td>
+        <td class="num total">${row.points !== null ? row.points : "–"}</td>
+      </tr>`
+    )
+    .join("");
+
+  heatModalBody.innerHTML = `
+    <h2>${heat.className} — ${heat.heatLabel}</h2>
+    <p class="heat-modal-meta">${heat.eventName || ""}</p>
+    <div style="overflow-x:auto;">
+      <table class="classification">
+        <thead>
+          <tr>
+            <th>Pos</th>
+            <th>Rijder</th>
+            <th class="num">Punten</th>
+          </tr>
+        </thead>
+        <tbody>${rows}</tbody>
+      </table>
+    </div>
+  `;
+  heatModalOverlay.hidden = false;
+}
+
+function closeHeatModal() {
+  heatModalOverlay.hidden = true;
+}
+
+heatModalClose.addEventListener("click", closeHeatModal);
+heatModalOverlay.addEventListener("click", (e) => {
+  if (e.target === heatModalOverlay) closeHeatModal();
+});
+document.addEventListener("keydown", (e) => {
+  if (e.key === "Escape" && !heatModalOverlay.hidden) closeHeatModal();
+});
 
 const HEATS_COLLAPSED_KEY = "kartingHeatsCollapsed.v1";
 let heatsCollapsed = localStorage.getItem(HEATS_COLLAPSED_KEY) !== "false"; // collapsed by default
@@ -792,7 +841,7 @@ function renderClassifications(classifications) {
               const entry = d.perHeat[h.id];
               const heatNum = (h.heatLabel.match(/(\d+)/) || [, h.heatLabel])[1];
               const codeTag = entry.code ? ` <span class="result-code">${entry.code}</span>` : "";
-              return `<span class="result-chip" title="${h.heatLabel}">H${heatNum} - P${entry.heatPos}${codeTag}</span>`;
+              return `<span class="result-chip" data-heat-id="${h.id.replace(/"/g, "&quot;")}" title="Bekijk volledige uitslag van ${h.heatLabel}">H${heatNum} - P${entry.heatPos}${codeTag}</span>`;
             })
             .join("")}</div></td>`
         : "";
@@ -863,6 +912,9 @@ function renderClassifications(classifications) {
       btn.addEventListener("click", () => {
         toggleHighlight(btn.closest("tr").dataset.key);
       });
+    });
+    block.querySelectorAll(".result-chip").forEach((chip) => {
+      chip.addEventListener("click", () => showHeatModal(chip.dataset.heatId));
     });
     classificationsContainer.appendChild(block);
   }
