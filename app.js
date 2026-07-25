@@ -748,8 +748,13 @@ function renderClassifications(classifications) {
             .map((h) => {
               const entry = d.perHeat[h.id];
               const heatNum = (h.heatLabel.match(/(\d+)/) || [, h.heatLabel])[1];
-              const codeTag = entry.code ? ` <span class="result-code">${entry.code}</span>` : "";
-              return `<span class="result-chip" title="${h.heatLabel}">H${heatNum}: P${entry.heatPos} · ${entry.points}p${codeTag}</span>`;
+              const codeTag = entry.code ? `<span class="result-code">${entry.code}</span>` : "";
+              return `<span class="result-chip" title="${h.heatLabel}">
+                <span class="chip-heat">Heat ${heatNum}</span>
+                <span class="chip-pos">Positie ${entry.heatPos}</span>
+                <span class="chip-pts">${entry.points} punten</span>
+                ${codeTag}
+              </span>`;
             })
             .join("")}</td>`
         : "";

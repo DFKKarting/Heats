@@ -298,19 +298,39 @@ table.classification td.name-cell .car-number { font-weight: 800; }
 table.classification td.results-cell {
   text-align: left;
   white-space: normal;
-  min-width: 220px;
+  min-width: 260px;
 }
 .result-chip {
-  display: inline-block;
-  background: rgba(0, 0, 0, 0.3);
-  border: 1px solid rgba(245, 66, 66, 0.3);
-  border-radius: 4px;
-  padding: 2px 6px;
-  font-size: 0.78em;
-  color: #ddd;
+  display: inline-flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 2px;
+  background: rgba(0, 0, 0, 0.35);
+  border: 1px solid rgba(245, 66, 66, 0.35);
+  border-radius: 6px;
+  padding: 6px 10px;
+  margin: 3px 6px 3px 0;
+  vertical-align: top;
   white-space: nowrap;
-  margin: 2px 4px 2px 0;
 }
+.result-chip .chip-heat {
+  font-family: 'Orbitron', sans-serif;
+  font-size: 0.68em;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+  color: #ff8080;
+}
+.result-chip .chip-pos {
+  font-size: 0.85em;
+  color: #ccc;
+}
+.result-chip .chip-pts {
+  font-size: 0.85em;
+  font-weight: 700;
+  color: #f54242;
+}
+.result-chip .result-code { margin-left: 0; margin-top: 1px; }
 
 .star-btn {
   background: none;
