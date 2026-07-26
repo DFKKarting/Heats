@@ -414,14 +414,22 @@ async function parseQualifyingPdf(file, pdf, page1Items) {
   };
 }
 
+function looksLikeQualifyingPdf(items) {
+  // Words in the PDF's internal content-stream order don't always match reading
+  // order, so "Qualifying" and "Practice" can end up non-adjacent in a naive
+  // join. Sort by position (like the title-block parsing does) before testing.
+  const lines = clusterByY(items, 3).sort((a, b) => a.y - b.y);
+  const readingOrderText = lines.map((l) => l.text).join(" ");
+  return /Qualifying\s+Practice/i.test(readingOrderText);
+}
+
 async function parseUploadedFile(file) {
   const buf = await file.arrayBuffer();
   const pdf = await pdfjsLib.getDocument({ data: buf }).promise;
   const page1 = await pdf.getPage(1);
   const items1 = await extractPageItems(page1);
-  const rawText1 = items1.map((it) => it.text).join(" ");
 
-  if (/Qualifying\s+Practice/i.test(rawText1)) {
+  if (looksLikeQualifyingPdf(items1)) {
     return { docType: "qualifying", record: await parseQualifyingPdf(file, pdf, items1) };
   }
   return { docType: "heat", record: buildHeatRecord(file, items1) };
