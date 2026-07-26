@@ -10,6 +10,7 @@ const HIGHLIGHT_KEY = "kartingHighlights.v1";
 const ACTIVE_RACE_KEY = "kartingActiveRace.v1";
 const QUALIFYING_KEY = "kartingQualifying.v1";
 const A_FINAL_CUTOFF = 36;
+const B_FINAL_CUTOFF = 72;
 
 const COL = {
   RANK: [16, 25],
@@ -881,10 +882,12 @@ function renderClassifications(classifications) {
         : "";
       const isHighlighted = highlights.has(d.key);
       const qualifiesA = drivers.length > A_FINAL_CUTOFF && d.pos <= A_FINAL_CUTOFF;
+      const qualifiesB = drivers.length > A_FINAL_CUTOFF && d.pos > A_FINAL_CUTOFF && d.pos <= B_FINAL_CUTOFF;
       const posTitleParts = [];
       if (qualifiesA) posTitleParts.push("Kwalificeert voor de A-finale");
+      if (qualifiesB) posTitleParts.push("Kwalificeert voor de B-finale");
       if (d.qualiPos !== undefined) posTitleParts.push(`Qualifying P${d.qualiPos}`);
-      let html = `<tr class="${isHighlighted ? "highlighted" : ""} ${qualifiesA ? "qualifies-a" : ""}" data-key="${d.key.replace(/"/g, "&quot;")}">
+      let html = `<tr class="${isHighlighted ? "highlighted" : ""} ${qualifiesA ? "qualifies-a" : ""} ${qualifiesB ? "qualifies-b" : ""}" data-key="${d.key.replace(/"/g, "&quot;")}">
           <td class="pos" title="${posTitleParts.join(" · ")}">${d.pos}</td>
           <td class="name-cell">
             <button type="button" class="star-btn ${isHighlighted ? "starred" : ""}" title="Highlight rijder" aria-label="Highlight ${d.fullName}">${isHighlighted ? "★" : "☆"}</button>
@@ -896,6 +899,9 @@ function renderClassifications(classifications) {
         </tr>`;
       if (d.pos === A_FINAL_CUTOFF && drivers.length > A_FINAL_CUTOFF) {
         html += `<tr class="cutoff-row"><td colspan="${colCount}">A-finale grens — top ${A_FINAL_CUTOFF}</td></tr>`;
+      }
+      if (d.pos === B_FINAL_CUTOFF && drivers.length > B_FINAL_CUTOFF) {
+        html += `<tr class="cutoff-row cutoff-row-b"><td colspan="${colCount}">B-finale grens — P${A_FINAL_CUTOFF + 1} t/m ${B_FINAL_CUTOFF}</td></tr>`;
       }
       return html;
     });
@@ -1011,12 +1017,13 @@ function renderHighlighted(classifications) {
   const bodyRows = followed
     .map((d) => {
       const qualifiesA = d.classDriverCount > A_FINAL_CUTOFF && d.pos <= A_FINAL_CUTOFF;
-      return `<tr class="${qualifiesA ? "qualifies-a" : ""}">
+      const qualifiesB = d.classDriverCount > A_FINAL_CUTOFF && d.pos > A_FINAL_CUTOFF && d.pos <= B_FINAL_CUTOFF;
+      return `<tr class="${qualifiesA ? "qualifies-a" : ""} ${qualifiesB ? "qualifies-b" : ""}">
         <td class="name-cell">
           <button type="button" class="star-btn starred" title="Highlight verwijderen" aria-label="Highlight ${d.fullName} verwijderen">★</button>
           ${d.fullName} <span class="car-number">#${d.car}</span>
         </td>
-        <td class="num pos" title="${qualifiesA ? "Kwalificeert voor de A-finale" : ""}">${d.pos}</td>
+        <td class="num pos" title="${qualifiesA ? "Kwalificeert voor de A-finale" : qualifiesB ? "Kwalificeert voor de B-finale" : ""}">${d.pos}</td>
         <td class="num total">${d.total}</td>
         <td class="num">${d.heatsCount}</td>
       </tr>`;

@@ -334,6 +334,9 @@ table.classification td.results-cell {
 table.classification tbody tr.qualifies-a {
   box-shadow: inset 3px 0 0 0 #42f54e;
 }
+table.classification tbody tr.qualifies-b {
+  box-shadow: inset 3px 0 0 0 #4aa8ff;
+}
 
 table.classification tbody tr.cutoff-row td {
   padding: 4px 10px;
@@ -346,6 +349,12 @@ table.classification tbody tr.cutoff-row td {
   text-align: center;
   border-top: 1px dashed rgba(66, 245, 78, 0.6);
   border-bottom: 1px dashed rgba(66, 245, 78, 0.6);
+}
+table.classification tbody tr.cutoff-row-b td {
+  background: linear-gradient(135deg, rgba(74, 168, 255, 0.18), rgba(74, 168, 255, 0.04));
+  color: #4aa8ff;
+  border-top: 1px dashed rgba(74, 168, 255, 0.6);
+  border-bottom: 1px dashed rgba(74, 168, 255, 0.6);
 }
 
 table.classification tbody tr.highlighted {
