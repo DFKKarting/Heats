@@ -987,19 +987,20 @@ function renderSearchResults(classifications) {
 }
 
 function renderHighlighted(classifications) {
+  const selected = classifications.find((c) => c.className === activeClass);
   const followed = [];
-  for (const { className, drivers } of classifications) {
-    for (const d of drivers) {
-      if (highlights.has(d.key)) followed.push({ ...d, className, classDriverCount: drivers.length });
+  if (selected) {
+    for (const d of selected.drivers) {
+      if (highlights.has(d.key)) followed.push({ ...d, classDriverCount: selected.drivers.length });
     }
   }
 
   if (!followed.length) {
-    highlightedContainer.innerHTML = '<p class="empty-hint">Nog geen rijders gehighlight. Klik op een ster om een rijder te volgen.</p>';
+    highlightedContainer.innerHTML = '<p class="empty-hint">Nog geen rijders gehighlight in deze klasse. Klik op een ster om een rijder te volgen.</p>';
     return;
   }
 
-  followed.sort((a, b) => a.className.localeCompare(b.className) || a.pos - b.pos);
+  followed.sort((a, b) => a.pos - b.pos);
 
   const bodyRows = followed
     .map((d) => {
@@ -1009,7 +1010,6 @@ function renderHighlighted(classifications) {
           <button type="button" class="star-btn starred" title="Highlight verwijderen" aria-label="Highlight ${d.fullName} verwijderen">★</button>
           ${d.fullName} <span class="car-number">#${d.car}</span>
         </td>
-        <td>${d.className}</td>
         <td class="num pos" title="${qualifiesA ? "Kwalificeert voor de A-finale" : ""}">${d.pos}</td>
         <td class="num total">${d.total}</td>
         <td class="num">${d.heatsCount}</td>
@@ -1023,7 +1023,6 @@ function renderHighlighted(classifications) {
         <thead>
           <tr>
             <th>Rijder</th>
-            <th>Klasse</th>
             <th class="num">Positie</th>
             <th class="num">Punten</th>
             <th class="num">Heats</th>
