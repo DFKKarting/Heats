@@ -28,6 +28,19 @@ const QCOL = {
   GROUP: [540, 578],
 };
 
+// A second qualifying template seen from some rounds/organizers: "Total Result
+// Qualifying Fast Group / Slow Group". Separate Firstname/Lastname columns
+// (instead of stacked first/last name), and a "Group Heats" column (A/B/C/...)
+// that's what we actually want, distinct from the "Quali Group" Fast/Slow column.
+const QCOL_FASTSLOW = {
+  POS: [8, 26],
+  CAR: [27, 49],
+  FIRSTNAME: [50, 112],
+  LASTNAME: [112, 206],
+  BESTTIME: [428, 470],
+  GROUP: [566, 590],
+};
+
 function loadHeats() {
   try {
     return JSON.parse(localStorage.getItem(STORAGE_KEY)) || [];
@@ -340,6 +353,65 @@ function parseQualifyingRowsFromItems(items) {
   return rows;
 }
 
+// "Total Result Qualifying Fast Group / Slow Group" template - Firstname and
+// Lastname are separate columns on the same line (no stacked two-line name),
+// and the heat-pairing group letter is in a "Group Heats" column, distinct
+// from the "Quali Group" (Fast/Slow) column.
+function parseQualifyingRowsFromItemsFastSlow(items) {
+  const posAnchors = items
+    .filter((it) => within(it.x, QCOL_FASTSLOW.POS) && /^[0-9]+$/.test(it.text))
+    .sort((a, b) => a.y - b.y);
+
+  const anchors = [];
+  for (const a of posAnchors) {
+    if (anchors.length && Math.abs(anchors[anchors.length - 1].y - a.y) < 3) continue;
+    anchors.push(a);
+  }
+  if (!anchors.length) return [];
+
+  const rows = [];
+  for (let i = 0; i < anchors.length; i++) {
+    const y0 = anchors[i].y;
+    const y1 = i + 1 < anchors.length ? anchors[i + 1].y : y0 + 18;
+    const band = items.filter((it) => it.y >= y0 - 6 && it.y < y1 - 6);
+
+    const carItem = band.find((it) => within(it.x, QCOL_FASTSLOW.CAR) && /^[0-9]+$/.test(it.text));
+    const firstName = band
+      .filter((it) => within(it.x, QCOL_FASTSLOW.FIRSTNAME))
+      .sort((a, b) => a.x - b.x)
+      .map((it) => it.text)
+      .join(" ");
+    const lastNameRaw = band
+      .filter((it) => within(it.x, QCOL_FASTSLOW.LASTNAME))
+      .sort((a, b) => a.x - b.x)
+      .map((it) => it.text)
+      .join(" ");
+    const lastNameClean = lastNameRaw.replace(/\s*\([A-Za-z]\)\s*$/, "").trim();
+    const fullName = `${firstName} ${lastNameClean}`.replace(/\s+/g, " ").trim();
+    if (!fullName) continue;
+
+    const bestTimeItem = band.find((it) => within(it.x, QCOL_FASTSLOW.BESTTIME) && /^\d{1,2}[.,]\d{3}$/.test(it.text));
+    const groupItem = band.find((it) => within(it.x, QCOL_FASTSLOW.GROUP) && /^[A-Z]$/.test(it.text));
+
+    rows.push({
+      car: carItem ? carItem.text : "",
+      fullName,
+      bestTime: bestTimeItem ? bestTimeItem.text.replace(",", ".") : null,
+      group: groupItem ? groupItem.text : null,
+    });
+  }
+  return rows;
+}
+
+function detectQualifyingVariant(items) {
+  const lines = clusterByY(items, 3).sort((a, b) => a.y - b.y);
+  const topText = lines.slice(0, 6).map((l) => l.text).join(" ");
+  if (/Fast\s+Group\s*\/\s*Slow\s+Group/i.test(topText) || /Result\s+Qualifying/i.test(topText)) {
+    return "fastslow";
+  }
+  return "practice";
+}
+
 function parseQualifyingClassName(items, tableTopY, knownClassNames) {
   const above = items.filter((it) => it.x < 300 && it.y < tableTopY - 8);
   const lines = clusterByY(above, 3).sort((a, b) => a.y - b.y);
@@ -378,15 +450,19 @@ function findRaceForQualifying(page1Items) {
 }
 
 async function parseQualifyingPdf(file, pdf, page1Items) {
+  const variant = detectQualifyingVariant(page1Items);
+  const cols = variant === "fastslow" ? QCOL_FASTSLOW : QCOL;
+  const parseRowsFn = variant === "fastslow" ? parseQualifyingRowsFromItemsFastSlow : parseQualifyingRowsFromItems;
+
   const allRows = [];
   let tableTopY = null;
   for (let pageNum = 1; pageNum <= pdf.numPages; pageNum++) {
     const items = pageNum === 1 ? page1Items : await extractPageItems(await pdf.getPage(pageNum));
     if (pageNum === 1) {
-      const anchorYs = items.filter((it) => within(it.x, QCOL.POS) && /^[0-9]+$/.test(it.text)).map((it) => it.y);
+      const anchorYs = items.filter((it) => within(it.x, cols.POS) && /^[0-9]+$/.test(it.text)).map((it) => it.y);
       tableTopY = anchorYs.length ? Math.min(...anchorYs) : null;
     }
-    allRows.push(...parseQualifyingRowsFromItems(items));
+    allRows.push(...parseRowsFn(items));
   }
   if (!allRows.length) {
     throw new Error("Kon geen qualifying-tabel herkennen in dit PDF.");
@@ -416,11 +492,13 @@ async function parseQualifyingPdf(file, pdf, page1Items) {
 
 function looksLikeQualifyingPdf(items) {
   // Words in the PDF's internal content-stream order don't always match reading
-  // order, so "Qualifying" and "Practice" can end up non-adjacent in a naive
-  // join. Sort by position (like the title-block parsing does) before testing.
+  // order, so words from the title can end up non-adjacent in a naive join.
+  // Sort by position (like the title-block parsing does) before testing, and
+  // only look at the title area - "Qualifying" never appears there on a heat
+  // result PDF, whichever qualifying template this turns out to be.
   const lines = clusterByY(items, 3).sort((a, b) => a.y - b.y);
-  const readingOrderText = lines.map((l) => l.text).join(" ");
-  return /Qualifying\s+Practice/i.test(readingOrderText);
+  const titleText = lines.slice(0, 6).map((l) => l.text).join(" ");
+  return /\bQualifying\b/i.test(titleText);
 }
 
 async function parseUploadedFile(file) {
