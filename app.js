@@ -183,12 +183,17 @@ function parseTitleBlock(items, tableTopY) {
   const classLine = lines[1] ? lines[1].text : "";
   let className = classLine;
   let heatLabel = "";
-  const m = classLine.match(/^(.*?)\s*-\s*(Heat\s+\d+\s*[A-Za-z0-9\-]*(?:\s+Revision\s+\d+)?)\s*$/i);
+  let revision = null;
+  // "Revision N" is kept separate from heatLabel so a revised heat keeps the
+  // same identity as the original (and correctly overwrites it) instead of
+  // being treated as an extra heat.
+  const m = classLine.match(/^(.*?)\s*-\s*(Heat\s+\d+\s*[A-Za-z0-9\-]*)(?:\s+Revision\s+(\d+))?\s*$/i);
   if (m) {
     className = m[1].trim();
     heatLabel = m[2].trim();
+    revision = m[3] ? parseInt(m[3], 10) : null;
   }
-  return { eventName, className: className || "Onbekende klasse", heatLabel: heatLabel || classLine || "Heat" };
+  return { eventName, className: className || "Onbekende klasse", heatLabel: heatLabel || classLine || "Heat", revision };
 }
 
 function parseRows(items) {
@@ -258,7 +263,7 @@ function buildHeatRecord(file, items) {
   if (!rows.length) {
     throw new Error("Kon geen resultatentabel herkennen in dit PDF.");
   }
-  const { eventName, className, heatLabel } = parseTitleBlock(items, tableTopY);
+  const { eventName, className, heatLabel, revision } = parseTitleBlock(items, tableTopY);
   const printedAt = parsePrintedAt(items);
   const raceKey = deriveRaceKey(eventName);
 
@@ -268,6 +273,7 @@ function buildHeatRecord(file, items) {
     heatLabel,
     eventName,
     raceKey,
+    revision,
     fileName: file.name,
     uploadedAt: new Date().toISOString(),
     printedAt,
