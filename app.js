@@ -958,16 +958,27 @@ function computeClassifications(heatsSubset) {
     const totalHeats = getTotalHeatsForClass(raceKey, className);
     let projectedACutoff = null;
     let projectedBCutoff = null;
+    let projectedSampleSize = 0;
     if (totalHeats) {
       const projected = drivers
         .filter((d) => d.heatsCount > 0)
         .map((d) => Math.round((d.total / d.heatsCount) * totalHeats))
         .sort((a, b) => a - b);
+      projectedSampleSize = projected.length;
       if (projected.length >= A_FINAL_CUTOFF) projectedACutoff = projected[A_FINAL_CUTOFF - 1];
       if (projected.length >= B_FINAL_CUTOFF) projectedBCutoff = projected[B_FINAL_CUTOFF - 1];
     }
 
-    classifications.push({ className, heatCols, drivers, hasQualifying: !!qualiMap, totalHeats, projectedACutoff, projectedBCutoff });
+    classifications.push({
+      className,
+      heatCols,
+      drivers,
+      hasQualifying: !!qualiMap,
+      totalHeats,
+      projectedACutoff,
+      projectedBCutoff,
+      projectedSampleSize,
+    });
   }
   return classifications;
 }
@@ -978,7 +989,7 @@ function renderClassifications(classifications) {
 
   {
     const selected = classifications.find((c) => c.className === activeClass) || classifications[0];
-    const { className, heatCols, drivers, hasQualifying, totalHeats, projectedACutoff, projectedBCutoff } = selected;
+    const { className, heatCols, drivers, hasQualifying, totalHeats, projectedACutoff, projectedBCutoff, projectedSampleSize } = selected;
     const block = document.createElement("section");
     block.className = "panel class-block";
     const colCount = 4 + (showHeatColumns ? 1 : 0); // Pos, Rijder, [Resultaten], Totaal, Heats
@@ -1038,10 +1049,12 @@ function renderClassifications(classifications) {
         <p class="class-meta">Klassement over ${heatCols.length} heat(s) — punten opgeteld, laagste totaal bovenaan. Klik de ster om een rijder te highlighten.${hasQualifying ? " Bij gelijke punten beslist de qualifying (snelste tijd wint)." : ""}</p>
         ${unevenHeats ? '<p class="class-warning">⚠ Niet alle rijders hebben evenveel heats gereden — dit klassement is nog niet volledig.</p>' : ""}
         ${
-          projectedACutoff !== null
-            ? `<p class="class-projection">📊 Geschatte grens A-finale: <strong>~${projectedACutoff} punten</strong>${
-                projectedBCutoff !== null ? ` · B-finale: <strong>~${projectedBCutoff} punten</strong>` : ""
-              } — schatting o.b.v. gemiddelde punten per heat (${totalHeats} heats totaal per rijder), kan nog wijzigen.</p>`
+          totalHeats
+            ? projectedACutoff !== null
+              ? `<p class="class-projection">📊 Geschatte grens A-finale: <strong>~${projectedACutoff} punten</strong>${
+                  projectedBCutoff !== null ? ` · B-finale: <strong>~${projectedBCutoff} punten</strong>` : ""
+                } — schatting o.b.v. gemiddelde punten per heat (${totalHeats} heats totaal per rijder, ${projectedSampleSize} rijders met data), kan nog wijzigen.</p>`
+              : `<p class="class-projection">📊 A/B-finale grens: nog geen schatting mogelijk — pas vanaf ${A_FINAL_CUTOFF} rijders met minstens 1 heat gereden (nu ${projectedSampleSize}).</p>`
             : ""
         }
         <label class="show-heats-toggle">
