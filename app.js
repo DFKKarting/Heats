@@ -1048,15 +1048,17 @@ function renderClassifications(classifications) {
       <div class="class-collapsible ${isCollapsed ? "collapsed" : ""}">
         <p class="class-meta">Klassement over ${heatCols.length} heat(s) — punten opgeteld, laagste totaal bovenaan. Klik de ster om een rijder te highlighten.${hasQualifying ? " Bij gelijke punten beslist de qualifying (snelste tijd wint)." : ""}</p>
         ${unevenHeats ? '<p class="class-warning">⚠ Niet alle rijders hebben evenveel heats gereden — dit klassement is nog niet volledig.</p>' : ""}
-        ${
+        <p class="class-projection">${
           totalHeats
             ? projectedACutoff !== null
-              ? `<p class="class-projection">📊 Geschatte grens A-finale: <strong>~${projectedACutoff} punten</strong>${
+              ? `📊 Geschatte grens A-finale: <strong>~${projectedACutoff} punten</strong>${
                   projectedBCutoff !== null ? ` · B-finale: <strong>~${projectedBCutoff} punten</strong>` : ""
-                } — schatting o.b.v. gemiddelde punten per heat (${totalHeats} heats totaal per rijder, ${projectedSampleSize} rijders met data), kan nog wijzigen.</p>`
-              : `<p class="class-projection">📊 A/B-finale grens: nog geen schatting mogelijk — pas vanaf ${A_FINAL_CUTOFF} rijders met minstens 1 heat gereden (nu ${projectedSampleSize}).</p>`
-            : ""
-        }
+                } — schatting o.b.v. gemiddelde punten per heat (${totalHeats} heats totaal per rijder, ${projectedSampleSize} rijders met data), kan nog wijzigen.`
+              : `📊 A/B-finale grens: nog geen schatting mogelijk — pas vanaf ${A_FINAL_CUTOFF} rijders met minstens 1 heat gereden (nu ${projectedSampleSize}).`
+            : hasQualifying
+              ? `📊 A/B-finale grens: kon het aantal groepen niet bepalen uit de geüploade qualifying-PDF.`
+              : `📊 A/B-finale grens: upload de "Total Qualifying Practice" PDF van deze klasse om een schatting te zien.`
+        }</p>
         <label class="show-heats-toggle">
           <input type="checkbox" class="show-heats-checkbox" ${showHeatColumns ? "checked" : ""} />
           Toon resultaten per heat
