@@ -425,7 +425,8 @@ const searchInput = document.getElementById("searchInput");
 const searchResults = document.getElementById("searchResults");
 const toggleHeatsBtn = document.getElementById("toggleHeatsBtn");
 const highlightedContainer = document.getElementById("highlightedContainer");
-const raceTabs = document.getElementById("raceTabs");
+const raceSelect = document.getElementById("raceSelect");
+const classSelect = document.getElementById("classSelect");
 const heatModalOverlay = document.getElementById("heatModalOverlay");
 const heatModalBody = document.getElementById("heatModalBody");
 const heatModalClose = document.getElementById("heatModalClose");
@@ -511,6 +512,23 @@ let highlights = loadHighlights();
 let activeRace = loadActiveRace();
 let qualifying = loadQualifying();
 
+const ACTIVE_CLASS_KEY = "kartingActiveClass.v1";
+let activeClass = localStorage.getItem(ACTIVE_CLASS_KEY) || null;
+
+raceSelect.addEventListener("change", () => {
+  activeRace = raceSelect.value;
+  saveActiveRace(activeRace);
+  activeClass = null;
+  localStorage.removeItem(ACTIVE_CLASS_KEY);
+  render();
+});
+
+classSelect.addEventListener("change", () => {
+  activeClass = classSelect.value;
+  localStorage.setItem(ACTIVE_CLASS_KEY, activeClass);
+  render();
+});
+
 const SHOW_HEATS_KEY = "kartingShowHeatColumns.v1";
 let showHeatColumns = localStorage.getItem(SHOW_HEATS_KEY) !== "false"; // shown by default
 
@@ -584,24 +602,32 @@ function activeHeats() {
   return heats.filter((h) => (h.raceKey || deriveRaceKey(h.eventName)) === activeRace);
 }
 
-function renderRaceTabs(races) {
+function renderSelectors(races, classifications) {
   if (!races.length) {
-    raceTabs.innerHTML = "";
+    raceSelect.innerHTML = '<option value="">Geen races</option>';
+    raceSelect.disabled = true;
+  } else {
+    raceSelect.disabled = false;
+    raceSelect.innerHTML = races
+      .map((r) => `<option value="${r.raceKey.replace(/"/g, "&quot;")}">${r.eventName}</option>`)
+      .join("");
+    raceSelect.value = activeRace;
+  }
+
+  if (!classifications.length) {
+    classSelect.innerHTML = '<option value="">Geen klasses</option>';
+    classSelect.disabled = true;
     return;
   }
-  raceTabs.innerHTML = "";
-  for (const r of races) {
-    const btn = document.createElement("button");
-    btn.type = "button";
-    btn.className = "race-tab" + (r.raceKey === activeRace ? " active" : "");
-    btn.textContent = r.eventName;
-    btn.addEventListener("click", () => {
-      activeRace = r.raceKey;
-      saveActiveRace(activeRace);
-      render();
-    });
-    raceTabs.appendChild(btn);
+  classSelect.disabled = false;
+  if (!classifications.some((c) => c.className === activeClass)) {
+    activeClass = classifications[0].className;
+    localStorage.setItem(ACTIVE_CLASS_KEY, activeClass);
   }
+  classSelect.innerHTML = classifications
+    .map((c) => `<option value="${c.className.replace(/"/g, "&quot;")}">${c.className}</option>`)
+    .join("");
+  classSelect.value = activeClass;
 }
 
 searchInput.addEventListener("input", () => renderSearchResults(computeClassifications(activeHeats())));
@@ -828,7 +854,9 @@ function renderClassifications(classifications) {
   classificationsContainer.innerHTML = "";
   if (!classifications.length) return;
 
-  for (const { className, heatCols, drivers, hasQualifying } of classifications) {
+  {
+    const selected = classifications.find((c) => c.className === activeClass) || classifications[0];
+    const { className, heatCols, drivers, hasQualifying } = selected;
     const block = document.createElement("section");
     block.className = "panel class-block";
     const colCount = 4 + (showHeatColumns ? 1 : 0); // Pos, Rijder, [Resultaten], Totaal, Heats
@@ -1016,10 +1044,10 @@ function render() {
     activeRace = races.length ? races[races.length - 1].raceKey : null;
     saveActiveRace(activeRace);
   }
-  renderRaceTabs(races);
 
   const currentHeats = activeHeats();
   const classifications = computeClassifications(currentHeats);
+  renderSelectors(races, classifications);
   renderHeatsList(currentHeats, activeQualifying());
   renderHighlighted(classifications);
   renderClassifications(classifications);
