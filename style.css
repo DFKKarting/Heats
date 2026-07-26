@@ -246,6 +246,18 @@ main {
   font-weight: 600;
   margin: -4px 0 14px;
 }
+
+.class-projection {
+  color: #4aa8ff;
+  background: rgba(74, 168, 255, 0.1);
+  border: 1px solid rgba(74, 168, 255, 0.4);
+  border-radius: 8px;
+  padding: 8px 12px;
+  font-size: .85rem;
+  font-weight: 600;
+  margin: -4px 0 14px;
+}
+.class-projection strong { color: #ffd54a; }
 .class-block .panel-header { margin-bottom: 0; }
 .class-collapsible.collapsed { display: none; }
 .class-collapsible:not(.collapsed) { margin-top: 14px; }

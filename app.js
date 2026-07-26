@@ -25,6 +25,7 @@ const QCOL = {
   CAR: [44, 63],
   NAME: [72, 168],
   BESTTIME: [436, 470],
+  GROUP: [540, 578],
 };
 
 function loadHeats() {
@@ -327,8 +328,14 @@ function parseQualifyingRowsFromItems(items) {
     if (!fullName) continue;
 
     const bestTimeItem = band.find((it) => within(it.x, QCOL.BESTTIME) && /^\d{1,2}:?\d{2}\.\d{3}$/.test(it.text));
+    const groupItem = band.find((it) => within(it.x, QCOL.GROUP) && /^[A-Z]$/.test(it.text));
 
-    rows.push({ car: carItem ? carItem.text : "", fullName, bestTime: bestTimeItem ? bestTimeItem.text : null });
+    rows.push({
+      car: carItem ? carItem.text : "",
+      fullName,
+      bestTime: bestTimeItem ? bestTimeItem.text : null,
+      group: groupItem ? groupItem.text : null,
+    });
   }
   return rows;
 }
@@ -573,6 +580,16 @@ function getQualiPosMap(raceKey, className) {
   const map = new Map();
   for (const e of q.entries) map.set(e.fullName, e.pos);
   return map;
+}
+
+// Everyone races each other group exactly once, so the number of qualifying
+// groups (A, B, C, ...) minus one gives the total number of heats per driver -
+// derived from the data itself instead of guessed.
+function getTotalHeatsForClass(raceKey, className) {
+  const q = qualifying.find((q) => (q.raceKey || deriveRaceKey(q.eventName)) === raceKey && q.className === className);
+  if (!q) return null;
+  const groups = new Set(q.entries.map((e) => e.group).filter(Boolean));
+  return groups.size > 1 ? groups.size - 1 : null;
 }
 
 function activeQualifying() {
@@ -852,7 +869,19 @@ function computeClassifications(heatsSubset) {
         qualiPos: qualiMap ? qualiMap.get(d.fullName) : undefined,
       }));
 
-    classifications.push({ className, heatCols, drivers, hasQualifying: !!qualiMap });
+    const totalHeats = getTotalHeatsForClass(raceKey, className);
+    let projectedACutoff = null;
+    let projectedBCutoff = null;
+    if (totalHeats) {
+      const projected = drivers
+        .filter((d) => d.heatsCount > 0)
+        .map((d) => Math.round((d.total / d.heatsCount) * totalHeats))
+        .sort((a, b) => a - b);
+      if (projected.length >= A_FINAL_CUTOFF) projectedACutoff = projected[A_FINAL_CUTOFF - 1];
+      if (projected.length >= B_FINAL_CUTOFF) projectedBCutoff = projected[B_FINAL_CUTOFF - 1];
+    }
+
+    classifications.push({ className, heatCols, drivers, hasQualifying: !!qualiMap, totalHeats, projectedACutoff, projectedBCutoff });
   }
   return classifications;
 }
@@ -863,7 +892,7 @@ function renderClassifications(classifications) {
 
   {
     const selected = classifications.find((c) => c.className === activeClass) || classifications[0];
-    const { className, heatCols, drivers, hasQualifying } = selected;
+    const { className, heatCols, drivers, hasQualifying, totalHeats, projectedACutoff, projectedBCutoff } = selected;
     const block = document.createElement("section");
     block.className = "panel class-block";
     const colCount = 4 + (showHeatColumns ? 1 : 0); // Pos, Rijder, [Resultaten], Totaal, Heats
@@ -922,6 +951,13 @@ function renderClassifications(classifications) {
       <div class="class-collapsible ${isCollapsed ? "collapsed" : ""}">
         <p class="class-meta">Klassement over ${heatCols.length} heat(s) — punten opgeteld, laagste totaal bovenaan. Klik de ster om een rijder te highlighten.${hasQualifying ? " Bij gelijke punten beslist de qualifying (snelste tijd wint)." : ""}</p>
         ${unevenHeats ? '<p class="class-warning">⚠ Niet alle rijders hebben evenveel heats gereden — dit klassement is nog niet volledig.</p>' : ""}
+        ${
+          projectedACutoff !== null
+            ? `<p class="class-projection">📊 Geschatte grens A-finale: <strong>~${projectedACutoff} punten</strong>${
+                projectedBCutoff !== null ? ` · B-finale: <strong>~${projectedBCutoff} punten</strong>` : ""
+              } — schatting o.b.v. gemiddelde punten per heat (${totalHeats} heats totaal per rijder), kan nog wijzigen.</p>`
+            : ""
+        }
         <label class="show-heats-toggle">
           <input type="checkbox" class="show-heats-checkbox" ${showHeatColumns ? "checked" : ""} />
           Toon resultaten per heat
