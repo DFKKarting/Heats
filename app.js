@@ -577,7 +577,7 @@ function parseQualifyingClassNameGK4(items, tableTopY) {
   return lines[1] ? lines[1].text.trim() : "Onbekende klasse";
 }
 
-function parseQualifyingClassName(items, tableTopY, knownClassNames) {
+function parseQualifyingClassName(items, tableTopY, knownClassNames, variant) {
   const above = items.filter((it) => it.x < 300 && it.y < tableTopY - 8);
   const lines = clusterByY(above, 3).sort((a, b) => a.y - b.y);
   const classLine = (lines[1] ? lines[1].text : lines[0] ? lines[0].text : "").trim();
@@ -591,6 +591,9 @@ function parseQualifyingClassName(items, tableTopY, knownClassNames) {
       return known;
     }
   }
+  // The "fastslow" template's class line has no trailing track name (e.g.
+  // just "X30 Junior") - trust it as-is instead of chopping off a real word.
+  if (variant === "fastslow") return classLine || "Onbekende klasse";
   // Fallback: this line is "<class name> <track>" with no delimiter (e.g. "X30 Senior Genk") -
   // assume the last word is the track name.
   const words = classLine.split(/\s+/).filter(Boolean);
@@ -613,6 +616,12 @@ function findRaceForQualifying(page1Items) {
   const guessKey = deriveRaceKey(titleGuess);
   const guessMatch = heats.find((h) => (h.raceKey || deriveRaceKey(h.eventName)) === guessKey);
   if (guessMatch) return { eventName: guessMatch.eventName, raceKey: guessMatch.raceKey || deriveRaceKey(guessMatch.eventName) };
+
+  // No heat for this race yet - this qualifying PDF may be the very first
+  // data uploaded for it (a preliminary, quali-only classification). Use its
+  // own title as the race identity instead of guessing at some other race
+  // that happens to be active, which would wrongly attach it there.
+  if (titleGuess) return { eventName: titleGuess, raceKey: guessKey };
 
   if (activeRace) {
     const match = heats.find((h) => (h.raceKey || deriveRaceKey(h.eventName)) === activeRace);
@@ -647,7 +656,7 @@ async function parseQualifyingPdf(file, pdf, page1Items) {
   }
   const race = findRaceForQualifying(page1Items);
   if (!race) {
-    throw new Error("Upload eerst een heat-PDF voor deze race, dan kan de qualifying eraan gekoppeld worden.");
+    throw new Error("Kon de race niet herkennen in dit PDF.");
   }
   const { eventName, raceKey } = race;
   const entries = allRows.map((r, idx) => ({ ...r, pos: idx + 1 }));
@@ -659,7 +668,7 @@ async function parseQualifyingPdf(file, pdf, page1Items) {
         ? parseQualifyingClassNameGK4(page1Items, tableTopY)
         : knownClassNames[0] || "Onbekende klasse"
       : tableTopY
-        ? parseQualifyingClassName(page1Items, tableTopY, knownClassNames)
+        ? parseQualifyingClassName(page1Items, tableTopY, knownClassNames, variant)
         : knownClassNames[0] || "Onbekende klasse";
   const printedAt = parsePrintedAt(page1Items);
 
@@ -882,6 +891,16 @@ function getRaces() {
     r.count += 1;
     if (h.uploadedAt < r.firstSeen) r.firstSeen = h.uploadedAt;
     r.eventNames.set(h.eventName, (r.eventNames.get(h.eventName) || 0) + 1);
+  }
+  // A race can also exist with only a qualifying PDF uploaded so far (the
+  // preliminary, quali-only classification) - make sure it still shows up in
+  // the race selector even though there's no heat for it yet.
+  for (const q of qualifying) {
+    const key = q.raceKey || deriveRaceKey(q.eventName);
+    if (!byKey.has(key)) byKey.set(key, { firstSeen: q.uploadedAt, count: 0, eventNames: new Map() });
+    const r = byKey.get(key);
+    if (q.uploadedAt < r.firstSeen) r.firstSeen = q.uploadedAt;
+    if (!r.eventNames.has(q.eventName)) r.eventNames.set(q.eventName, 0);
   }
   return [...byKey.entries()]
     .map(([raceKey, info]) => {
@@ -1165,6 +1184,38 @@ function computeClassifications(heatsSubset) {
       projectedSampleSize,
     });
   }
+
+  // A class with qualifying uploaded but no heats yet doesn't show up above at
+  // all (byClass is built from heats). Show a preliminary list based on
+  // qualifying order instead, so there's something to see right away.
+  for (const qRecord of qualifying.filter((q) => (q.raceKey || deriveRaceKey(q.eventName)) === raceKey)) {
+    if (byClass.has(qRecord.className)) continue;
+    const drivers = [...qRecord.entries]
+      .sort((a, b) => a.pos - b.pos)
+      .map((e) => ({
+        fullName: e.fullName,
+        car: e.car,
+        perHeat: {},
+        total: null,
+        heatsCount: 0,
+        pos: e.pos,
+        key: `${qRecord.className}::${e.fullName}`,
+        qualiPos: e.pos,
+      }));
+    classifications.push({
+      className: qRecord.className,
+      heatCols: [],
+      drivers,
+      hasQualifying: true,
+      qualiOnly: true,
+      totalHeats: getTotalHeatsForClass(raceKey, qRecord.className),
+      projectedACutoff: null,
+      projectedBCutoff: null,
+      projectedSampleSize: 0,
+    });
+  }
+
+  classifications.sort((a, b) => a.className.localeCompare(b.className));
   return classifications;
 }
 
@@ -1174,16 +1225,20 @@ function renderClassifications(classifications) {
 
   {
     const selected = classifications.find((c) => c.className === activeClass) || classifications[0];
-    const { className, heatCols, drivers, hasQualifying, totalHeats, projectedACutoff, projectedBCutoff, projectedSampleSize } = selected;
+    const { className, heatCols, drivers, hasQualifying, qualiOnly, totalHeats, projectedACutoff, projectedBCutoff, projectedSampleSize } = selected;
     // GK4 doesn't work with qualifying groups or an A/B-final split at all -
-    // none of that is relevant there, so hide it entirely for GK4 races.
+    // none of that is relevant there, so hide it entirely for GK4 races. A
+    // qualifying-only preliminary list (no heats raced yet) doesn't have a
+    // real A/B-final split either, since it's not based on points.
     const isGK4Race = activeRace && activeRace.startsWith("gk4-round-");
+    const suppressFinals = isGK4Race || qualiOnly;
+    const showHeatsUI = showHeatColumns && heatCols.length > 0;
     const block = document.createElement("section");
     block.className = "panel class-block";
-    const colCount = 4 + (showHeatColumns ? 1 : 0); // Pos, Rijder, [Resultaten], Totaal, Heats
-    const resultsHeaderCell = showHeatColumns ? `<th>Resultaten per heat</th>` : "";
+    const colCount = 4 + (showHeatsUI ? 1 : 0); // Pos, Rijder, [Resultaten], Totaal, Heats
+    const resultsHeaderCell = showHeatsUI ? `<th>Resultaten per heat</th>` : "";
     const rowsHtml = drivers.map((d) => {
-      const resultsCell = showHeatColumns
+      const resultsCell = showHeatsUI
         ? `<td class="results-cell"><div class="results-wrap">${heatCols
             .filter((h) => d.perHeat[h.id])
             .map((h) => {
@@ -1195,26 +1250,26 @@ function renderClassifications(classifications) {
             .join("")}</div></td>`
         : "";
       const isHighlighted = highlights.has(d.key);
-      const qualifiesA = !isGK4Race && drivers.length > A_FINAL_CUTOFF && d.pos <= A_FINAL_CUTOFF;
-      const qualifiesB = !isGK4Race && drivers.length > A_FINAL_CUTOFF && d.pos > A_FINAL_CUTOFF && d.pos <= B_FINAL_CUTOFF;
+      const qualifiesA = !suppressFinals && drivers.length > A_FINAL_CUTOFF && d.pos <= A_FINAL_CUTOFF;
+      const qualifiesB = !suppressFinals && drivers.length > A_FINAL_CUTOFF && d.pos > A_FINAL_CUTOFF && d.pos <= B_FINAL_CUTOFF;
       const posTitleParts = [];
       if (qualifiesA) posTitleParts.push("Kwalificeert voor de A-finale");
       if (qualifiesB) posTitleParts.push("Kwalificeert voor de B-finale");
       if (d.qualiPos !== undefined) posTitleParts.push(`Qualifying P${d.qualiPos}`);
       let html = `<tr class="${isHighlighted ? "highlighted" : ""} ${qualifiesA ? "qualifies-a" : ""} ${qualifiesB ? "qualifies-b" : ""}" data-key="${d.key.replace(/"/g, "&quot;")}">
-          <td class="pos" title="${posTitleParts.join(" · ")}">${d.pos}</td>
+          <td class="pos ${d.pos === 1 ? "pos-first" : ""}" title="${posTitleParts.join(" · ")}">${d.pos}</td>
           <td class="name-cell">
             <button type="button" class="star-btn ${isHighlighted ? "starred" : ""}" title="Highlight rijder" aria-label="Highlight ${d.fullName}">${isHighlighted ? "★" : "☆"}</button>
             ${d.fullName} <span class="car-number">#${d.car}</span>
           </td>
           ${resultsCell}
-          <td class="num total">${d.total}</td>
+          <td class="num total">${d.total !== null ? d.total : "–"}</td>
           <td class="num">${d.heatsCount}</td>
         </tr>`;
-      if (!isGK4Race && d.pos === A_FINAL_CUTOFF && drivers.length > A_FINAL_CUTOFF) {
+      if (!suppressFinals && d.pos === A_FINAL_CUTOFF && drivers.length > A_FINAL_CUTOFF) {
         html += `<tr class="cutoff-row"><td colspan="${colCount}">A-finale grens — top ${A_FINAL_CUTOFF}</td></tr>`;
       }
-      if (!isGK4Race && d.pos === B_FINAL_CUTOFF && drivers.length > B_FINAL_CUTOFF) {
+      if (!suppressFinals && d.pos === B_FINAL_CUTOFF && drivers.length > B_FINAL_CUTOFF) {
         html += `<tr class="cutoff-row cutoff-row-b"><td colspan="${colCount}">B-finale grens — P${A_FINAL_CUTOFF + 1} t/m ${B_FINAL_CUTOFF}</td></tr>`;
       }
       return html;
@@ -1234,10 +1289,14 @@ function renderClassifications(classifications) {
         </button>
       </div>
       <div class="class-collapsible ${isCollapsed ? "collapsed" : ""}">
-        <p class="class-meta">Klassement over ${heatCols.length} heat(s) — punten opgeteld, laagste totaal bovenaan. Klik de ster om een rijder te highlighten.${hasQualifying ? " Bij gelijke punten beslist de qualifying (snelste tijd wint)." : ""}</p>
+        <p class="class-meta">${
+          qualiOnly
+            ? `Voorlopige volgorde op basis van de qualifying — er zijn nog geen heats geüpload voor deze klasse.`
+            : `Klassement over ${heatCols.length} heat(s) — punten opgeteld, laagste totaal bovenaan. Klik de ster om een rijder te highlighten.${hasQualifying ? " Bij gelijke punten beslist de qualifying (snelste tijd wint)." : ""}`
+        }</p>
         ${unevenHeats ? '<p class="class-warning">⚠ Niet alle rijders hebben evenveel heats gereden — dit klassement is nog niet volledig.</p>' : ""}
         ${
-          isGK4Race
+          suppressFinals
             ? ""
             : `<p class="class-projection">${
                 totalHeats
@@ -1251,10 +1310,14 @@ function renderClassifications(classifications) {
                     : `📊 A/B-finale grens: upload de "Total Qualifying Practice" PDF van deze klasse om een schatting te zien.`
               }</p>`
         }
-        <label class="show-heats-toggle">
-          <input type="checkbox" class="show-heats-checkbox" ${showHeatColumns ? "checked" : ""} />
-          Toon resultaten per heat
-        </label>
+        ${
+          heatCols.length > 0
+            ? `<label class="show-heats-toggle">
+                <input type="checkbox" class="show-heats-checkbox" ${showHeatColumns ? "checked" : ""} />
+                Toon resultaten per heat
+              </label>`
+            : ""
+        }
         <div style="overflow-x:auto;">
           <table class="classification">
             <thead>
@@ -1272,7 +1335,7 @@ function renderClassifications(classifications) {
       </div>
     `;
     block.querySelector(".class-toggle").addEventListener("click", () => toggleClassCollapsed(className));
-    block.querySelector(".show-heats-checkbox").addEventListener("change", (e) => {
+    block.querySelector(".show-heats-checkbox")?.addEventListener("change", (e) => {
       showHeatColumns = e.target.checked;
       localStorage.setItem(SHOW_HEATS_KEY, String(showHeatColumns));
       render();
@@ -1353,7 +1416,7 @@ function renderHighlighted(classifications) {
           <button type="button" class="star-btn starred" title="Highlight verwijderen" aria-label="Highlight ${d.fullName} verwijderen">★</button>
           ${d.fullName} <span class="car-number">#${d.car}</span>
         </td>
-        <td class="num pos" title="${qualifiesA ? "Kwalificeert voor de A-finale" : qualifiesB ? "Kwalificeert voor de B-finale" : ""}">${d.pos}</td>
+        <td class="num pos ${d.pos === 1 ? "pos-first" : ""}" title="${qualifiesA ? "Kwalificeert voor de A-finale" : qualifiesB ? "Kwalificeert voor de B-finale" : ""}">${d.pos}</td>
         <td class="num total">${d.total}</td>
         <td class="num">${d.heatsCount}</td>
       </tr>`;

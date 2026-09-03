@@ -288,7 +288,7 @@ table.classification tbody tr { transition: background-color 0.2s ease; }
 table.classification tbody tr:nth-child(even) { background-color: rgba(255, 255, 255, 0.03); }
 table.classification tbody tr:hover { background-color: rgba(245, 66, 66, 0.15); }
 table.classification td.pos { font-family: 'Orbitron', sans-serif; font-weight: 700; color: #ccc; }
-table.classification tbody tr:first-child td.pos {
+table.classification td.pos.pos-first {
   color: #ffd54a;
   text-shadow: 0 0 10px rgba(255, 213, 74, 0.6);
 }
