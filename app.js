@@ -53,6 +53,16 @@ const QCOL_PLAIN = {
   GROUP: null,
 };
 
+// Heat results from GK4 Kart Series (different organizer/timing software -
+// "Orbits" - not Camp Company). Single-line "Firstname Lastname" instead of
+// stacked two-line name, and a completely different column layout.
+const GK4_COL = {
+  RANK: [10, 24],
+  CAR: [28, 58],
+  NAME: [58, 178],
+  POINTS: [534, 552],
+};
+
 function loadHeats() {
   try {
     return JSON.parse(localStorage.getItem(STORAGE_KEY)) || [];
@@ -121,8 +131,22 @@ function deriveRaceLabel(eventName) {
 // match so they don't fragment into duplicate tabs.
 function deriveRaceKey(eventName) {
   if (!eventName) return "unknown-race";
-  const m = eventName.match(/Round\s+(\d+)/i);
-  return m ? `round-${m[1]}` : eventName.trim().toLowerCase();
+  const m = eventName.match(/^(.*?)\s+Round\s+(\d+)/i);
+  if (!m) return eventName.trim().toLowerCase();
+  // Different championships can both use "Round N" numbering (e.g. IAME
+  // Benelux Round 4 vs GK4 Kart Series Round 4) - fold in a normalized series
+  // name (stripped of generic/variable words) so they don't collide, while
+  // still unifying slightly differently worded titles for the same series
+  // (e.g. "IAME Benelux" vs "IAME Series Benelux ... Genk").
+  const STOPWORDS = new Set(["series", "iame", "kart", "karting"]);
+  const seriesWords = m[1]
+    .toLowerCase()
+    .replace(/[^a-z0-9\s]/g, "")
+    .split(/\s+/)
+    .filter((w) => w && !STOPWORDS.has(w))
+    .sort();
+  const seriesKey = seriesWords.join("-") || "series";
+  return `${seriesKey}-round-${m[2]}`;
 }
 
 function within(x, [lo, hi]) {
@@ -194,13 +218,14 @@ async function extractPageItems(page) {
 }
 
 function parsePrintedAt(items) {
-  // The timing software stamps every export with "Printed: DD.MM.YYYY / HH:MM".
+  // The timing software stamps every export with a "Printed:" timestamp -
+  // "DD.MM.YYYY / HH:MM" (Camp Company) or "DD.MM.YYYY HH:MM:SS" (Orbits/GK4).
   // A later stamp for the same heat means it's a newer, revised export.
   const rawText = items.map((it) => it.text).join(" ");
-  const m = rawText.match(/Printed:\s*(\d{2})\.(\d{2})\.(\d{4})\s*\/\s*(\d{2}):(\d{2})/);
+  const m = rawText.match(/Printed:\s*(\d{2})\.(\d{2})\.(\d{4})\s*\/?\s*(\d{2}):(\d{2})(?::(\d{2}))?/);
   if (!m) return null;
-  const [, dd, mm, yyyy, hh, min] = m;
-  return `${yyyy}-${mm}-${dd}T${hh}:${min}:00`;
+  const [, dd, mm, yyyy, hh, min, sec] = m;
+  return `${yyyy}-${mm}-${dd}T${hh}:${min}:${sec || "00"}`;
 }
 
 function parseTitleBlock(items, tableTopY) {
@@ -285,12 +310,83 @@ function parseRows(items) {
   return { rows, tableTopY: Math.min(...anchors.map((a) => a.y)) };
 }
 
+function isGK4Heat(items) {
+  const above = items.filter((it) => it.y < 100);
+  const topText = clusterByY(above, 3).map((l) => l.text).join(" ");
+  return /GK4/i.test(topText);
+}
+
+// GK4 Kart Series heat results (Orbits timing, not Camp Company): single-line
+// "Firstname Lastname" instead of stacked two-line name, plain (non-doubled)
+// rank digits, and a 3-line title block (event / class / heat), each with
+// track/date info off to the right that needs filtering out.
+function parseRowsGK4(items) {
+  const rankAnchors = items
+    .filter((it) => within(it.x, GK4_COL.RANK) && isRowAnchorText(it.text))
+    .sort((a, b) => a.y - b.y);
+
+  const anchors = [];
+  for (const a of rankAnchors) {
+    if (anchors.length && Math.abs(anchors[anchors.length - 1].y - a.y) < 3) continue;
+    anchors.push(a);
+  }
+  if (!anchors.length) return { rows: [], tableTopY: null };
+
+  const rows = [];
+  for (let i = 0; i < anchors.length; i++) {
+    const y0 = anchors[i].y;
+    const y1 = i + 1 < anchors.length ? anchors[i + 1].y : y0 + 16;
+    const band = items.filter((it) => it.y >= y0 - 6 && it.y < y1 - 6);
+
+    const carItem = band.find((it) => within(it.x, GK4_COL.CAR) && /^[0-9]+$/.test(it.text));
+    const fullName = band
+      .filter((it) => within(it.x, GK4_COL.NAME))
+      .sort((a, b) => a.x - b.x)
+      .map((it) => it.text)
+      .join(" ")
+      .replace(/\s+/g, " ")
+      .trim();
+    if (!fullName) continue;
+
+    const spaceIdx = fullName.indexOf(" ");
+    const firstName = spaceIdx === -1 ? fullName : fullName.slice(0, spaceIdx);
+    const lastName = spaceIdx === -1 ? "" : fullName.slice(spaceIdx + 1);
+
+    const pointsItem = band.find((it) => within(it.x, GK4_COL.POINTS) && /^[0-9]+$/.test(it.text));
+    const anchorCode = collapseDoubled(anchors[i].text).toUpperCase();
+    const resultCode = /^[0-9]+$/.test(anchorCode) ? null : anchorCode;
+
+    rows.push({
+      rank: i + 1,
+      car: carItem ? carItem.text : "",
+      firstName,
+      lastName,
+      fullName,
+      points: pointsItem ? parseInt(pointsItem.text, 10) : null,
+      resultCode,
+    });
+  }
+  return { rows, tableTopY: Math.min(...anchors.map((a) => a.y)) };
+}
+
+function parseTitleBlockGK4(items, tableTopY) {
+  const above = items.filter((it) => it.x < 250 && it.y < tableTopY - 5);
+  const lines = clusterByY(above, 3).sort((a, b) => a.y - b.y);
+  const eventName = lines[0] ? lines[0].text.trim() : "";
+  const className = lines[1] ? lines[1].text.trim() : "Onbekende klasse";
+  const heatLabel = lines[2] ? lines[2].text.trim() : "Heat";
+  return { eventName, className, heatLabel, revision: null };
+}
+
 function buildHeatRecord(file, items) {
-  const { rows, tableTopY } = parseRows(items);
+  const gk4 = isGK4Heat(items);
+  const { rows, tableTopY } = gk4 ? parseRowsGK4(items) : parseRows(items);
   if (!rows.length) {
     throw new Error("Kon geen resultatentabel herkennen in dit PDF.");
   }
-  const { eventName, className, heatLabel, revision } = parseTitleBlock(items, tableTopY);
+  const { eventName, className, heatLabel, revision } = gk4
+    ? parseTitleBlockGK4(items, tableTopY)
+    : parseTitleBlock(items, tableTopY);
   const printedAt = parsePrintedAt(items);
   const raceKey = deriveRaceKey(eventName);
 
