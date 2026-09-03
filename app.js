@@ -1175,6 +1175,9 @@ function renderClassifications(classifications) {
   {
     const selected = classifications.find((c) => c.className === activeClass) || classifications[0];
     const { className, heatCols, drivers, hasQualifying, totalHeats, projectedACutoff, projectedBCutoff, projectedSampleSize } = selected;
+    // GK4 doesn't work with qualifying groups or an A/B-final split at all -
+    // none of that is relevant there, so hide it entirely for GK4 races.
+    const isGK4Race = activeRace && activeRace.startsWith("gk4-round-");
     const block = document.createElement("section");
     block.className = "panel class-block";
     const colCount = 4 + (showHeatColumns ? 1 : 0); // Pos, Rijder, [Resultaten], Totaal, Heats
@@ -1192,8 +1195,8 @@ function renderClassifications(classifications) {
             .join("")}</div></td>`
         : "";
       const isHighlighted = highlights.has(d.key);
-      const qualifiesA = drivers.length > A_FINAL_CUTOFF && d.pos <= A_FINAL_CUTOFF;
-      const qualifiesB = drivers.length > A_FINAL_CUTOFF && d.pos > A_FINAL_CUTOFF && d.pos <= B_FINAL_CUTOFF;
+      const qualifiesA = !isGK4Race && drivers.length > A_FINAL_CUTOFF && d.pos <= A_FINAL_CUTOFF;
+      const qualifiesB = !isGK4Race && drivers.length > A_FINAL_CUTOFF && d.pos > A_FINAL_CUTOFF && d.pos <= B_FINAL_CUTOFF;
       const posTitleParts = [];
       if (qualifiesA) posTitleParts.push("Kwalificeert voor de A-finale");
       if (qualifiesB) posTitleParts.push("Kwalificeert voor de B-finale");
@@ -1208,10 +1211,10 @@ function renderClassifications(classifications) {
           <td class="num total">${d.total}</td>
           <td class="num">${d.heatsCount}</td>
         </tr>`;
-      if (d.pos === A_FINAL_CUTOFF && drivers.length > A_FINAL_CUTOFF) {
+      if (!isGK4Race && d.pos === A_FINAL_CUTOFF && drivers.length > A_FINAL_CUTOFF) {
         html += `<tr class="cutoff-row"><td colspan="${colCount}">A-finale grens — top ${A_FINAL_CUTOFF}</td></tr>`;
       }
-      if (d.pos === B_FINAL_CUTOFF && drivers.length > B_FINAL_CUTOFF) {
+      if (!isGK4Race && d.pos === B_FINAL_CUTOFF && drivers.length > B_FINAL_CUTOFF) {
         html += `<tr class="cutoff-row cutoff-row-b"><td colspan="${colCount}">B-finale grens — P${A_FINAL_CUTOFF + 1} t/m ${B_FINAL_CUTOFF}</td></tr>`;
       }
       return html;
@@ -1233,17 +1236,21 @@ function renderClassifications(classifications) {
       <div class="class-collapsible ${isCollapsed ? "collapsed" : ""}">
         <p class="class-meta">Klassement over ${heatCols.length} heat(s) — punten opgeteld, laagste totaal bovenaan. Klik de ster om een rijder te highlighten.${hasQualifying ? " Bij gelijke punten beslist de qualifying (snelste tijd wint)." : ""}</p>
         ${unevenHeats ? '<p class="class-warning">⚠ Niet alle rijders hebben evenveel heats gereden — dit klassement is nog niet volledig.</p>' : ""}
-        <p class="class-projection">${
-          totalHeats
-            ? projectedACutoff !== null
-              ? `📊 Geschatte grens A-finale: <strong>~${projectedACutoff} punten</strong>${
-                  projectedBCutoff !== null ? ` · B-finale: <strong>~${projectedBCutoff} punten</strong>` : ""
-                } — schatting o.b.v. gemiddelde punten per heat (${totalHeats} heats totaal per rijder, ${projectedSampleSize} rijders met data), kan nog wijzigen.`
-              : `📊 A/B-finale grens: nog geen schatting mogelijk — pas vanaf ${A_FINAL_CUTOFF} rijders met minstens 1 heat gereden (nu ${projectedSampleSize}).`
-            : hasQualifying
-              ? `📊 A/B-finale grens: kon het aantal groepen niet bepalen uit de geüploade qualifying-PDF.`
-              : `📊 A/B-finale grens: upload de "Total Qualifying Practice" PDF van deze klasse om een schatting te zien.`
-        }</p>
+        ${
+          isGK4Race
+            ? ""
+            : `<p class="class-projection">${
+                totalHeats
+                  ? projectedACutoff !== null
+                    ? `📊 Geschatte grens A-finale: <strong>~${projectedACutoff} punten</strong>${
+                        projectedBCutoff !== null ? ` · B-finale: <strong>~${projectedBCutoff} punten</strong>` : ""
+                      } — schatting o.b.v. gemiddelde punten per heat (${totalHeats} heats totaal per rijder, ${projectedSampleSize} rijders met data), kan nog wijzigen.`
+                    : `📊 A/B-finale grens: nog geen schatting mogelijk — pas vanaf ${A_FINAL_CUTOFF} rijders met minstens 1 heat gereden (nu ${projectedSampleSize}).`
+                  : hasQualifying
+                    ? `📊 A/B-finale grens: kon het aantal groepen niet bepalen uit de geüploade qualifying-PDF.`
+                    : `📊 A/B-finale grens: upload de "Total Qualifying Practice" PDF van deze klasse om een schatting te zien.`
+              }</p>`
+        }
         <label class="show-heats-toggle">
           <input type="checkbox" class="show-heats-checkbox" ${showHeatColumns ? "checked" : ""} />
           Toon resultaten per heat
@@ -1338,8 +1345,9 @@ function renderHighlighted(classifications) {
 
   const bodyRows = followed
     .map((d) => {
-      const qualifiesA = d.classDriverCount > A_FINAL_CUTOFF && d.pos <= A_FINAL_CUTOFF;
-      const qualifiesB = d.classDriverCount > A_FINAL_CUTOFF && d.pos > A_FINAL_CUTOFF && d.pos <= B_FINAL_CUTOFF;
+      const isGK4Race = activeRace && activeRace.startsWith("gk4-round-");
+      const qualifiesA = !isGK4Race && d.classDriverCount > A_FINAL_CUTOFF && d.pos <= A_FINAL_CUTOFF;
+      const qualifiesB = !isGK4Race && d.classDriverCount > A_FINAL_CUTOFF && d.pos > A_FINAL_CUTOFF && d.pos <= B_FINAL_CUTOFF;
       return `<tr class="${qualifiesA ? "qualifies-a" : ""} ${qualifiesB ? "qualifies-b" : ""}">
         <td class="name-cell">
           <button type="button" class="star-btn starred" title="Highlight verwijderen" aria-label="Highlight ${d.fullName} verwijderen">★</button>
