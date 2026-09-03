@@ -63,6 +63,15 @@ const GK4_COL = {
   POINTS: [534, 552],
 };
 
+// GK4's qualifying sheet uses the same generator/layout family as its heat
+// results (single-line name), just with slightly different column widths and
+// no group column (single, ungrouped qualifying session).
+const GK4_QCOL = {
+  POS: [10, 26],
+  CAR: [28, 60],
+  NAME: [60, 224],
+};
+
 function loadHeats() {
   try {
     return JSON.parse(localStorage.getItem(STORAGE_KEY)) || [];
@@ -514,6 +523,9 @@ function parseQualifyingRowsFromItemsFastSlow(items) {
 function detectQualifyingVariant(items) {
   const lines = clusterByY(items, 3).sort((a, b) => a.y - b.y);
   const topText = lines.slice(0, 6).map((l) => l.text).join(" ");
+  if (/GK4/i.test(topText)) {
+    return "gk4";
+  }
   if (/Fast\s+Group\s*\/\s*Slow\s+Group/i.test(topText) || /Result\s+Qualifying/i.test(topText)) {
     return "fastslow";
   }
@@ -523,6 +535,46 @@ function detectQualifyingVariant(items) {
   // A plain "<Class> - Qualifying Practice" sheet: same layout family as a
   // heat result (stacked name) but different column x-positions, no group column.
   return "plainpractice";
+}
+
+// GK4's qualifying sheet: single-line "Firstname Lastname", no group column.
+function parseQualifyingRowsFromItemsGK4(items) {
+  const posAnchors = items
+    .filter((it) => within(it.x, GK4_QCOL.POS) && /^[0-9]+$/.test(it.text))
+    .sort((a, b) => a.y - b.y);
+
+  const anchors = [];
+  for (const a of posAnchors) {
+    if (anchors.length && Math.abs(anchors[anchors.length - 1].y - a.y) < 3) continue;
+    anchors.push(a);
+  }
+  if (!anchors.length) return [];
+
+  const rows = [];
+  for (let i = 0; i < anchors.length; i++) {
+    const y0 = anchors[i].y;
+    const y1 = i + 1 < anchors.length ? anchors[i + 1].y : y0 + 16;
+    const band = items.filter((it) => it.y >= y0 - 6 && it.y < y1 - 6);
+
+    const carItem = band.find((it) => within(it.x, GK4_QCOL.CAR) && /^[0-9]+$/.test(it.text));
+    const fullName = band
+      .filter((it) => within(it.x, GK4_QCOL.NAME))
+      .sort((a, b) => a.x - b.x)
+      .map((it) => it.text)
+      .join(" ")
+      .replace(/\s+/g, " ")
+      .trim();
+    if (!fullName) continue;
+
+    rows.push({ car: carItem ? carItem.text : "", fullName, bestTime: null, group: null });
+  }
+  return rows;
+}
+
+function parseQualifyingClassNameGK4(items, tableTopY) {
+  const above = items.filter((it) => it.x < 250 && it.y < tableTopY - 5);
+  const lines = clusterByY(above, 3).sort((a, b) => a.y - b.y);
+  return lines[1] ? lines[1].text.trim() : "Onbekende klasse";
 }
 
 function parseQualifyingClassName(items, tableTopY, knownClassNames) {
@@ -552,13 +604,16 @@ function parseQualifyingClassName(items, tableTopY, knownClassNames) {
 // we already know about instead - this works regardless of which race tab is
 // currently active, which matters for background auto-import.
 function findRaceForQualifying(page1Items) {
-  const rawText = page1Items.map((it) => it.text).join(" ");
-  const m = rawText.match(/Round\s+(\d+)/i);
-  const key = m ? `round-${m[1]}` : null;
-  if (key) {
-    const match = heats.find((h) => (h.raceKey || deriveRaceKey(h.eventName)) === key);
-    if (match) return { eventName: match.eventName, raceKey: match.raceKey || deriveRaceKey(match.eventName) };
-  }
+  // The event name is reliably the first position-sorted line on every
+  // template seen so far (Camp Company and GK4/Orbits alike) - run it through
+  // the same deriveRaceKey used for heats so matching stays consistent even
+  // as more championships/templates are added.
+  const lines = clusterByY(page1Items, 3).sort((a, b) => a.y - b.y);
+  const titleGuess = lines[0] ? lines[0].text : "";
+  const guessKey = deriveRaceKey(titleGuess);
+  const guessMatch = heats.find((h) => (h.raceKey || deriveRaceKey(h.eventName)) === guessKey);
+  if (guessMatch) return { eventName: guessMatch.eventName, raceKey: guessMatch.raceKey || deriveRaceKey(guessMatch.eventName) };
+
   if (activeRace) {
     const match = heats.find((h) => (h.raceKey || deriveRaceKey(h.eventName)) === activeRace);
     if (match) return { eventName: match.eventName, raceKey: activeRace };
@@ -569,7 +624,7 @@ function findRaceForQualifying(page1Items) {
 
 async function parseQualifyingPdf(file, pdf, page1Items) {
   const variant = detectQualifyingVariant(page1Items);
-  const cols = variant === "fastslow" ? QCOL_FASTSLOW : variant === "totalpractice" ? QCOL : QCOL_PLAIN;
+  const cols = variant === "fastslow" ? QCOL_FASTSLOW : variant === "totalpractice" ? QCOL : variant === "gk4" ? GK4_QCOL : QCOL_PLAIN;
 
   const allRows = [];
   let tableTopY = null;
@@ -579,7 +634,13 @@ async function parseQualifyingPdf(file, pdf, page1Items) {
       const anchorYs = items.filter((it) => within(it.x, cols.POS) && /^[0-9]+$/.test(it.text)).map((it) => it.y);
       tableTopY = anchorYs.length ? Math.min(...anchorYs) : null;
     }
-    allRows.push(...(variant === "fastslow" ? parseQualifyingRowsFromItemsFastSlow(items) : parseQualifyingRowsFromItems(items, cols)));
+    if (variant === "fastslow") {
+      allRows.push(...parseQualifyingRowsFromItemsFastSlow(items));
+    } else if (variant === "gk4") {
+      allRows.push(...parseQualifyingRowsFromItemsGK4(items));
+    } else {
+      allRows.push(...parseQualifyingRowsFromItems(items, cols));
+    }
   }
   if (!allRows.length) {
     throw new Error("Kon geen qualifying-tabel herkennen in dit PDF.");
@@ -592,7 +653,14 @@ async function parseQualifyingPdf(file, pdf, page1Items) {
   const entries = allRows.map((r, idx) => ({ ...r, pos: idx + 1 }));
 
   const knownClassNames = [...new Set(heats.filter((h) => (h.raceKey || deriveRaceKey(h.eventName)) === raceKey).map((h) => h.className))];
-  const className = tableTopY ? parseQualifyingClassName(page1Items, tableTopY, knownClassNames) : knownClassNames[0] || "Onbekende klasse";
+  const className =
+    variant === "gk4"
+      ? tableTopY
+        ? parseQualifyingClassNameGK4(page1Items, tableTopY)
+        : knownClassNames[0] || "Onbekende klasse"
+      : tableTopY
+        ? parseQualifyingClassName(page1Items, tableTopY, knownClassNames)
+        : knownClassNames[0] || "Onbekende klasse";
   const printedAt = parsePrintedAt(page1Items);
 
   return {
