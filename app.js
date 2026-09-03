@@ -57,7 +57,10 @@ const QCOL_PLAIN = {
 // "Orbits" - not Camp Company). Single-line "Firstname Lastname" instead of
 // stacked two-line name, and a completely different column layout.
 const GK4_COL = {
-  RANK: [10, 24],
+  // Right-aligned column: a plain rank ("1", "12") sits close to x=24, but a
+  // DSQ/DNF code is wider text starting further left - widen the lower bound
+  // so those "Not classified" rows still anchor as rows.
+  RANK: [0, 24],
   CAR: [28, 58],
   NAME: [58, 178],
   POINTS: [534, 552],
