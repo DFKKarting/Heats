@@ -857,8 +857,22 @@ function mergeQualifying(parsed) {
     : "replaced";
 }
 
+// Qualifying sheets and heat sheets don't always name a class identically
+// (e.g. qualifying "Senior" vs heats "X30 Senior"). Treat two names as the same
+// class when they're equal or one is the other with extra leading words.
+function classesMatch(a, b) {
+  const x = a.trim().toLowerCase();
+  const y = b.trim().toLowerCase();
+  return x === y || x.endsWith(` ${y}`) || y.endsWith(` ${x}`);
+}
+
+function findQualifyingFor(raceKey, className) {
+  const inRace = qualifying.filter((q) => (q.raceKey || deriveRaceKey(q.eventName)) === raceKey);
+  return inRace.find((q) => q.className === className) || inRace.find((q) => classesMatch(q.className, className));
+}
+
 function getQualiPosMap(raceKey, className) {
-  const q = qualifying.find((q) => (q.raceKey || deriveRaceKey(q.eventName)) === raceKey && q.className === className);
+  const q = findQualifyingFor(raceKey, className);
   if (!q) return null;
   const map = new Map();
   for (const e of q.entries) map.set(e.fullName, e.pos);
@@ -869,7 +883,7 @@ function getQualiPosMap(raceKey, className) {
 // groups (A, B, C, ...) minus one gives the total number of heats per driver -
 // derived from the data itself instead of guessed.
 function getTotalHeatsForClass(raceKey, className) {
-  const q = qualifying.find((q) => (q.raceKey || deriveRaceKey(q.eventName)) === raceKey && q.className === className);
+  const q = findQualifyingFor(raceKey, className);
   if (!q) return null;
   const groups = new Set(q.entries.map((e) => e.group).filter(Boolean));
   return groups.size > 1 ? groups.size - 1 : null;
@@ -1192,7 +1206,7 @@ function computeClassifications(heatsSubset) {
   // all (byClass is built from heats). Show a preliminary list based on
   // qualifying order instead, so there's something to see right away.
   for (const qRecord of qualifying.filter((q) => (q.raceKey || deriveRaceKey(q.eventName)) === raceKey)) {
-    if (byClass.has(qRecord.className)) continue;
+    if ([...byClass.keys()].some((name) => classesMatch(name, qRecord.className))) continue;
     const drivers = [...qRecord.entries]
       .sort((a, b) => a.pos - b.pos)
       .map((e) => ({
