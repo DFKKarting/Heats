@@ -299,6 +299,7 @@ table.classification td.a-need { font-size: .85rem; font-weight: 700; white-spac
 table.classification td.a-need small { font-weight: 600; opacity: .7; }
 table.classification td.a-need.a-safe { color: #42f54e; }
 table.classification td.a-need.a-out { color: #ff6b6b; }
+table.classification td.a-need.a-edge { color: #ffb020; }
 table.classification td.a-need.a-required { color: #4aa8ff; }
 
 table.classification td.name-cell { text-align: left; white-space: nowrap; }

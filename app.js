@@ -1132,6 +1132,13 @@ function renderHeatsList(heatsSubset, qualifyingSubset) {
 // position are read from the uploaded heats themselves (in this data P1 isn't
 // always 1 point), so this doesn't assume "points = position".
 function attachAFinalNeeds(drivers, heatCols, totalHeats, cutoff) {
+  // Uncertainty of the cutoff estimate shrinks as more of the round's heats
+  // have been run (checked against a full real round: the estimate was off by
+  // up to ~6 points halfway, ~2 near the end, exact once every heat was done).
+  const groupCount = totalHeats + 1;
+  const totalPairHeats = (groupCount * (groupCount - 1)) / 2;
+  const remainingShare = Math.max(0, 1 - heatCols.length / totalPairHeats);
+  const margin = remainingShare > 0 ? Math.ceil(1 + 5 * remainingShare) : 0;
   const pointsByRank = new Map();
   let worstPerHeat = 0;
   for (const h of heatCols) {
@@ -1149,11 +1156,17 @@ function attachAFinalNeeds(drivers, heatCols, totalHeats, cutoff) {
   for (const d of drivers) {
     const remaining = totalHeats - d.heatsCount;
     const budget = cutoff - d.total;
+    // The cutoff is only an estimate: treat "clearly in/out" as being at least
+    // `margin` points away from it, everything closer stays undecided.
     if (remaining <= 0) {
-      d.aNeed = { status: d.total <= cutoff ? "in" : "out-done", remaining: 0, budget };
-    } else if (d.total + remaining * worstPerHeat <= cutoff) {
+      d.aNeed = {
+        status: d.total <= cutoff - margin ? "in" : d.total > cutoff + margin ? "out-done" : "edge",
+        remaining: 0,
+        budget,
+      };
+    } else if (d.total + remaining * worstPerHeat <= cutoff - margin) {
       d.aNeed = { status: "safe", remaining, budget };
-    } else if (d.total + remaining * bestPerHeat > cutoff) {
+    } else if (d.total + remaining * bestPerHeat > cutoff + margin) {
       d.aNeed = { status: "out", remaining, budget };
     } else {
       const avgPoints = budget / remaining;
@@ -1168,6 +1181,7 @@ function aNeedCell(d) {
   const n = d.aNeed;
   if (!n) return `<td class="a-need">–</td>`;
   const tip = `Nog ${n.remaining} heat(s) · nu ${d.total} punten · grens ~${d.total + n.budget} → nog max ${Math.max(n.budget, 0)} punten te verdelen`;
+  if (n.status === "edge") return `<td class="a-need a-edge" title="Alle heats gereden, maar te dicht bij de geschatte grens (~${d.total + n.budget}) om te zeggen — wacht op de andere rijders">≈ Op de grens</td>`;
   if (n.status === "in") return `<td class="a-need a-safe" title="Alle heats gereden, onder de geschatte grens">✓ A-finale</td>`;
   if (n.status === "out-done") return `<td class="a-need a-out" title="Alle heats gereden, boven de geschatte grens">✗ Niet gehaald</td>`;
   if (n.status === "safe") return `<td class="a-need a-safe" title="${tip} — ook met de slechtste uitslagen onder de grens">✓ Veilig</td>`;
