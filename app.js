@@ -1237,8 +1237,14 @@ function computeClassifications(heatsSubset) {
         .map((d) => Math.round((d.total / d.heatsCount) * totalHeats))
         .sort((a, b) => a - b);
       projectedSampleSize = projected.length;
-      if (projected.length >= A_FINAL_CUTOFF) projectedACutoff = projected[A_FINAL_CUTOFF - 1];
-      if (projected.length >= B_FINAL_CUTOFF) projectedBCutoff = projected[B_FINAL_CUTOFF - 1];
+      // Early in the round only some groups have raced, so `projected` holds
+      // just part of the field. The cutoff is "the Nth best of the WHOLE field",
+      // so take the same share of the sample (e.g. 36/63 of 42 drivers) instead
+      // of the raw 36th - otherwise the estimate comes out far too high.
+      const fieldSize = Math.max(drivers.length, qualiMap ? qualiMap.size : 0);
+      const share = (cutoff) => Math.max(1, Math.round((cutoff * projected.length) / fieldSize));
+      if (projected.length >= A_FINAL_CUTOFF) projectedACutoff = projected[share(A_FINAL_CUTOFF) - 1];
+      if (projected.length >= B_FINAL_CUTOFF) projectedBCutoff = projected[share(B_FINAL_CUTOFF) - 1];
     }
     if (totalHeats && projectedACutoff !== null) {
       attachAFinalNeeds(drivers, heatCols, totalHeats, projectedACutoff);
