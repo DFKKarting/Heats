@@ -193,6 +193,7 @@ main {
   cursor: pointer;
   user-select: none;
 }
+.toggles-row { display: flex; flex-wrap: wrap; gap: 4px 20px; }
 .show-heats-toggle input { accent-color: #f54242; width: 16px; height: 16px; cursor: pointer; }
 
 .search-results { margin-top: 12px; display: flex; flex-direction: column; gap: 8px; text-align: left; }

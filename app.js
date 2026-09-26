@@ -828,6 +828,8 @@ classSelect.addEventListener("change", () => {
 
 const SHOW_HEATS_KEY = "kartingShowHeatColumns.v1";
 let showHeatColumns = localStorage.getItem(SHOW_HEATS_KEY) !== "false"; // shown by default
+const SHOW_ANEED_KEY = "kartingShowANeed.v1";
+let showANeedPref = localStorage.getItem(SHOW_ANEED_KEY) !== "false"; // "Nodig voor A" column, shown by default
 
 function toggleHighlight(key) {
   if (highlights.has(key)) {
@@ -1304,7 +1306,8 @@ function renderClassifications(classifications) {
     const showHeatsUI = showHeatColumns && heatCols.length > 0;
     const block = document.createElement("section");
     block.className = "panel class-block";
-    const showANeed = !suppressFinals && projectedACutoff !== null;
+    const aNeedAvailable = !suppressFinals && projectedACutoff !== null;
+    const showANeed = aNeedAvailable && showANeedPref;
     const colCount = 4 + (showHeatsUI ? 1 : 0) + (showANeed ? 1 : 0); // Pos, Rijder, [Resultaten], Totaal, Heats, [A-finale]
     const resultsHeaderCell = showHeatsUI ? `<th>Resultaten per heat</th>` : "";
     const rowsHtml = drivers.map((d) => {
@@ -1381,14 +1384,24 @@ function renderClassifications(classifications) {
                     : `📊 A/B-finale grens: upload de "Total Qualifying Practice" PDF van deze klasse om een schatting te zien.`
               }</p>`
         }
-        ${
-          heatCols.length > 0
-            ? `<label class="show-heats-toggle">
-                <input type="checkbox" class="show-heats-checkbox" ${showHeatColumns ? "checked" : ""} />
-                Toon resultaten per heat
-              </label>`
-            : ""
-        }
+        <div class="toggles-row">
+          ${
+            heatCols.length > 0
+              ? `<label class="show-heats-toggle">
+                  <input type="checkbox" class="show-heats-checkbox" ${showHeatColumns ? "checked" : ""} />
+                  Toon resultaten per heat
+                </label>`
+              : ""
+          }
+          ${
+            aNeedAvailable
+              ? `<label class="show-heats-toggle">
+                  <input type="checkbox" class="show-aneed-checkbox" ${showANeedPref ? "checked" : ""} />
+                  Toon "Nodig voor A"
+                </label>`
+              : ""
+          }
+        </div>
         <div style="overflow-x:auto;">
           <table class="classification">
             <thead>
@@ -1410,6 +1423,11 @@ function renderClassifications(classifications) {
     block.querySelector(".show-heats-checkbox")?.addEventListener("change", (e) => {
       showHeatColumns = e.target.checked;
       localStorage.setItem(SHOW_HEATS_KEY, String(showHeatColumns));
+      render();
+    });
+    block.querySelector(".show-aneed-checkbox")?.addEventListener("change", (e) => {
+      showANeedPref = e.target.checked;
+      localStorage.setItem(SHOW_ANEED_KEY, String(showANeedPref));
       render();
     });
     block.querySelectorAll(".star-btn").forEach((btn) => {
@@ -1477,7 +1495,7 @@ function renderHighlighted(classifications) {
   }
 
   followed.sort((a, b) => a.pos - b.pos);
-  const showANeed = followed.some((d) => d.aNeed);
+  const showANeed = showANeedPref && followed.some((d) => d.aNeed);
 
   const bodyRows = followed
     .map((d) => {
