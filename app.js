@@ -1125,6 +1125,55 @@ function renderHeatsList(heatsSubset, qualifyingSubset) {
   }
 }
 
+// Per driver: what do they still need in the remaining heats to end at or
+// below the estimated A-final points cutoff? Heat points per finishing
+// position are read from the uploaded heats themselves (in this data P1 isn't
+// always 1 point), so this doesn't assume "points = position".
+function attachAFinalNeeds(drivers, heatCols, totalHeats, cutoff) {
+  const pointsByRank = new Map();
+  let worstPerHeat = 0;
+  for (const h of heatCols) {
+    for (const row of h.rows) {
+      if (row.points === null || row.resultCode) continue;
+      if (!pointsByRank.has(row.rank) || row.points > pointsByRank.get(row.rank)) pointsByRank.set(row.rank, row.points);
+      if (row.points > worstPerHeat) worstPerHeat = row.points;
+    }
+  }
+  if (!pointsByRank.size) return;
+  const maxRank = Math.max(...pointsByRank.keys());
+  const pointsFor = (rank) => (pointsByRank.has(rank) ? pointsByRank.get(rank) : rank);
+  const bestPerHeat = Math.min(...pointsByRank.values());
+
+  for (const d of drivers) {
+    const remaining = totalHeats - d.heatsCount;
+    const budget = cutoff - d.total;
+    if (remaining <= 0) {
+      d.aNeed = { status: d.total <= cutoff ? "in" : "out-done", remaining: 0, budget };
+    } else if (d.total + remaining * worstPerHeat <= cutoff) {
+      d.aNeed = { status: "safe", remaining, budget };
+    } else if (d.total + remaining * bestPerHeat > cutoff) {
+      d.aNeed = { status: "out", remaining, budget };
+    } else {
+      const avgPoints = budget / remaining;
+      let maxPos = 1;
+      for (let q = 1; q <= maxRank; q++) if (pointsFor(q) <= avgPoints) maxPos = q;
+      d.aNeed = { status: "need", remaining, budget, avgPoints, maxPos };
+    }
+  }
+}
+
+function aNeedCell(d) {
+  const n = d.aNeed;
+  if (!n) return `<td class="a-need">–</td>`;
+  const tip = `Nog ${n.remaining} heat(s) · nu ${d.total} punten · grens ~${d.total + n.budget} → nog max ${Math.max(n.budget, 0)} punten te verdelen`;
+  if (n.status === "in") return `<td class="a-need a-safe" title="Alle heats gereden, onder de geschatte grens">✓ A-finale</td>`;
+  if (n.status === "out-done") return `<td class="a-need a-out" title="Alle heats gereden, boven de geschatte grens">✗ Niet gehaald</td>`;
+  if (n.status === "safe") return `<td class="a-need a-safe" title="${tip} — ook met de slechtste uitslagen onder de grens">✓ Veilig</td>`;
+  if (n.status === "out") return `<td class="a-need a-out" title="${tip} — zelfs met alleen winnen niet meer haalbaar">✗ Buiten bereik</td>`;
+  const label = n.remaining === 1 ? `P${n.maxPos} of beter` : `gem. P${n.maxPos} of beter`;
+  return `<td class="a-need a-required" title="${tip}">${label}${n.remaining > 1 ? ` <small>(${n.remaining} heats)</small>` : ""}</td>`;
+}
+
 function computeClassifications(heatsSubset) {
   const raceKey = heatsSubset.length ? heatsSubset[0].raceKey || deriveRaceKey(heatsSubset[0].eventName) : activeRace;
 
@@ -1189,6 +1238,9 @@ function computeClassifications(heatsSubset) {
       if (projected.length >= A_FINAL_CUTOFF) projectedACutoff = projected[A_FINAL_CUTOFF - 1];
       if (projected.length >= B_FINAL_CUTOFF) projectedBCutoff = projected[B_FINAL_CUTOFF - 1];
     }
+    if (totalHeats && projectedACutoff !== null) {
+      attachAFinalNeeds(drivers, heatCols, totalHeats, projectedACutoff);
+    }
 
     classifications.push({
       className,
@@ -1252,7 +1304,8 @@ function renderClassifications(classifications) {
     const showHeatsUI = showHeatColumns && heatCols.length > 0;
     const block = document.createElement("section");
     block.className = "panel class-block";
-    const colCount = 4 + (showHeatsUI ? 1 : 0); // Pos, Rijder, [Resultaten], Totaal, Heats
+    const showANeed = !suppressFinals && projectedACutoff !== null;
+    const colCount = 4 + (showHeatsUI ? 1 : 0) + (showANeed ? 1 : 0); // Pos, Rijder, [Resultaten], Totaal, Heats, [A-finale]
     const resultsHeaderCell = showHeatsUI ? `<th>Resultaten per heat</th>` : "";
     const rowsHtml = drivers.map((d) => {
       const resultsCell = showHeatsUI
@@ -1282,6 +1335,7 @@ function renderClassifications(classifications) {
           ${resultsCell}
           <td class="num total">${d.total !== null ? d.total : "–"}</td>
           <td class="num">${d.heatsCount}</td>
+          ${showANeed ? aNeedCell(d) : ""}
         </tr>`;
       if (!suppressFinals && d.pos === A_FINAL_CUTOFF && drivers.length > A_FINAL_CUTOFF) {
         html += `<tr class="cutoff-row"><td colspan="${colCount}">A-finale grens — top ${A_FINAL_CUTOFF}</td></tr>`;
@@ -1344,6 +1398,7 @@ function renderClassifications(classifications) {
                 ${resultsHeaderCell}
                 <th class="num">Totaal</th>
                 <th class="num">Heats</th>
+                ${showANeed ? '<th title="Wat je in de resterende heats nog nodig hebt voor de A-finale, o.b.v. de geschatte grens">Nodig voor A</th>' : ""}
               </tr>
             </thead>
             <tbody>${bodyRows}</tbody>
@@ -1422,6 +1477,7 @@ function renderHighlighted(classifications) {
   }
 
   followed.sort((a, b) => a.pos - b.pos);
+  const showANeed = followed.some((d) => d.aNeed);
 
   const bodyRows = followed
     .map((d) => {
@@ -1436,6 +1492,7 @@ function renderHighlighted(classifications) {
         <td class="num pos ${d.pos === 1 ? "pos-first" : ""}" title="${qualifiesA ? "Kwalificeert voor de A-finale" : qualifiesB ? "Kwalificeert voor de B-finale" : ""}">${d.pos}</td>
         <td class="num total">${d.total}</td>
         <td class="num">${d.heatsCount}</td>
+        ${showANeed ? aNeedCell(d) : ""}
       </tr>`;
     })
     .join("");
@@ -1449,6 +1506,7 @@ function renderHighlighted(classifications) {
             <th class="num">Positie</th>
             <th class="num">Punten</th>
             <th class="num">Heats</th>
+            ${showANeed ? '<th title="Wat je in de resterende heats nog nodig hebt voor de A-finale, o.b.v. de geschatte grens">Nodig voor A</th>' : ""}
           </tr>
         </thead>
         <tbody>${bodyRows}</tbody>
