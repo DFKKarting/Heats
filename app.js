@@ -1153,9 +1153,19 @@ function attachAFinalNeeds(drivers, heatCols, totalHeats, cutoff) {
   const pointsFor = (rank) => (pointsByRank.has(rank) ? pointsByRank.get(rank) : rank);
   const bestPerHeat = Math.min(...pointsByRank.values());
 
+  // Once every driver has raced all their heats the standings are final, so
+  // the A-final is simply the top A_FINAL_CUTOFF by position (ties on points
+  // are already split by qualifying) - not "everyone at or under the cutoff
+  // points", which would let a tied 37th also show as A-final.
+  const allDone = drivers.every((d) => d.heatsCount >= totalHeats);
+
   for (const d of drivers) {
     const remaining = totalHeats - d.heatsCount;
     const budget = cutoff - d.total;
+    if (allDone) {
+      d.aNeed = { status: d.pos <= A_FINAL_CUTOFF ? "in" : "out-done", remaining: 0, budget };
+      continue;
+    }
     // The cutoff is only an estimate: treat "clearly in/out" as being at least
     // `margin` points away from it, everything closer stays undecided.
     if (remaining <= 0) {
@@ -1182,8 +1192,8 @@ function aNeedCell(d) {
   if (!n) return `<td class="a-need">–</td>`;
   const tip = `Nog ${n.remaining} heat(s) · nu ${d.total} punten · grens ~${d.total + n.budget} → nog max ${Math.max(n.budget, 0)} punten te verdelen`;
   if (n.status === "edge") return `<td class="a-need a-edge" title="Alle heats gereden, maar te dicht bij de geschatte grens (~${d.total + n.budget}) om te zeggen — wacht op de andere rijders">≈ Op de grens</td>`;
-  if (n.status === "in") return `<td class="a-need a-safe" title="Alle heats gereden, onder de geschatte grens">✓ A-finale</td>`;
-  if (n.status === "out-done") return `<td class="a-need a-out" title="Alle heats gereden, boven de geschatte grens">✗ Niet gehaald</td>`;
+  if (n.status === "in") return `<td class="a-need a-safe" title="Alle heats gereden — bij de eerste ${A_FINAL_CUTOFF} (bij gelijke punten beslist de qualifying)">✓ A-finale</td>`;
+  if (n.status === "out-done") return `<td class="a-need a-out" title="Alle heats gereden — buiten de eerste ${A_FINAL_CUTOFF}">✗ Niet gehaald</td>`;
   if (n.status === "safe") return `<td class="a-need a-safe" title="${tip} — ook met de slechtste uitslagen onder de grens">✓ Veilig</td>`;
   if (n.status === "out") return `<td class="a-need a-out" title="${tip} — zelfs met alleen winnen niet meer haalbaar">✗ Buiten bereik</td>`;
   const needTip =
