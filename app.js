@@ -1193,7 +1193,7 @@ function aNeedCell(d) {
   const text =
     n.remaining === 1
       ? `Laatste heat: P${n.maxPos} of beter`
-      : `Gemiddeld P${n.maxPos} of beter <small>over ${n.remaining} heats</small>`;
+      : `Gemiddeld P${n.maxPos} of beter`;
   return `<td class="a-need a-required" title="${needTip}">${text}</td>`;
 }
 
