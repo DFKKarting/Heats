@@ -1186,8 +1186,15 @@ function aNeedCell(d) {
   if (n.status === "out-done") return `<td class="a-need a-out" title="Alle heats gereden, boven de geschatte grens">✗ Niet gehaald</td>`;
   if (n.status === "safe") return `<td class="a-need a-safe" title="${tip} — ook met de slechtste uitslagen onder de grens">✓ Veilig</td>`;
   if (n.status === "out") return `<td class="a-need a-out" title="${tip} — zelfs met alleen winnen niet meer haalbaar">✗ Buiten bereik</td>`;
-  const label = n.remaining === 1 ? `P${n.maxPos} of beter` : `gem. P${n.maxPos} of beter`;
-  return `<td class="a-need a-required" title="${tip}">${label}${n.remaining > 1 ? ` <small>(${n.remaining} heats)</small>` : ""}</td>`;
+  const needTip =
+    n.remaining === 1
+      ? `Nog 1 heat. Om onder de geschatte grens (~${d.total + n.budget}) te blijven mag je nog max ${n.budget} punten scoren: eindig in die heat op P${n.maxPos} of beter.`
+      : `Nog ${n.remaining} heats. Om onder de geschatte grens (~${d.total + n.budget}) te blijven mag je nog max ${n.budget} punten scoren, dat is gemiddeld ${Math.floor(n.avgPoints * 10) / 10} per heat. Eindig dus gemiddeld op P${n.maxPos} of beter; een slechte heat mag je goedmaken met een betere.`;
+  const text =
+    n.remaining === 1
+      ? `Laatste heat: P${n.maxPos} of beter`
+      : `Gemiddeld P${n.maxPos} of beter <small>over ${n.remaining} heats</small>`;
+  return `<td class="a-need a-required" title="${needTip}">${text}</td>`;
 }
 
 function computeClassifications(heatsSubset) {
