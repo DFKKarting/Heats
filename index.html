@@ -4,11 +4,23 @@
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <title>Karting Klassement</title>
+<script>
+  // Applied before the stylesheet paints anything, so there's no flash of the
+  // wrong theme on load.
+  (function () {
+    try {
+      if (localStorage.getItem("kartingTheme.v1") === "light") {
+        document.documentElement.dataset.theme = "light";
+      }
+    } catch (e) {}
+  })();
+</script>
 <link rel="preconnect" href="https://fonts.googleapis.com" />
 <link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@500;600;700&family=Orbitron:wght@700;800;900&display=swap" rel="stylesheet" />
 <link rel="stylesheet" href="style.css" />
 </head>
 <body>
+<button type="button" id="themeToggle" class="theme-toggle" aria-label="Wissel tussen licht en donker thema" title="Wissel thema">🌙</button>
 <div class="top-banner">
   <img src="DFK ZWT.png" alt="DFK Kart Racing Team" />
 </div>

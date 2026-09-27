@@ -15,12 +15,14 @@ const B_FINAL_MIN_DRIVERS = 8; // a B-final is only actually run with at least t
 
 // A distinct color per sub-class (e.g. KA100's 140/155, X30 Master-SC's M/SC)
 // so it's visually obvious at a glance which sub-class a driver is in.
+// Medium-saturation tones (not the very light pastels a dark-only palette
+// would use) so the badge text stays legible on both the dark and light theme.
 const SUBCLASS_PALETTE = [
-  { color: "#4aa8ff", bg: "rgba(74, 168, 255, 0.15)", border: "rgba(74, 168, 255, 0.4)" },
-  { color: "#c792ea", bg: "rgba(199, 146, 234, 0.15)", border: "rgba(199, 146, 234, 0.4)" },
-  { color: "#2dd4bf", bg: "rgba(45, 212, 191, 0.15)", border: "rgba(45, 212, 191, 0.4)" },
-  { color: "#ffa94d", bg: "rgba(255, 169, 77, 0.15)", border: "rgba(255, 169, 77, 0.4)" },
-  { color: "#ff7edb", bg: "rgba(255, 126, 219, 0.15)", border: "rgba(255, 126, 219, 0.4)" },
+  { color: "#2f8fd8", bg: "rgba(47, 143, 216, 0.15)", border: "rgba(47, 143, 216, 0.4)" },
+  { color: "#9b6fd1", bg: "rgba(155, 111, 209, 0.15)", border: "rgba(155, 111, 209, 0.4)" },
+  { color: "#1fae9f", bg: "rgba(31, 174, 159, 0.15)", border: "rgba(31, 174, 159, 0.4)" },
+  { color: "#d1802e", bg: "rgba(209, 128, 46, 0.15)", border: "rgba(209, 128, 46, 0.4)" },
+  { color: "#c25a9e", bg: "rgba(194, 90, 158, 0.15)", border: "rgba(194, 90, 158, 0.4)" },
 ];
 function subClassStyle(subClass, subClassOrder) {
   const idx = Math.max(0, subClassOrder.indexOf(subClass));
@@ -874,6 +876,24 @@ toggleHeatsBtn.addEventListener("click", () => {
 });
 
 applyHeatsCollapsedState();
+
+const THEME_KEY = "kartingTheme.v1";
+const themeToggle = document.getElementById("themeToggle");
+function applyTheme(theme) {
+  if (theme === "light") {
+    document.documentElement.dataset.theme = "light";
+    themeToggle.textContent = "☀️";
+  } else {
+    delete document.documentElement.dataset.theme;
+    themeToggle.textContent = "🌙";
+  }
+}
+applyTheme(localStorage.getItem(THEME_KEY) === "light" ? "light" : "dark");
+themeToggle.addEventListener("click", () => {
+  const next = document.documentElement.dataset.theme === "light" ? "dark" : "light";
+  localStorage.setItem(THEME_KEY, next);
+  applyTheme(next);
+});
 
 const CLASS_COLLAPSED_KEY = "kartingClassCollapsed.v1";
 let collapsedClasses = new Set(JSON.parse(localStorage.getItem(CLASS_COLLAPSED_KEY)) || []);
