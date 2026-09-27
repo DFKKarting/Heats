@@ -1128,12 +1128,10 @@ function renderHeatsList(heatsSubset, qualifyingSubset) {
 }
 
 // Per driver: what do they still need in the remaining heats to end at or
-// below the estimated A-final (or B-final) points cutoff? Heat points per
-// finishing position are read from the uploaded heats themselves (in this data
-// P1 isn't always 1 point), so this doesn't assume "points = position".
-// Sets d.aNeed, and d.bNeed when a B cutoff can be estimated (field big enough
-// to miss the B-final) or when all results are in and start positions are known.
-function attachFinalNeeds(drivers, heatCols, totalHeats, aCutoff, bCutoff) {
+// below the estimated A-final points cutoff? Heat points per finishing
+// position are read from the uploaded heats themselves (in this data P1 isn't
+// always 1 point), so this doesn't assume "points = position". Sets d.aNeed.
+function attachFinalNeeds(drivers, heatCols, totalHeats, aCutoff) {
   // Uncertainty of the cutoff estimate shrinks as more of the round's heats
   // have been run (checked against a full real round: the estimate was off by
   // up to ~6 points halfway, ~2 near the end, exact once every heat was done).
@@ -1161,52 +1159,46 @@ function attachFinalNeeds(drivers, heatCols, totalHeats, aCutoff, bCutoff) {
   // let a tied driver just outside the limit also show as qualified.
   const allDone = drivers.every((d) => d.heatsCount >= totalHeats);
 
-  const needFor = (d, cutoff, limit) => {
+  for (const d of drivers) {
     const remaining = totalHeats - d.heatsCount;
-    const budget = cutoff - d.total;
-    if (allDone) return { status: d.pos <= limit ? "in" : "out-done", remaining: 0, budget, final: true };
+    const budget = aCutoff - d.total;
+    if (allDone) {
+      // Once every driver is done, anyone who missed the A-final but still
+      // falls within the B-final range is in the B-final, not just "missed
+      // out" - flag that separately so it can be shown as such.
+      const status = d.pos <= A_FINAL_CUTOFF ? "in" : drivers.length > A_FINAL_CUTOFF && d.pos <= B_FINAL_CUTOFF ? "b-final" : "out-done";
+      d.aNeed = { status, remaining: 0, budget };
+      continue;
+    }
     // The cutoff is only an estimate: treat "clearly in/out" as being at least
     // `margin` points away from it, everything closer stays undecided.
     if (remaining <= 0) {
-      return { status: d.total <= cutoff - margin ? "in" : d.total > cutoff + margin ? "out-done" : "edge", remaining: 0, budget };
+      d.aNeed = { status: d.total <= aCutoff - margin ? "in" : d.total > aCutoff + margin ? "out-done" : "edge", remaining: 0, budget };
+      continue;
     }
-    if (d.total + remaining * worstPerHeat <= cutoff - margin) return { status: "safe", remaining, budget };
-    if (d.total + remaining * bestPerHeat > cutoff + margin) return { status: "out", remaining, budget };
+    if (d.total + remaining * worstPerHeat <= aCutoff - margin) {
+      d.aNeed = { status: "safe", remaining, budget };
+      continue;
+    }
+    if (d.total + remaining * bestPerHeat > aCutoff + margin) {
+      d.aNeed = { status: "out", remaining, budget };
+      continue;
+    }
     const avgPoints = budget / remaining;
     let maxPos = 1;
     for (let q = 1; q <= maxRank; q++) if (pointsFor(q) <= avgPoints) maxPos = q;
-    return { status: "need", remaining, budget, avgPoints, maxPos };
-  };
-
-  for (const d of drivers) {
-    d.aNeed = needFor(d, aCutoff, A_FINAL_CUTOFF);
-    if (allDone && drivers.length > A_FINAL_CUTOFF) {
-      d.bNeed = needFor(d, bCutoff !== null ? bCutoff : aCutoff, B_FINAL_CUTOFF);
-    } else if (!allDone && bCutoff !== null) {
-      d.bNeed = needFor(d, bCutoff, B_FINAL_CUTOFF);
-    }
+    d.aNeed = { status: "need", remaining, budget, avgPoints, maxPos };
   }
 }
 
-// key: "aNeed" (A-final) or "bNeed" (B-final).
 function needCell(d, key) {
   const n = d[key];
-  const isB = key === "bNeed";
-  const letter = isB ? "B" : "A";
-  const limit = isB ? B_FINAL_CUTOFF : A_FINAL_CUTOFF;
   if (!n) return `<td class="a-need">–</td>`;
-  if (isB) {
-    // Someone already at/near A-level doesn't need the B-final.
-    if (n.final && d.pos <= A_FINAL_CUTOFF) return `<td class="a-need">–</td>`;
-    if (!n.final && d.aNeed && (d.aNeed.status === "safe" || d.aNeed.status === "in")) return `<td class="a-need">–</td>`;
-    if (n.final && n.status === "in") {
-      return `<td class="a-need a-safe" title="Alle heats gereden — B-finale, startpositie ${d.pos - A_FINAL_CUTOFF} in de B-finale">✓ B-finale · start P${d.pos - A_FINAL_CUTOFF}</td>`;
-    }
-  }
   const tip = `Nog ${n.remaining} heat(s) · nu ${d.total} punten · grens ~${d.total + n.budget} → nog max ${Math.max(n.budget, 0)} punten te verdelen`;
   if (n.status === "edge") return `<td class="a-need a-edge" title="Alle heats gereden, maar te dicht bij de geschatte grens (~${d.total + n.budget}) om te zeggen — wacht op de andere rijders">≈ Op de grens</td>`;
-  if (n.status === "in") return `<td class="a-need a-safe" title="Alle heats gereden — bij de eerste ${limit} (bij gelijke punten beslist de qualifying)">✓ ${letter}-finale</td>`;
-  if (n.status === "out-done") return `<td class="a-need a-out" title="Alle heats gereden — buiten de eerste ${limit}">✗ Niet gehaald</td>`;
+  if (n.status === "in") return `<td class="a-need a-safe" title="Alle heats gereden — bij de eerste ${A_FINAL_CUTOFF} (bij gelijke punten beslist de qualifying)">✓ A-finale</td>`;
+  if (n.status === "b-final") return `<td class="a-need a-out" title="Alle heats gereden — buiten de eerste ${A_FINAL_CUTOFF}, maar wel bij de eerste ${B_FINAL_CUTOFF} (B-finale)">B-finale</td>`;
+  if (n.status === "out-done") return `<td class="a-need a-out" title="Alle heats gereden — buiten de eerste ${A_FINAL_CUTOFF}">✗ Niet gehaald</td>`;
   if (n.status === "safe") return `<td class="a-need a-safe" title="${tip} — ook met de slechtste uitslagen onder de grens">✓ Veilig</td>`;
   if (n.status === "out") return `<td class="a-need a-out" title="${tip} — zelfs met alleen winnen niet meer haalbaar">✗ Buiten bereik</td>`;
   const needTip =
@@ -1288,7 +1280,7 @@ function computeClassifications(heatsSubset) {
       if (projected.length >= B_FINAL_CUTOFF) projectedBCutoff = projected[share(B_FINAL_CUTOFF) - 1];
     }
     if (totalHeats && projectedACutoff !== null) {
-      attachFinalNeeds(drivers, heatCols, totalHeats, projectedACutoff, projectedBCutoff);
+      attachFinalNeeds(drivers, heatCols, totalHeats, projectedACutoff);
     }
 
     classifications.push({
@@ -1355,8 +1347,10 @@ function renderClassifications(classifications) {
     block.className = "panel class-block";
     const aNeedAvailable = !suppressFinals && projectedACutoff !== null;
     const showANeed = aNeedAvailable && showANeedPref;
-    const showBNeed = showANeed && drivers.some((d) => d.bNeed);
-    const colCount = 4 + (showHeatsUI ? 1 : 0) + (showANeed ? 1 : 0) + (showBNeed ? 1 : 0); // Pos, Rijder, [Resultaten], Totaal, Heats, [A], [B]
+    const colCount = 4 + (showHeatsUI ? 1 : 0) + (showANeed ? 1 : 0); // Pos, Rijder, [Resultaten], Totaal, Heats, [A-finale]
+    // Once every heat is raced, renumber the B-final group starting back at 1
+    // (its own start order) instead of continuing the overall P37, P38, ...
+    const allHeatsDone = !suppressFinals && !!totalHeats && drivers.every((d) => d.heatsCount >= totalHeats);
     const resultsHeaderCell = showHeatsUI ? `<th>Resultaten per heat</th>` : "";
     const rowsHtml = drivers.map((d) => {
       const resultsCell = showHeatsUI
@@ -1372,12 +1366,15 @@ function renderClassifications(classifications) {
       const isHighlighted = highlights.has(d.key);
       const qualifiesA = !suppressFinals && drivers.length > A_FINAL_CUTOFF && d.pos <= A_FINAL_CUTOFF;
       const qualifiesB = !suppressFinals && drivers.length > A_FINAL_CUTOFF && d.pos > A_FINAL_CUTOFF && d.pos <= B_FINAL_CUTOFF;
+      const restarted = allHeatsDone && drivers.length > A_FINAL_CUTOFF && d.pos > A_FINAL_CUTOFF;
+      const displayPos = restarted ? d.pos - A_FINAL_CUTOFF : d.pos;
       const posTitleParts = [];
       if (qualifiesA) posTitleParts.push("Kwalificeert voor de A-finale");
       if (qualifiesB) posTitleParts.push("Kwalificeert voor de B-finale");
+      if (restarted) posTitleParts.push(`Startnummer B-finale (eindpositie na de heats: P${d.pos})`);
       if (d.qualiPos !== undefined) posTitleParts.push(`Qualifying P${d.qualiPos}`);
       let html = `<tr class="${isHighlighted ? "highlighted" : ""} ${qualifiesA ? "qualifies-a" : ""} ${qualifiesB ? "qualifies-b" : ""}" data-key="${d.key.replace(/"/g, "&quot;")}">
-          <td class="pos ${d.pos === 1 ? "pos-first" : ""}" title="${posTitleParts.join(" · ")}">${d.pos}</td>
+          <td class="pos ${d.pos === 1 ? "pos-first" : ""}" title="${posTitleParts.join(" · ")}">${displayPos}</td>
           <td class="name-cell">
             <button type="button" class="star-btn ${isHighlighted ? "starred" : ""}" title="Highlight rijder" aria-label="Highlight ${d.fullName}">${isHighlighted ? "★" : "☆"}</button>
             ${d.fullName} <span class="car-number">#${d.car}</span>
@@ -1386,7 +1383,6 @@ function renderClassifications(classifications) {
           <td class="num total">${d.total !== null ? d.total : "–"}</td>
           <td class="num">${d.heatsCount}</td>
           ${showANeed ? needCell(d, "aNeed") : ""}
-          ${showBNeed ? needCell(d, "bNeed") : ""}
         </tr>`;
       if (!suppressFinals && d.pos === A_FINAL_CUTOFF && drivers.length > A_FINAL_CUTOFF) {
         html += `<tr class="cutoff-row"><td colspan="${colCount}">A-finale grens — top ${A_FINAL_CUTOFF}</td></tr>`;
@@ -1445,7 +1441,7 @@ function renderClassifications(classifications) {
             aNeedAvailable
               ? `<label class="show-heats-toggle">
                   <input type="checkbox" class="show-aneed-checkbox" ${showANeedPref ? "checked" : ""} />
-                  Toon "Nodig voor A/B"
+                  Toon "Nodig voor A"
                 </label>`
               : ""
           }
@@ -1460,7 +1456,6 @@ function renderClassifications(classifications) {
                 <th class="num">Totaal</th>
                 <th class="num">Heats</th>
                 ${showANeed ? '<th title="Wat je in de resterende heats nog nodig hebt voor de A-finale, o.b.v. de geschatte grens">Nodig voor A</th>' : ""}
-                ${showBNeed ? '<th title="Wat je in de resterende heats nog nodig hebt voor de B-finale (P37 t/m P72). Na alle heats: startpositie in de B-finale.">Nodig voor B</th>' : ""}
               </tr>
             </thead>
             <tbody>${bodyRows}</tbody>
@@ -1545,23 +1540,31 @@ function renderHighlighted(classifications) {
 
   followed.sort((a, b) => a.pos - b.pos);
   const showANeed = showANeedPref && followed.some((d) => d.aNeed);
-  const showBNeed = showANeed && followed.some((d) => d.bNeed);
+  const allHeatsDone = !!selected.totalHeats && selected.drivers.every((d) => d.heatsCount >= selected.totalHeats);
 
   const bodyRows = followed
     .map((d) => {
       const isGK4Race = activeRace && activeRace.startsWith("gk4-round-");
       const qualifiesA = !isGK4Race && d.classDriverCount > A_FINAL_CUTOFF && d.pos <= A_FINAL_CUTOFF;
       const qualifiesB = !isGK4Race && d.classDriverCount > A_FINAL_CUTOFF && d.pos > A_FINAL_CUTOFF && d.pos <= B_FINAL_CUTOFF;
+      const restarted = !isGK4Race && allHeatsDone && d.classDriverCount > A_FINAL_CUTOFF && d.pos > A_FINAL_CUTOFF;
+      const displayPos = restarted ? d.pos - A_FINAL_CUTOFF : d.pos;
+      const posTitle = restarted
+        ? `Startnummer B-finale (eindpositie na de heats: P${d.pos})`
+        : qualifiesA
+          ? "Kwalificeert voor de A-finale"
+          : qualifiesB
+            ? "Kwalificeert voor de B-finale"
+            : "";
       return `<tr class="${qualifiesA ? "qualifies-a" : ""} ${qualifiesB ? "qualifies-b" : ""}">
         <td class="name-cell">
           <button type="button" class="star-btn starred" title="Highlight verwijderen" aria-label="Highlight ${d.fullName} verwijderen">★</button>
           ${d.fullName} <span class="car-number">#${d.car}</span>
         </td>
-        <td class="num pos ${d.pos === 1 ? "pos-first" : ""}" title="${qualifiesA ? "Kwalificeert voor de A-finale" : qualifiesB ? "Kwalificeert voor de B-finale" : ""}">${d.pos}</td>
+        <td class="num pos ${d.pos === 1 ? "pos-first" : ""}" title="${posTitle}">${displayPos}</td>
         <td class="num total">${d.total}</td>
         <td class="num">${d.heatsCount}</td>
         ${showANeed ? needCell(d, "aNeed") : ""}
-        ${showBNeed ? needCell(d, "bNeed") : ""}
       </tr>`;
     })
     .join("");
@@ -1576,7 +1579,6 @@ function renderHighlighted(classifications) {
             <th class="num">Punten</th>
             <th class="num">Heats</th>
             ${showANeed ? '<th title="Wat je in de resterende heats nog nodig hebt voor de A-finale, o.b.v. de geschatte grens">Nodig voor A</th>' : ""}
-            ${showBNeed ? '<th title="Wat je in de resterende heats nog nodig hebt voor de B-finale (P37 t/m P72). Na alle heats: startpositie in de B-finale.">Nodig voor B</th>' : ""}
           </tr>
         </thead>
         <tbody>${bodyRows}</tbody>
