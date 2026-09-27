@@ -11,6 +11,15 @@ const ACTIVE_RACE_KEY = "kartingActiveRace.v1";
 const QUALIFYING_KEY = "kartingQualifying.v1";
 const A_FINAL_CUTOFF = 36;
 const B_FINAL_CUTOFF = 72;
+const B_FINAL_MIN_DRIVERS = 8; // a B-final is only actually run with at least this many drivers in it
+
+// Whether a field of this size gets a B-final at all: only the drivers beyond
+// the A-final cutoff (up to the B-final cap) would race it, and with too few
+// of them there's no separate B-final race.
+function hasBFinal(fieldSize) {
+  const inBRange = Math.max(0, Math.min(fieldSize, B_FINAL_CUTOFF) - A_FINAL_CUTOFF);
+  return inBRange >= B_FINAL_MIN_DRIVERS;
+}
 
 const COL = {
   RANK: [16, 25],
@@ -1166,7 +1175,7 @@ function attachFinalNeeds(drivers, heatCols, totalHeats, aCutoff) {
       // Once every driver is done, anyone who missed the A-final but still
       // falls within the B-final range is in the B-final, not just "missed
       // out" - flag that separately so it can be shown as such.
-      const status = d.pos <= A_FINAL_CUTOFF ? "in" : drivers.length > A_FINAL_CUTOFF && d.pos <= B_FINAL_CUTOFF ? "b-final" : "out-done";
+      const status = d.pos <= A_FINAL_CUTOFF ? "in" : hasBFinal(drivers.length) && d.pos <= B_FINAL_CUTOFF ? "b-final" : "out-done";
       d.aNeed = { status, remaining: 0, budget };
       continue;
     }
@@ -1291,7 +1300,7 @@ function computeClassifications(heatsSubset) {
       const fieldSize = Math.max(drivers.length, qualiMap ? qualiMap.size : 0);
       const share = (cutoff) => Math.max(1, Math.round((cutoff * projected.length) / fieldSize));
       if (projected.length >= A_FINAL_CUTOFF) projectedACutoff = projected[share(A_FINAL_CUTOFF) - 1];
-      if (projected.length >= B_FINAL_CUTOFF) projectedBCutoff = projected[share(B_FINAL_CUTOFF) - 1];
+      if (projected.length >= B_FINAL_CUTOFF && hasBFinal(fieldSize)) projectedBCutoff = projected[share(B_FINAL_CUTOFF) - 1];
     }
     if (totalHeats && projectedACutoff !== null) {
       attachFinalNeeds(drivers, heatCols, totalHeats, projectedACutoff);
@@ -1379,8 +1388,8 @@ function renderClassifications(classifications) {
         : "";
       const isHighlighted = highlights.has(d.key);
       const qualifiesA = !suppressFinals && drivers.length > A_FINAL_CUTOFF && d.pos <= A_FINAL_CUTOFF;
-      const qualifiesB = !suppressFinals && drivers.length > A_FINAL_CUTOFF && d.pos > A_FINAL_CUTOFF && d.pos <= B_FINAL_CUTOFF;
-      const restarted = allHeatsDone && drivers.length > A_FINAL_CUTOFF && d.pos > A_FINAL_CUTOFF;
+      const qualifiesB = !suppressFinals && hasBFinal(drivers.length) && d.pos > A_FINAL_CUTOFF && d.pos <= B_FINAL_CUTOFF;
+      const restarted = allHeatsDone && hasBFinal(drivers.length) && d.pos > A_FINAL_CUTOFF;
       const displayPos = restarted ? d.pos - A_FINAL_CUTOFF : d.pos;
       const posTitleParts = [];
       if (qualifiesA) posTitleParts.push("Kwalificeert voor de A-finale");
@@ -1401,7 +1410,7 @@ function renderClassifications(classifications) {
       if (!suppressFinals && d.pos === A_FINAL_CUTOFF && drivers.length > A_FINAL_CUTOFF) {
         html += `<tr class="cutoff-row"><td colspan="${colCount}">A-finale grens — top ${A_FINAL_CUTOFF}</td></tr>`;
       }
-      if (!suppressFinals && d.pos === B_FINAL_CUTOFF && drivers.length > B_FINAL_CUTOFF) {
+      if (!suppressFinals && d.pos === B_FINAL_CUTOFF && drivers.length > B_FINAL_CUTOFF && hasBFinal(drivers.length)) {
         html += `<tr class="cutoff-row cutoff-row-b"><td colspan="${colCount}">B-finale grens — P${A_FINAL_CUTOFF + 1} t/m ${B_FINAL_CUTOFF}</td></tr>`;
       }
       return html;
@@ -1560,8 +1569,8 @@ function renderHighlighted(classifications) {
     .map((d) => {
       const isGK4Race = activeRace && activeRace.startsWith("gk4-round-");
       const qualifiesA = !isGK4Race && d.classDriverCount > A_FINAL_CUTOFF && d.pos <= A_FINAL_CUTOFF;
-      const qualifiesB = !isGK4Race && d.classDriverCount > A_FINAL_CUTOFF && d.pos > A_FINAL_CUTOFF && d.pos <= B_FINAL_CUTOFF;
-      const restarted = !isGK4Race && allHeatsDone && d.classDriverCount > A_FINAL_CUTOFF && d.pos > A_FINAL_CUTOFF;
+      const qualifiesB = !isGK4Race && hasBFinal(d.classDriverCount) && d.pos > A_FINAL_CUTOFF && d.pos <= B_FINAL_CUTOFF;
+      const restarted = !isGK4Race && allHeatsDone && hasBFinal(d.classDriverCount) && d.pos > A_FINAL_CUTOFF;
       const displayPos = restarted ? d.pos - A_FINAL_CUTOFF : d.pos;
       const posTitle = restarted
         ? `Startnummer B-finale (eindpositie na de heats: P${d.pos})`
