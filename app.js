@@ -198,6 +198,16 @@ function deriveSeriesLabel(eventName) {
   return (m ? m[1] : eventName).trim();
 }
 
+// The track/circuit name, when the title has one trailing "Round N" (e.g.
+// "IAME Series Benelux Round 6 Mariembourg" -> "Mariembourg"). The
+// championship itself is already shown by its own picker, so the round
+// picker doesn't need to repeat it too.
+function deriveTrackLabel(eventName) {
+  if (!eventName) return "";
+  const m = eventName.match(/\bRound\s+\d+\s+(.*)$/i);
+  return m ? m[1].trim() : "";
+}
+
 // Different documents for the same physical event sometimes title themselves
 // slightly differently (e.g. "IAME Benelux Round 1" vs "IAME Series Benelux
 // Round 1 Mariembourg"). Group races by round number instead of exact string
@@ -1144,7 +1154,11 @@ function renderSelectors(races, classifications) {
     const rounds = getRounds(races, activeYear, activeSeriesKey);
     raceSelect.disabled = false;
     raceSelect.innerHTML = rounds
-      .map((r) => `<option value="${r.raceKey.replace(/"/g, "&quot;")}">${r.roundNumber !== null ? `Ronde ${r.roundNumber}` : r.label} — ${r.eventName}</option>`)
+      .map((r) => {
+        const track = deriveTrackLabel(r.eventName);
+        const label = r.roundNumber !== null ? `Ronde ${r.roundNumber}${track ? ` — ${track}` : ""}` : r.label;
+        return `<option value="${r.raceKey.replace(/"/g, "&quot;")}">${label}</option>`;
+      })
       .join("");
     raceSelect.value = activeRace;
   }
