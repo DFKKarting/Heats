@@ -1493,6 +1493,11 @@ function computeClassifications(heatsSubset) {
     }
 
     const qualiMap = getQualiPosMap(raceKey, className);
+    // Known once qualifying is uploaded: with 36 or fewer drivers in the whole
+    // field there's no A/B split at all - everyone races one final together -
+    // so none of the A/B-final UI (banner, badges, "Nodig voor A" column)
+    // applies, same as it doesn't for GK4.
+    const noFinalSplit = !!qualiMap && qualiMap.size <= A_FINAL_CUTOFF;
     const subClassMap = getSubClassMap(raceKey, className);
     const drivers = [...driverMap.values()]
       .sort((a, b) => {
@@ -1583,6 +1588,7 @@ function computeClassifications(heatsSubset) {
       projectedSampleNeeded,
       hasMultipleSubClasses,
       subClassOrder,
+      noFinalSplit,
     });
   }
 
@@ -1646,14 +1652,15 @@ function renderClassifications(classifications) {
 
   {
     const selected = classifications.find((c) => c.className === activeClass) || classifications[0];
-    const { className, heatCols, drivers, hasQualifying, qualiOnly, totalHeats, projectedACutoff, projectedBCutoff, projectedSampleSize, projectedSampleNeeded, hasMultipleSubClasses, subClassOrder } =
+    const { className, heatCols, drivers, hasQualifying, qualiOnly, totalHeats, projectedACutoff, projectedBCutoff, projectedSampleSize, projectedSampleNeeded, hasMultipleSubClasses, subClassOrder, noFinalSplit } =
       selected;
     // GK4 doesn't work with qualifying groups or an A/B-final split at all -
     // none of that is relevant there, so hide it entirely for GK4 races. A
     // qualifying-only preliminary list (no heats raced yet) doesn't have a
-    // real A/B-final split either, since it's not based on points.
+    // real A/B-final split either, since it's not based on points. Same for a
+    // field the qualifying shows has 36 or fewer drivers - just one final.
     const isGK4Race = activeRace && activeRace.startsWith("gk4-round-");
-    const suppressFinals = isGK4Race || qualiOnly;
+    const suppressFinals = isGK4Race || qualiOnly || noFinalSplit;
     const showHeatsUI = showHeatColumns && heatCols.length > 0;
     const block = document.createElement("section");
     block.className = "panel class-block";
@@ -1738,9 +1745,7 @@ function renderClassifications(classifications) {
                     ? `📊 Geschatte grens A-finale: <strong>~${projectedACutoff} punten</strong>${
                         projectedBCutoff !== null ? ` · B-finale: <strong>~${projectedBCutoff} punten</strong>` : ""
                       } — schatting o.b.v. gemiddelde punten per heat (${totalHeats} heats totaal per rijder, ${projectedSampleSize} rijders met data), kan nog wijzigen.`
-                    : projectedSampleNeeded !== null
-                      ? `📊 A/B-finale grens: nog geen schatting mogelijk — nog ${projectedSampleNeeded - projectedSampleSize} rijder(s) met minstens 1 heat nodig (nu ${projectedSampleSize} van de ${projectedSampleNeeded} benodigd).`
-                      : `📊 A/B-finale grens: dit veld is te klein voor een A/B-finale-opsplitsing.`
+                    : `📊 A/B-finale grens: nog geen schatting mogelijk — nog ${projectedSampleNeeded - projectedSampleSize} rijder(s) met minstens 1 heat nodig (nu ${projectedSampleSize} van de ${projectedSampleNeeded} benodigd).`
                   : hasQualifying
                     ? `📊 A/B-finale grens: kon het aantal groepen niet bepalen uit de geüploade qualifying-PDF.`
                     : `📊 A/B-finale grens: upload de "Total Qualifying Practice" PDF van deze klasse om een schatting te zien.`
