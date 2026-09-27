@@ -1185,6 +1185,14 @@ function attachFinalNeeds(drivers, heatCols, totalHeats, aCutoff) {
       continue;
     }
     const avgPoints = budget / remaining;
+    // Not caught by the "out" check above (that only trips past cutoff+margin),
+    // but scoring better than the best possible result doesn't exist either -
+    // this is the same "too close to call" uncertainty as `edge`, just from
+    // the other side of the cutoff.
+    if (avgPoints < bestPerHeat) {
+      d.aNeed = { status: "edge", remaining, budget };
+      continue;
+    }
     let maxPos = 1;
     for (let q = 1; q <= maxRank; q++) if (pointsFor(q) <= avgPoints) maxPos = q;
     d.aNeed = { status: "need", remaining, budget, avgPoints, maxPos };
@@ -1195,7 +1203,13 @@ function needCell(d, key) {
   const n = d[key];
   if (!n) return `<td class="a-need">–</td>`;
   const tip = `Nog ${n.remaining} heat(s) · nu ${d.total} punten · grens ~${d.total + n.budget} → nog max ${Math.max(n.budget, 0)} punten te verdelen`;
-  if (n.status === "edge") return `<td class="a-need a-edge" title="Alle heats gereden, maar te dicht bij de geschatte grens (~${d.total + n.budget}) om te zeggen — wacht op de andere rijders">≈ Op de grens</td>`;
+  if (n.status === "edge") {
+    const edgeTip =
+      n.remaining > 0
+        ? `Nog ${n.remaining} heat(s), maar zelfs met de beste uitslag land je net rond de geschatte grens (~${d.total + n.budget}) — te dicht om te zeggen.`
+        : `Alle heats gereden, maar te dicht bij de geschatte grens (~${d.total + n.budget}) om te zeggen — wacht op de andere rijders.`;
+    return `<td class="a-need a-edge" title="${edgeTip}">≈ Op de grens</td>`;
+  }
   if (n.status === "in") return `<td class="a-need a-safe" title="Alle heats gereden — bij de eerste ${A_FINAL_CUTOFF} (bij gelijke punten beslist de qualifying)">✓ A-finale</td>`;
   if (n.status === "b-final") return `<td class="a-need a-out" title="Alle heats gereden — buiten de eerste ${A_FINAL_CUTOFF}, maar wel bij de eerste ${B_FINAL_CUTOFF} (B-finale)">B-finale</td>`;
   if (n.status === "out-done") return `<td class="a-need a-out" title="Alle heats gereden — buiten de eerste ${A_FINAL_CUTOFF}">✗ Niet gehaald</td>`;
