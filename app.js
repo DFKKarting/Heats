@@ -101,9 +101,26 @@ const GK4_QCOL = {
   NAME: [60, 224],
 };
 
+// raceKey is stored on each record so it stays stable across reloads, but
+// deriveRaceKey() has changed shape a few times as more championships were
+// added (e.g. an old "round-4" from before races became series-aware). A
+// record saved under an older version keeps its stale key forever otherwise,
+// silently splitting one real race into two. Re-derive it from the record's
+// own eventName on every load so previously-saved data heals itself instead
+// of needing a re-upload.
+function migrateRaceKey(record, idParts) {
+  const freshKey = deriveRaceKey(record.eventName);
+  if (record.raceKey !== freshKey) {
+    record.raceKey = freshKey;
+    record.id = idParts(freshKey).join("::");
+  }
+  return record;
+}
+
 function loadHeats() {
   try {
-    return JSON.parse(localStorage.getItem(STORAGE_KEY)) || [];
+    const heats = JSON.parse(localStorage.getItem(STORAGE_KEY)) || [];
+    return heats.map((h) => migrateRaceKey(h, (key) => [key, h.className, h.heatLabel]));
   } catch {
     return [];
   }
@@ -115,7 +132,8 @@ function saveHeats(heats) {
 
 function loadQualifying() {
   try {
-    return JSON.parse(localStorage.getItem(QUALIFYING_KEY)) || [];
+    const qualifying = JSON.parse(localStorage.getItem(QUALIFYING_KEY)) || [];
+    return qualifying.map((q) => migrateRaceKey(q, (key) => [key, q.className]));
   } catch {
     return [];
   }
@@ -922,6 +940,10 @@ let heats = loadHeats();
 let highlights = loadHighlights();
 let activeRace = loadActiveRace();
 let qualifying = loadQualifying();
+// Persist any raceKey migration done during loading right away, so raw
+// storage is corrected immediately rather than waiting for the next upload.
+saveHeats(heats);
+saveQualifying(qualifying);
 
 const ACTIVE_CLASS_KEY = "kartingActiveClass.v1";
 let activeClass = localStorage.getItem(ACTIVE_CLASS_KEY) || null;
