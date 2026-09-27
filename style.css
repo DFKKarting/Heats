@@ -304,6 +304,19 @@ table.classification td.a-need.a-required { color: #4aa8ff; }
 
 table.classification td.name-cell { text-align: left; white-space: nowrap; }
 table.classification td.name-cell .car-number { font-weight: 800; }
+table.classification td.name-cell .weight-class-badge {
+  display: inline-block;
+  margin-left: 6px;
+  padding: 1px 6px;
+  border-radius: 5px;
+  background: rgba(74, 168, 255, 0.15);
+  border: 1px solid rgba(74, 168, 255, 0.4);
+  color: #4aa8ff;
+  font-size: 0.72em;
+  font-weight: 700;
+  letter-spacing: 0.3px;
+  vertical-align: middle;
+}
 
 .result-code {
   display: inline-block;

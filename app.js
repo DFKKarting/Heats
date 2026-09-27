@@ -186,6 +186,22 @@ function collapseDoubled(text) {
   return result;
 }
 
+// The last-name line can carry trailing markers in parentheses, e.g.
+// "CUMBO (140) (L)": "(L)"/"(R)" are lady/rookie flags, but a class like
+// KA100 also uses this same spot for the driver's weight class - "(140)" or
+// "(155)" kg. Strip all trailing markers off the name and pull out a weight
+// class if one of them was purely numeric.
+function stripNameMarkers(rawLastName) {
+  let name = rawLastName;
+  let weightClass = null;
+  let m;
+  while ((m = name.match(/\s*\(([A-Za-z0-9]+)\)\s*$/))) {
+    if (/^\d{2,3}$/.test(m[1])) weightClass = m[1];
+    name = name.slice(0, m.index).trim();
+  }
+  return { name, weightClass };
+}
+
 // A row is anchored either by a plain rank number, or by a non-finish code
 // (DSQ, DNF, DNS, ...) for drivers listed under "Not classified" - they still
 // have a Points value that must count towards the total.
@@ -308,7 +324,7 @@ function parseRows(items) {
         .map((it) => it.text)
         .join(" ");
     }
-    const lastNameClean = lastName.replace(/\s*\([A-Za-z]\)\s*$/, "").trim();
+    const { name: lastNameClean, weightClass } = stripNameMarkers(lastName);
     const fullName = `${firstName} ${lastNameClean}`.replace(/\s+/g, " ").trim();
 
     const pointsItem = band.find((it) => within(it.x, COL.POINTS) && /^[0-9]+$/.test(it.text));
@@ -326,6 +342,7 @@ function parseRows(items) {
       fullName,
       points: pointsItem ? parseInt(pointsItem.text, 10) : null,
       resultCode,
+      weightClass,
     });
   }
   return { rows, tableTopY: Math.min(...anchors.map((a) => a.y)) };
@@ -465,7 +482,7 @@ function parseQualifyingRowsFromItems(items, cols) {
         .map((it) => it.text)
         .join(" ");
     }
-    const lastNameClean = lastName.replace(/\s*\([A-Za-z]\)\s*$/, "").trim();
+    const { name: lastNameClean, weightClass } = stripNameMarkers(lastName);
     const fullName = `${firstName} ${lastNameClean}`.replace(/\s+/g, " ").trim();
     if (!fullName) continue;
 
@@ -477,6 +494,7 @@ function parseQualifyingRowsFromItems(items, cols) {
       fullName,
       bestTime: bestTimeItem ? bestTimeItem.text : null,
       group: groupItem ? groupItem.text : null,
+      weightClass,
     });
   }
   return rows;
@@ -515,7 +533,7 @@ function parseQualifyingRowsFromItemsFastSlow(items) {
       .sort((a, b) => a.x - b.x)
       .map((it) => it.text)
       .join(" ");
-    const lastNameClean = lastNameRaw.replace(/\s*\([A-Za-z]\)\s*$/, "").trim();
+    const { name: lastNameClean, weightClass } = stripNameMarkers(lastNameRaw);
     const fullName = `${firstName} ${lastNameClean}`.replace(/\s+/g, " ").trim();
     if (!fullName) continue;
 
@@ -527,6 +545,7 @@ function parseQualifyingRowsFromItemsFastSlow(items) {
       fullName,
       bestTime: bestTimeItem ? bestTimeItem.text.replace(",", ".") : null,
       group: groupItem ? groupItem.text : null,
+      weightClass,
     });
   }
   return rows;
@@ -887,6 +906,17 @@ function getQualiPosMap(raceKey, className) {
   if (!q) return null;
   const map = new Map();
   for (const e of q.entries) map.set(e.fullName, e.pos);
+  return map;
+}
+
+// A driver's weight class (e.g. KA100's "140"/"155" kg brackets, printed as a
+// marker after the last name) - fall back to the qualifying sheet when a heat
+// row didn't carry it for some reason.
+function getWeightClassMap(raceKey, className) {
+  const q = findQualifyingFor(raceKey, className);
+  if (!q) return null;
+  const map = new Map();
+  for (const e of q.entries) if (e.weightClass) map.set(e.fullName, e.weightClass);
   return map;
 }
 
@@ -1252,17 +1282,19 @@ function computeClassifications(heatsSubset) {
       for (const row of h.rows) {
         if (row.points === null) continue;
         if (!driverMap.has(row.fullName)) {
-          driverMap.set(row.fullName, { fullName: row.fullName, car: row.car, perHeat: {}, total: 0, heatsCount: 0 });
+          driverMap.set(row.fullName, { fullName: row.fullName, car: row.car, perHeat: {}, total: 0, heatsCount: 0, weightClass: null });
         }
         const d = driverMap.get(row.fullName);
         d.perHeat[h.id] = { points: row.points, code: row.resultCode, heatPos: row.rank };
         d.total += row.points;
         d.heatsCount += 1;
         d.car = row.car;
+        if (row.weightClass) d.weightClass = row.weightClass;
       }
     }
 
     const qualiMap = getQualiPosMap(raceKey, className);
+    const weightClassMap = getWeightClassMap(raceKey, className);
     const drivers = [...driverMap.values()]
       .sort((a, b) => {
         if (a.total !== b.total) return a.total - b.total;
@@ -1281,7 +1313,26 @@ function computeClassifications(heatsSubset) {
         pos: idx + 1,
         key: `${className}::${d.fullName}`,
         qualiPos: qualiMap ? qualiMap.get(d.fullName) : undefined,
+        weightClass: d.weightClass || (weightClassMap ? weightClassMap.get(d.fullName) : undefined) || null,
       }));
+
+    // Position within your own weight class (e.g. KA100's 140/155 kg split) -
+    // only meaningful once at least two different classes actually show up.
+    const weightGroups = new Map();
+    for (const d of drivers) {
+      if (!d.weightClass) continue;
+      if (!weightGroups.has(d.weightClass)) weightGroups.set(d.weightClass, []);
+      weightGroups.get(d.weightClass).push(d);
+    }
+    const hasMultipleWeightClasses = weightGroups.size > 1;
+    if (hasMultipleWeightClasses) {
+      for (const group of weightGroups.values()) {
+        group.forEach((d, idx) => {
+          d.weightClassPos = idx + 1;
+          d.weightClassSize = group.length;
+        });
+      }
+    }
 
     const totalHeats = getTotalHeatsForClass(raceKey, className);
     let projectedACutoff = null;
@@ -1315,6 +1366,7 @@ function computeClassifications(heatsSubset) {
       projectedACutoff,
       projectedBCutoff,
       projectedSampleSize,
+      hasMultipleWeightClasses,
     });
   }
 
@@ -1334,7 +1386,23 @@ function computeClassifications(heatsSubset) {
         pos: e.pos,
         key: `${qRecord.className}::${e.fullName}`,
         qualiPos: e.pos,
+        weightClass: e.weightClass || null,
       }));
+    const qWeightGroups = new Map();
+    for (const d of drivers) {
+      if (!d.weightClass) continue;
+      if (!qWeightGroups.has(d.weightClass)) qWeightGroups.set(d.weightClass, []);
+      qWeightGroups.get(d.weightClass).push(d);
+    }
+    const qHasMultipleWeightClasses = qWeightGroups.size > 1;
+    if (qHasMultipleWeightClasses) {
+      for (const group of qWeightGroups.values()) {
+        group.forEach((d, idx) => {
+          d.weightClassPos = idx + 1;
+          d.weightClassSize = group.length;
+        });
+      }
+    }
     classifications.push({
       className: qRecord.className,
       heatCols: [],
@@ -1345,6 +1413,7 @@ function computeClassifications(heatsSubset) {
       projectedACutoff: null,
       projectedBCutoff: null,
       projectedSampleSize: 0,
+      hasMultipleWeightClasses: qHasMultipleWeightClasses,
     });
   }
 
@@ -1358,7 +1427,8 @@ function renderClassifications(classifications) {
 
   {
     const selected = classifications.find((c) => c.className === activeClass) || classifications[0];
-    const { className, heatCols, drivers, hasQualifying, qualiOnly, totalHeats, projectedACutoff, projectedBCutoff, projectedSampleSize } = selected;
+    const { className, heatCols, drivers, hasQualifying, qualiOnly, totalHeats, projectedACutoff, projectedBCutoff, projectedSampleSize, hasMultipleWeightClasses } =
+      selected;
     // GK4 doesn't work with qualifying groups or an A/B-final split at all -
     // none of that is relevant there, so hide it entirely for GK4 races. A
     // qualifying-only preliminary list (no heats raced yet) doesn't have a
@@ -1396,11 +1466,15 @@ function renderClassifications(classifications) {
       if (qualifiesB) posTitleParts.push("Kwalificeert voor de B-finale");
       if (restarted) posTitleParts.push(`Startnummer B-finale (eindpositie na de heats: P${d.pos})`);
       if (d.qualiPos !== undefined) posTitleParts.push(`Qualifying P${d.qualiPos}`);
+      const weightBadge =
+        hasMultipleWeightClasses && d.weightClass
+          ? `<span class="weight-class-badge" title="${d.weightClassPos}e van ${d.weightClassSize} in de ${d.weightClass}-klasse">${d.weightClass} · P${d.weightClassPos}</span>`
+          : "";
       let html = `<tr class="${isHighlighted ? "highlighted" : ""} ${qualifiesA ? "qualifies-a" : ""} ${qualifiesB ? "qualifies-b" : ""}" data-key="${d.key.replace(/"/g, "&quot;")}">
           <td class="pos ${d.pos === 1 ? "pos-first" : ""}" title="${posTitleParts.join(" · ")}">${displayPos}</td>
           <td class="name-cell">
             <button type="button" class="star-btn ${isHighlighted ? "starred" : ""}" title="Highlight rijder" aria-label="Highlight ${d.fullName}">${isHighlighted ? "★" : "☆"}</button>
-            ${d.fullName} <span class="car-number">#${d.car}</span>
+            ${d.fullName} <span class="car-number">#${d.car}</span>${weightBadge}
           </td>
           ${resultsCell}
           <td class="num total">${d.total !== null ? d.total : "–"}</td>
@@ -1579,10 +1653,14 @@ function renderHighlighted(classifications) {
           : qualifiesB
             ? "Kwalificeert voor de B-finale"
             : "";
+      const weightBadge =
+        selected.hasMultipleWeightClasses && d.weightClass
+          ? `<span class="weight-class-badge" title="${d.weightClassPos}e van ${d.weightClassSize} in de ${d.weightClass}-klasse">${d.weightClass} · P${d.weightClassPos}</span>`
+          : "";
       return `<tr class="${qualifiesA ? "qualifies-a" : ""} ${qualifiesB ? "qualifies-b" : ""}">
         <td class="name-cell">
           <button type="button" class="star-btn starred" title="Highlight verwijderen" aria-label="Highlight ${d.fullName} verwijderen">★</button>
-          ${d.fullName} <span class="car-number">#${d.car}</span>
+          ${d.fullName} <span class="car-number">#${d.car}</span>${weightBadge}
         </td>
         <td class="num pos ${d.pos === 1 ? "pos-first" : ""}" title="${posTitle}">${displayPos}</td>
         <td class="num total">${d.total}</td>
