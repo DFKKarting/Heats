@@ -236,6 +236,16 @@ function clusterByY(items, tolerance = 3) {
   }));
 }
 
+// "Practice" session sheets (unscored: qualifying/free practice) prepend a
+// couple of metadata lines - "Track: ..." and "Session Started: ..." - above
+// the actual event/class title block. Heat and "Total Qualifying" sheets
+// don't have these, so title parsing there assumes line 0 is the event name
+// and line 1 the class - which breaks on a practice sheet unless these lines
+// are filtered out first.
+function skipMetaLines(lines) {
+  return lines.filter((l) => !/^(Track|Session Started)\s*:/i.test(l.text.trim()));
+}
+
 async function extractPageItems(page) {
   const viewport = page.getViewport({ scale: 1 });
   const content = await page.getTextContent();
@@ -267,7 +277,7 @@ function parsePrintedAt(items) {
 
 function parseTitleBlock(items, tableTopY) {
   const above = items.filter((it) => it.x < 350 && it.y < tableTopY - 15);
-  const lines = clusterByY(above, 3).sort((a, b) => a.y - b.y);
+  const lines = skipMetaLines(clusterByY(above, 3).sort((a, b) => a.y - b.y));
   const eventName = lines[0] ? lines[0].text : "";
   const classLine = lines[1] ? lines[1].text : "";
   let className = classLine;
@@ -409,7 +419,7 @@ function parseRowsGK4(items) {
 
 function parseTitleBlockGK4(items, tableTopY) {
   const above = items.filter((it) => it.x < 250 && it.y < tableTopY - 5);
-  const lines = clusterByY(above, 3).sort((a, b) => a.y - b.y);
+  const lines = skipMetaLines(clusterByY(above, 3).sort((a, b) => a.y - b.y));
   const eventName = lines[0] ? lines[0].text.trim() : "";
   const className = lines[1] ? lines[1].text.trim() : "Onbekende klasse";
   const heatLabel = lines[2] ? lines[2].text.trim() : "Heat";
@@ -604,13 +614,13 @@ function parseQualifyingRowsFromItemsGK4(items) {
 
 function parseQualifyingClassNameGK4(items, tableTopY) {
   const above = items.filter((it) => it.x < 250 && it.y < tableTopY - 5);
-  const lines = clusterByY(above, 3).sort((a, b) => a.y - b.y);
+  const lines = skipMetaLines(clusterByY(above, 3).sort((a, b) => a.y - b.y));
   return lines[1] ? lines[1].text.trim() : "Onbekende klasse";
 }
 
 function parseQualifyingClassName(items, tableTopY, knownClassNames, variant) {
   const above = items.filter((it) => it.x < 300 && it.y < tableTopY - 8);
-  const lines = clusterByY(above, 3).sort((a, b) => a.y - b.y);
+  const lines = skipMetaLines(clusterByY(above, 3).sort((a, b) => a.y - b.y));
   const classLine = (lines[1] ? lines[1].text : lines[0] ? lines[0].text : "").trim();
 
   // "<Class> - Qualifying Practice" (e.g. "Mini Rookie - Qualifying Practice")
@@ -642,7 +652,7 @@ function findRaceForQualifying(page1Items) {
   // template seen so far (Camp Company and GK4/Orbits alike) - run it through
   // the same deriveRaceKey used for heats so matching stays consistent even
   // as more championships/templates are added.
-  const lines = clusterByY(page1Items, 3).sort((a, b) => a.y - b.y);
+  const lines = skipMetaLines(clusterByY(page1Items, 3).sort((a, b) => a.y - b.y));
   const titleGuess = lines[0] ? lines[0].text : "";
   const guessKey = deriveRaceKey(titleGuess);
   const guessMatch = heats.find((h) => (h.raceKey || deriveRaceKey(h.eventName)) === guessKey);
