@@ -1538,6 +1538,7 @@ function computeClassifications(heatsSubset) {
     let projectedACutoff = null;
     let projectedBCutoff = null;
     let projectedSampleSize = 0;
+    let projectedSampleNeeded = null;
     if (totalHeats) {
       const projected = drivers
         .filter((d) => d.heatsCount > 0)
@@ -1550,8 +1551,21 @@ function computeClassifications(heatsSubset) {
       // of the raw 36th - otherwise the estimate comes out far too high.
       const fieldSize = Math.max(drivers.length, qualiMap ? qualiMap.size : 0);
       const share = (cutoff) => Math.max(1, Math.round((cutoff * projected.length) / fieldSize));
-      if (projected.length >= A_FINAL_CUTOFF) projectedACutoff = projected[share(A_FINAL_CUTOFF) - 1];
-      if (projected.length >= B_FINAL_CUTOFF && hasBFinal(fieldSize)) projectedBCutoff = projected[share(B_FINAL_CUTOFF) - 1];
+      // A handful of data points is too noisy to say anything useful, however
+      // small the scaled share comes out to - require a minimum absolute
+      // sample too, not just the scaled one.
+      const MIN_PROJECTION_SAMPLE = 10;
+      // Gate on the SCALED index being available, not the raw 36th/72nd - with
+      // e.g. 25 of a 75-driver field raced so far, share(36) is only ~12, which
+      // the sample already covers. Requiring the raw 36 blocked any estimate
+      // until way more heats were in, even though the scaled one was already fine.
+      const neededA = Math.max(share(A_FINAL_CUTOFF), MIN_PROJECTION_SAMPLE);
+      const neededB = Math.max(share(B_FINAL_CUTOFF), MIN_PROJECTION_SAMPLE);
+      if (fieldSize > A_FINAL_CUTOFF) {
+        projectedSampleNeeded = neededA;
+        if (neededA <= projected.length) projectedACutoff = projected[share(A_FINAL_CUTOFF) - 1];
+      }
+      if (hasBFinal(fieldSize) && neededB <= projected.length) projectedBCutoff = projected[share(B_FINAL_CUTOFF) - 1];
     }
     if (totalHeats && projectedACutoff !== null) {
       attachFinalNeeds(drivers, heatCols, totalHeats, projectedACutoff);
@@ -1566,6 +1580,7 @@ function computeClassifications(heatsSubset) {
       projectedACutoff,
       projectedBCutoff,
       projectedSampleSize,
+      projectedSampleNeeded,
       hasMultipleSubClasses,
       subClassOrder,
     });
@@ -1615,6 +1630,7 @@ function computeClassifications(heatsSubset) {
       projectedACutoff: null,
       projectedBCutoff: null,
       projectedSampleSize: 0,
+      projectedSampleNeeded: null,
       hasMultipleSubClasses: qHasMultipleSubClasses,
       subClassOrder: qSubClassOrder,
     });
@@ -1630,7 +1646,7 @@ function renderClassifications(classifications) {
 
   {
     const selected = classifications.find((c) => c.className === activeClass) || classifications[0];
-    const { className, heatCols, drivers, hasQualifying, qualiOnly, totalHeats, projectedACutoff, projectedBCutoff, projectedSampleSize, hasMultipleSubClasses, subClassOrder } =
+    const { className, heatCols, drivers, hasQualifying, qualiOnly, totalHeats, projectedACutoff, projectedBCutoff, projectedSampleSize, projectedSampleNeeded, hasMultipleSubClasses, subClassOrder } =
       selected;
     // GK4 doesn't work with qualifying groups or an A/B-final split at all -
     // none of that is relevant there, so hide it entirely for GK4 races. A
@@ -1722,7 +1738,9 @@ function renderClassifications(classifications) {
                     ? `📊 Geschatte grens A-finale: <strong>~${projectedACutoff} punten</strong>${
                         projectedBCutoff !== null ? ` · B-finale: <strong>~${projectedBCutoff} punten</strong>` : ""
                       } — schatting o.b.v. gemiddelde punten per heat (${totalHeats} heats totaal per rijder, ${projectedSampleSize} rijders met data), kan nog wijzigen.`
-                    : `📊 A/B-finale grens: nog geen schatting mogelijk — pas vanaf ${A_FINAL_CUTOFF} rijders met minstens 1 heat gereden (nu ${projectedSampleSize}).`
+                    : projectedSampleNeeded !== null
+                      ? `📊 A/B-finale grens: nog geen schatting mogelijk — nog ${projectedSampleNeeded - projectedSampleSize} rijder(s) met minstens 1 heat nodig (nu ${projectedSampleSize} van de ${projectedSampleNeeded} benodigd).`
+                      : `📊 A/B-finale grens: dit veld is te klein voor een A/B-finale-opsplitsing.`
                   : hasQualifying
                     ? `📊 A/B-finale grens: kon het aantal groepen niet bepalen uit de geüploade qualifying-PDF.`
                     : `📊 A/B-finale grens: upload de "Total Qualifying Practice" PDF van deze klasse om een schatting te zien.`
