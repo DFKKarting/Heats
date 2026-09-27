@@ -107,12 +107,16 @@ main {
   text-transform: uppercase;
   cursor: pointer;
 }
+.race-select.year-select {
+  flex: 0 1 110px;
+  min-width: 90px;
+}
 .race-select:focus, .class-select:focus {
   outline: none;
   border-color: #f54242;
   box-shadow: 0 0 0 2px rgba(245, 66, 66, 0.25);
 }
-.class-select:disabled { opacity: 0.5; cursor: not-allowed; }
+.race-select:disabled, .class-select:disabled { opacity: 0.5; cursor: not-allowed; }
 
 .heats-toggle-row {
   display: flex;

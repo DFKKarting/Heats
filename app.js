@@ -161,28 +161,55 @@ function deriveRaceLabel(eventName) {
   return eventName;
 }
 
+// The round number embedded in an event title (e.g. "... Round 6 ..." -> 6),
+// or null for a title without one.
+function deriveRoundNumber(eventName) {
+  const m = eventName && eventName.match(/\bRound\s+(\d+)/i);
+  return m ? parseInt(m[1], 10) : null;
+}
+
+// A normalized, stopword-stripped key for the championship a title belongs
+// to (e.g. "IAME Series Benelux Round 4" and "IAME Benelux Round 4 Genk" both
+// give "benelux", while "GK4 Kart Series Round 4" gives "gk4" - so the two
+// don't collide just because they share a round number). Used both to keep
+// raceKey series-aware and to group races by championship in the UI.
+const SERIES_STOPWORDS = new Set(["series", "iame", "kart", "karting"]);
+function deriveSeriesKey(eventName) {
+  if (!eventName) return "unknown-series";
+  const raw = deriveSeriesLabel(eventName);
+  const words = raw
+    .toLowerCase()
+    .replace(/[^a-z0-9\s]/g, "")
+    .split(/\s+/)
+    .filter((w) => w && !SERIES_STOPWORDS.has(w))
+    .sort();
+  return words.join("-") || "series";
+}
+
+// A human-readable championship name - the part of the title before "Round
+// N", e.g. "IAME Series Benelux" or "GK4 Kart Series". Different documents
+// for the same championship can word this slightly differently; the UI picks
+// the longest variant seen as the display label (see getChampionships()).
+function deriveSeriesLabel(eventName) {
+  if (!eventName) return "Onbekend kampioenschap";
+  const m = eventName.match(/^(.*?)\s+Round\s+\d+/i);
+  return (m ? m[1] : eventName).trim();
+}
+
 // Different documents for the same physical event sometimes title themselves
 // slightly differently (e.g. "IAME Benelux Round 1" vs "IAME Series Benelux
 // Round 1 Mariembourg"). Group races by round number instead of exact string
 // match so they don't fragment into duplicate tabs.
 function deriveRaceKey(eventName) {
   if (!eventName) return "unknown-race";
-  const m = eventName.match(/^(.*?)\s+Round\s+(\d+)/i);
-  if (!m) return eventName.trim().toLowerCase();
+  const roundNumber = deriveRoundNumber(eventName);
+  if (roundNumber === null) return eventName.trim().toLowerCase();
   // Different championships can both use "Round N" numbering (e.g. IAME
   // Benelux Round 4 vs GK4 Kart Series Round 4) - fold in a normalized series
   // name (stripped of generic/variable words) so they don't collide, while
   // still unifying slightly differently worded titles for the same series
   // (e.g. "IAME Benelux" vs "IAME Series Benelux ... Genk").
-  const STOPWORDS = new Set(["series", "iame", "kart", "karting"]);
-  const seriesWords = m[1]
-    .toLowerCase()
-    .replace(/[^a-z0-9\s]/g, "")
-    .split(/\s+/)
-    .filter((w) => w && !STOPWORDS.has(w))
-    .sort();
-  const seriesKey = seriesWords.join("-") || "series";
-  return `${seriesKey}-round-${m[2]}`;
+  return `${deriveSeriesKey(eventName)}-round-${roundNumber}`;
 }
 
 function within(x, [lo, hi]) {
@@ -777,6 +804,8 @@ const searchInput = document.getElementById("searchInput");
 const searchResults = document.getElementById("searchResults");
 const toggleHeatsBtn = document.getElementById("toggleHeatsBtn");
 const highlightedContainer = document.getElementById("highlightedContainer");
+const yearSelect = document.getElementById("yearSelect");
+const seriesSelect = document.getElementById("seriesSelect");
 const raceSelect = document.getElementById("raceSelect");
 const classSelect = document.getElementById("classSelect");
 const heatModalOverlay = document.getElementById("heatModalOverlay");
@@ -867,12 +896,40 @@ let qualifying = loadQualifying();
 const ACTIVE_CLASS_KEY = "kartingActiveClass.v1";
 let activeClass = localStorage.getItem(ACTIVE_CLASS_KEY) || null;
 
-raceSelect.addEventListener("change", () => {
-  activeRace = raceSelect.value;
+// Year and championship are just a filtered path to a round (activeRace) -
+// they're not persisted on their own, only ever re-derived from it in
+// resolveActiveSelectors(), except for the moment right after the user picks
+// a different year/championship here, before a round has been chosen yet.
+let activeYear = null;
+let activeSeriesKey = null;
+
+function selectRace(raceKey) {
+  activeRace = raceKey;
   saveActiveRace(activeRace);
   activeClass = null;
   localStorage.removeItem(ACTIVE_CLASS_KEY);
   render();
+}
+
+yearSelect.addEventListener("change", () => {
+  activeYear = parseInt(yearSelect.value, 10);
+  const championships = getChampionships(getRaces(), activeYear);
+  // Keep the same championship if it also raced in the newly picked year,
+  // otherwise fall back to the first one alphabetically.
+  const champ = championships.find((c) => c.seriesKey === activeSeriesKey) || championships[0];
+  activeSeriesKey = champ ? champ.seriesKey : null;
+  const rounds = activeSeriesKey ? getRounds(getRaces(), activeYear, activeSeriesKey) : [];
+  selectRace(rounds.length ? rounds[rounds.length - 1].raceKey : null);
+});
+
+seriesSelect.addEventListener("change", () => {
+  activeSeriesKey = seriesSelect.value;
+  const rounds = getRounds(getRaces(), activeYear, activeSeriesKey);
+  selectRace(rounds.length ? rounds[rounds.length - 1].raceKey : null);
+});
+
+raceSelect.addEventListener("change", () => {
+  selectRace(raceSelect.value);
 });
 
 classSelect.addEventListener("change", () => {
@@ -971,30 +1028,72 @@ function getRaces() {
   const byKey = new Map();
   for (const h of heats) {
     const key = h.raceKey || deriveRaceKey(h.eventName);
-    if (!byKey.has(key)) byKey.set(key, { firstSeen: h.uploadedAt, count: 0, eventNames: new Map() });
+    if (!byKey.has(key)) byKey.set(key, { firstSeen: h.uploadedAt, count: 0, eventNames: new Map(), printedDates: [] });
     const r = byKey.get(key);
     r.count += 1;
     if (h.uploadedAt < r.firstSeen) r.firstSeen = h.uploadedAt;
     r.eventNames.set(h.eventName, (r.eventNames.get(h.eventName) || 0) + 1);
+    if (h.printedAt) r.printedDates.push(h.printedAt);
   }
   // A race can also exist with only a qualifying PDF uploaded so far (the
   // preliminary, quali-only classification) - make sure it still shows up in
   // the race selector even though there's no heat for it yet.
   for (const q of qualifying) {
     const key = q.raceKey || deriveRaceKey(q.eventName);
-    if (!byKey.has(key)) byKey.set(key, { firstSeen: q.uploadedAt, count: 0, eventNames: new Map() });
+    if (!byKey.has(key)) byKey.set(key, { firstSeen: q.uploadedAt, count: 0, eventNames: new Map(), printedDates: [] });
     const r = byKey.get(key);
     if (q.uploadedAt < r.firstSeen) r.firstSeen = q.uploadedAt;
     if (!r.eventNames.has(q.eventName)) r.eventNames.set(q.eventName, 0);
+    if (q.printedAt) r.printedDates.push(q.printedAt);
   }
   return [...byKey.entries()]
     .map(([raceKey, info]) => {
       // Different documents for the same race can title themselves slightly
       // differently - use the longest (most descriptive) variant seen as the label.
       const eventName = [...info.eventNames.keys()].sort((a, b) => b.length - a.length)[0];
-      return { raceKey, eventName, label: deriveRaceLabel(eventName), firstSeen: info.firstSeen, count: info.count };
+      // The season year isn't in the title anywhere, so it comes from the
+      // timing software's own "Printed:" timestamp on the earliest document
+      // for this race (falls back to the upload time if that's missing).
+      const earliestPrinted = info.printedDates.length ? [...info.printedDates].sort()[0] : info.firstSeen;
+      const year = new Date(earliestPrinted).getFullYear();
+      return {
+        raceKey,
+        eventName,
+        label: deriveRaceLabel(eventName),
+        firstSeen: info.firstSeen,
+        count: info.count,
+        year: Number.isFinite(year) ? year : null,
+        seriesKey: deriveSeriesKey(eventName),
+        seriesLabel: deriveSeriesLabel(eventName),
+        roundNumber: deriveRoundNumber(eventName),
+      };
     })
     .sort((a, b) => a.firstSeen.localeCompare(b.firstSeen));
+}
+
+// Distinct years across all known races, newest first.
+function getYears(races) {
+  return [...new Set(races.map((r) => r.year).filter((y) => y !== null))].sort((a, b) => b - a);
+}
+
+// Distinct championships within a given year, each with the longest (most
+// descriptive) championship label seen for it.
+function getChampionships(races, year) {
+  const map = new Map();
+  for (const r of races) {
+    if (r.year !== year) continue;
+    if (!map.has(r.seriesKey) || r.seriesLabel.length > map.get(r.seriesKey).length) {
+      map.set(r.seriesKey, r.seriesLabel);
+    }
+  }
+  return [...map.entries()].map(([seriesKey, label]) => ({ seriesKey, label })).sort((a, b) => a.label.localeCompare(b.label));
+}
+
+// Rounds of one championship within a given year, in round order.
+function getRounds(races, year, seriesKey) {
+  return races
+    .filter((r) => r.year === year && r.seriesKey === seriesKey)
+    .sort((a, b) => (a.roundNumber ?? 0) - (b.roundNumber ?? 0));
 }
 
 function activeHeats() {
@@ -1003,12 +1102,29 @@ function activeHeats() {
 
 function renderSelectors(races, classifications) {
   if (!races.length) {
-    raceSelect.innerHTML = '<option value="">Geen races</option>';
+    yearSelect.innerHTML = '<option value="">Geen jaren</option>';
+    yearSelect.disabled = true;
+    seriesSelect.innerHTML = '<option value="">Geen kampioenschappen</option>';
+    seriesSelect.disabled = true;
+    raceSelect.innerHTML = '<option value="">Geen rondes</option>';
     raceSelect.disabled = true;
   } else {
+    const years = getYears(races);
+    yearSelect.disabled = false;
+    yearSelect.innerHTML = years.map((y) => `<option value="${y}">${y}</option>`).join("");
+    yearSelect.value = String(activeYear);
+
+    const championships = getChampionships(races, activeYear);
+    seriesSelect.disabled = false;
+    seriesSelect.innerHTML = championships
+      .map((c) => `<option value="${c.seriesKey.replace(/"/g, "&quot;")}">${c.label}</option>`)
+      .join("");
+    seriesSelect.value = activeSeriesKey;
+
+    const rounds = getRounds(races, activeYear, activeSeriesKey);
     raceSelect.disabled = false;
-    raceSelect.innerHTML = races
-      .map((r) => `<option value="${r.raceKey.replace(/"/g, "&quot;")}">${r.eventName}</option>`)
+    raceSelect.innerHTML = rounds
+      .map((r) => `<option value="${r.raceKey.replace(/"/g, "&quot;")}">${r.roundNumber !== null ? `Ronde ${r.roundNumber}` : r.label} — ${r.eventName}</option>`)
       .join("");
     raceSelect.value = activeRace;
   }
@@ -1722,12 +1838,22 @@ function renderHighlighted(classifications) {
   });
 }
 
-function render() {
-  const races = getRaces();
+// activeRace (the round) is the single source of truth: activeYear and
+// activeSeriesKey are always re-derived from it here, so the Year/Championship
+// pickers can never drift out of sync with whichever round is actually shown.
+function resolveActiveSelectors(races) {
   if (!races.some((r) => r.raceKey === activeRace)) {
     activeRace = races.length ? races[races.length - 1].raceKey : null;
     saveActiveRace(activeRace);
   }
+  const current = races.find((r) => r.raceKey === activeRace);
+  activeYear = current ? current.year : null;
+  activeSeriesKey = current ? current.seriesKey : null;
+}
+
+function render() {
+  const races = getRaces();
+  resolveActiveSelectors(races);
 
   const currentHeats = activeHeats();
   const classifications = computeClassifications(currentHeats);
