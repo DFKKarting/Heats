@@ -13,6 +13,21 @@ const A_FINAL_CUTOFF = 36;
 const B_FINAL_CUTOFF = 72;
 const B_FINAL_MIN_DRIVERS = 8; // a B-final is only actually run with at least this many drivers in it
 
+// A distinct color per sub-class (e.g. KA100's 140/155, X30 Master-SC's M/SC)
+// so it's visually obvious at a glance which sub-class a driver is in.
+const SUBCLASS_PALETTE = [
+  { color: "#4aa8ff", bg: "rgba(74, 168, 255, 0.15)", border: "rgba(74, 168, 255, 0.4)" },
+  { color: "#c792ea", bg: "rgba(199, 146, 234, 0.15)", border: "rgba(199, 146, 234, 0.4)" },
+  { color: "#2dd4bf", bg: "rgba(45, 212, 191, 0.15)", border: "rgba(45, 212, 191, 0.4)" },
+  { color: "#ffa94d", bg: "rgba(255, 169, 77, 0.15)", border: "rgba(255, 169, 77, 0.4)" },
+  { color: "#ff7edb", bg: "rgba(255, 126, 219, 0.15)", border: "rgba(255, 126, 219, 0.4)" },
+];
+function subClassStyle(subClass, subClassOrder) {
+  const idx = Math.max(0, subClassOrder.indexOf(subClass));
+  const c = SUBCLASS_PALETTE[idx % SUBCLASS_PALETTE.length];
+  return `color:${c.color};background:${c.bg};border-color:${c.border};`;
+}
+
 // Whether a field of this size gets a B-final at all: only the drivers beyond
 // the A-final cutoff (up to the B-final cap) would race it, and with too few
 // of them there's no separate B-final race.
@@ -187,19 +202,21 @@ function collapseDoubled(text) {
 }
 
 // The last-name line can carry trailing markers in parentheses, e.g.
-// "CUMBO (140) (L)": "(L)"/"(R)" are lady/rookie flags, but a class like
-// KA100 also uses this same spot for the driver's weight class - "(140)" or
-// "(155)" kg. Strip all trailing markers off the name and pull out a weight
-// class if one of them was purely numeric.
+// "CUMBO (140) (L)" or "BULT (SC)": "(L)"/"(R)" are lady/rookie flags with no
+// effect on classification, but the same spot is also used for a genuine
+// sub-class split within the class - KA100's "(140)"/"(155)" weight brackets,
+// or "X30 Master-SC"'s "(M)"/"(SC)" sub-categories. Anything other than the
+// known rider flags is treated as a sub-class marker.
+const NAME_MARKER_FLAGS = new Set(["R", "L"]); // rookie / lady - not a sub-class
 function stripNameMarkers(rawLastName) {
   let name = rawLastName;
-  let weightClass = null;
+  let subClass = null;
   let m;
   while ((m = name.match(/\s*\(([A-Za-z0-9]+)\)\s*$/))) {
-    if (/^\d{2,3}$/.test(m[1])) weightClass = m[1];
+    if (!NAME_MARKER_FLAGS.has(m[1].toUpperCase())) subClass = m[1];
     name = name.slice(0, m.index).trim();
   }
-  return { name, weightClass };
+  return { name, subClass };
 }
 
 // A row is anchored either by a plain rank number, or by a non-finish code
@@ -334,7 +351,7 @@ function parseRows(items) {
         .map((it) => it.text)
         .join(" ");
     }
-    const { name: lastNameClean, weightClass } = stripNameMarkers(lastName);
+    const { name: lastNameClean, subClass } = stripNameMarkers(lastName);
     const fullName = `${firstName} ${lastNameClean}`.replace(/\s+/g, " ").trim();
 
     const pointsItem = band.find((it) => within(it.x, COL.POINTS) && /^[0-9]+$/.test(it.text));
@@ -352,7 +369,7 @@ function parseRows(items) {
       fullName,
       points: pointsItem ? parseInt(pointsItem.text, 10) : null,
       resultCode,
-      weightClass,
+      subClass,
     });
   }
   return { rows, tableTopY: Math.min(...anchors.map((a) => a.y)) };
@@ -492,7 +509,7 @@ function parseQualifyingRowsFromItems(items, cols) {
         .map((it) => it.text)
         .join(" ");
     }
-    const { name: lastNameClean, weightClass } = stripNameMarkers(lastName);
+    const { name: lastNameClean, subClass } = stripNameMarkers(lastName);
     const fullName = `${firstName} ${lastNameClean}`.replace(/\s+/g, " ").trim();
     if (!fullName) continue;
 
@@ -504,7 +521,7 @@ function parseQualifyingRowsFromItems(items, cols) {
       fullName,
       bestTime: bestTimeItem ? bestTimeItem.text : null,
       group: groupItem ? groupItem.text : null,
-      weightClass,
+      subClass,
     });
   }
   return rows;
@@ -543,7 +560,7 @@ function parseQualifyingRowsFromItemsFastSlow(items) {
       .sort((a, b) => a.x - b.x)
       .map((it) => it.text)
       .join(" ");
-    const { name: lastNameClean, weightClass } = stripNameMarkers(lastNameRaw);
+    const { name: lastNameClean, subClass } = stripNameMarkers(lastNameRaw);
     const fullName = `${firstName} ${lastNameClean}`.replace(/\s+/g, " ").trim();
     if (!fullName) continue;
 
@@ -555,7 +572,7 @@ function parseQualifyingRowsFromItemsFastSlow(items) {
       fullName,
       bestTime: bestTimeItem ? bestTimeItem.text.replace(",", ".") : null,
       group: groupItem ? groupItem.text : null,
-      weightClass,
+      subClass,
     });
   }
   return rows;
@@ -919,14 +936,14 @@ function getQualiPosMap(raceKey, className) {
   return map;
 }
 
-// A driver's weight class (e.g. KA100's "140"/"155" kg brackets, printed as a
-// marker after the last name) - fall back to the qualifying sheet when a heat
-// row didn't carry it for some reason.
-function getWeightClassMap(raceKey, className) {
+// A driver's sub-class (e.g. KA100's "140"/"155" weight brackets, or X30
+// Master-SC's "M"/"SC" split - a marker after the last name) - fall back to
+// the qualifying sheet when a heat row didn't carry it for some reason.
+function getSubClassMap(raceKey, className) {
   const q = findQualifyingFor(raceKey, className);
   if (!q) return null;
   const map = new Map();
-  for (const e of q.entries) if (e.weightClass) map.set(e.fullName, e.weightClass);
+  for (const e of q.entries) if (e.subClass) map.set(e.fullName, e.subClass);
   return map;
 }
 
@@ -1292,19 +1309,19 @@ function computeClassifications(heatsSubset) {
       for (const row of h.rows) {
         if (row.points === null) continue;
         if (!driverMap.has(row.fullName)) {
-          driverMap.set(row.fullName, { fullName: row.fullName, car: row.car, perHeat: {}, total: 0, heatsCount: 0, weightClass: null });
+          driverMap.set(row.fullName, { fullName: row.fullName, car: row.car, perHeat: {}, total: 0, heatsCount: 0, subClass: null });
         }
         const d = driverMap.get(row.fullName);
         d.perHeat[h.id] = { points: row.points, code: row.resultCode, heatPos: row.rank };
         d.total += row.points;
         d.heatsCount += 1;
         d.car = row.car;
-        if (row.weightClass) d.weightClass = row.weightClass;
+        if (row.subClass) d.subClass = row.subClass;
       }
     }
 
     const qualiMap = getQualiPosMap(raceKey, className);
-    const weightClassMap = getWeightClassMap(raceKey, className);
+    const subClassMap = getSubClassMap(raceKey, className);
     const drivers = [...driverMap.values()]
       .sort((a, b) => {
         if (a.total !== b.total) return a.total - b.total;
@@ -1323,23 +1340,24 @@ function computeClassifications(heatsSubset) {
         pos: idx + 1,
         key: `${className}::${d.fullName}`,
         qualiPos: qualiMap ? qualiMap.get(d.fullName) : undefined,
-        weightClass: d.weightClass || (weightClassMap ? weightClassMap.get(d.fullName) : undefined) || null,
+        subClass: d.subClass || (subClassMap ? subClassMap.get(d.fullName) : undefined) || null,
       }));
 
     // Position within your own weight class (e.g. KA100's 140/155 kg split) -
     // only meaningful once at least two different classes actually show up.
-    const weightGroups = new Map();
+    const subClassGroups = new Map();
     for (const d of drivers) {
-      if (!d.weightClass) continue;
-      if (!weightGroups.has(d.weightClass)) weightGroups.set(d.weightClass, []);
-      weightGroups.get(d.weightClass).push(d);
+      if (!d.subClass) continue;
+      if (!subClassGroups.has(d.subClass)) subClassGroups.set(d.subClass, []);
+      subClassGroups.get(d.subClass).push(d);
     }
-    const hasMultipleWeightClasses = weightGroups.size > 1;
-    if (hasMultipleWeightClasses) {
-      for (const group of weightGroups.values()) {
+    const hasMultipleSubClasses = subClassGroups.size > 1;
+    const subClassOrder = hasMultipleSubClasses ? [...subClassGroups.keys()].sort() : [];
+    if (hasMultipleSubClasses) {
+      for (const group of subClassGroups.values()) {
         group.forEach((d, idx) => {
-          d.weightClassPos = idx + 1;
-          d.weightClassSize = group.length;
+          d.subClassPos = idx + 1;
+          d.subClassSize = group.length;
         });
       }
     }
@@ -1376,7 +1394,8 @@ function computeClassifications(heatsSubset) {
       projectedACutoff,
       projectedBCutoff,
       projectedSampleSize,
-      hasMultipleWeightClasses,
+      hasMultipleSubClasses,
+      subClassOrder,
     });
   }
 
@@ -1396,20 +1415,21 @@ function computeClassifications(heatsSubset) {
         pos: e.pos,
         key: `${qRecord.className}::${e.fullName}`,
         qualiPos: e.pos,
-        weightClass: e.weightClass || null,
+        subClass: e.subClass || null,
       }));
-    const qWeightGroups = new Map();
+    const qSubClassGroups = new Map();
     for (const d of drivers) {
-      if (!d.weightClass) continue;
-      if (!qWeightGroups.has(d.weightClass)) qWeightGroups.set(d.weightClass, []);
-      qWeightGroups.get(d.weightClass).push(d);
+      if (!d.subClass) continue;
+      if (!qSubClassGroups.has(d.subClass)) qSubClassGroups.set(d.subClass, []);
+      qSubClassGroups.get(d.subClass).push(d);
     }
-    const qHasMultipleWeightClasses = qWeightGroups.size > 1;
-    if (qHasMultipleWeightClasses) {
-      for (const group of qWeightGroups.values()) {
+    const qHasMultipleSubClasses = qSubClassGroups.size > 1;
+    const qSubClassOrder = qHasMultipleSubClasses ? [...qSubClassGroups.keys()].sort() : [];
+    if (qHasMultipleSubClasses) {
+      for (const group of qSubClassGroups.values()) {
         group.forEach((d, idx) => {
-          d.weightClassPos = idx + 1;
-          d.weightClassSize = group.length;
+          d.subClassPos = idx + 1;
+          d.subClassSize = group.length;
         });
       }
     }
@@ -1423,7 +1443,8 @@ function computeClassifications(heatsSubset) {
       projectedACutoff: null,
       projectedBCutoff: null,
       projectedSampleSize: 0,
-      hasMultipleWeightClasses: qHasMultipleWeightClasses,
+      hasMultipleSubClasses: qHasMultipleSubClasses,
+      subClassOrder: qSubClassOrder,
     });
   }
 
@@ -1437,7 +1458,7 @@ function renderClassifications(classifications) {
 
   {
     const selected = classifications.find((c) => c.className === activeClass) || classifications[0];
-    const { className, heatCols, drivers, hasQualifying, qualiOnly, totalHeats, projectedACutoff, projectedBCutoff, projectedSampleSize, hasMultipleWeightClasses } =
+    const { className, heatCols, drivers, hasQualifying, qualiOnly, totalHeats, projectedACutoff, projectedBCutoff, projectedSampleSize, hasMultipleSubClasses, subClassOrder } =
       selected;
     // GK4 doesn't work with qualifying groups or an A/B-final split at all -
     // none of that is relevant there, so hide it entirely for GK4 races. A
@@ -1477,8 +1498,8 @@ function renderClassifications(classifications) {
       if (restarted) posTitleParts.push(`Startnummer B-finale (eindpositie na de heats: P${d.pos})`);
       if (d.qualiPos !== undefined) posTitleParts.push(`Qualifying P${d.qualiPos}`);
       const weightBadge =
-        hasMultipleWeightClasses && d.weightClass
-          ? `<span class="weight-class-badge" title="${d.weightClassPos}e van ${d.weightClassSize} in de ${d.weightClass}-klasse">${d.weightClass} · P${d.weightClassPos}</span>`
+        hasMultipleSubClasses && d.subClass
+          ? `<span class="sub-class-badge" style="${subClassStyle(d.subClass, subClassOrder)}" title="${d.subClassPos}e van ${d.subClassSize} in de ${d.subClass}-klasse">${d.subClass} · P${d.subClassPos}</span>`
           : "";
       let html = `<tr class="${isHighlighted ? "highlighted" : ""} ${qualifiesA ? "qualifies-a" : ""} ${qualifiesB ? "qualifies-b" : ""}" data-key="${d.key.replace(/"/g, "&quot;")}">
           <td class="pos ${d.pos === 1 ? "pos-first" : ""}" title="${posTitleParts.join(" · ")}">${displayPos}</td>
@@ -1664,8 +1685,8 @@ function renderHighlighted(classifications) {
             ? "Kwalificeert voor de B-finale"
             : "";
       const weightBadge =
-        selected.hasMultipleWeightClasses && d.weightClass
-          ? `<span class="weight-class-badge" title="${d.weightClassPos}e van ${d.weightClassSize} in de ${d.weightClass}-klasse">${d.weightClass} · P${d.weightClassPos}</span>`
+        selected.hasMultipleSubClasses && d.subClass
+          ? `<span class="sub-class-badge" style="${subClassStyle(d.subClass, selected.subClassOrder)}" title="${d.subClassPos}e van ${d.subClassSize} in de ${d.subClass}-klasse">${d.subClass} · P${d.subClassPos}</span>`
           : "";
       return `<tr class="${qualifiesA ? "qualifies-a" : ""} ${qualifiesB ? "qualifies-b" : ""}">
         <td class="name-cell">

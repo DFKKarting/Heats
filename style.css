@@ -304,7 +304,7 @@ table.classification td.a-need.a-required { color: #4aa8ff; }
 
 table.classification td.name-cell { text-align: left; white-space: nowrap; }
 table.classification td.name-cell .car-number { font-weight: 800; }
-table.classification td.name-cell .weight-class-badge {
+table.classification td.name-cell .sub-class-badge {
   display: inline-block;
   margin-left: 6px;
   padding: 1px 6px;
