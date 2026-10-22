@@ -113,6 +113,16 @@ const APEX_COL = {
   POINTS: [550, 590],
 };
 
+// Apex Timing "Qualifying Practice (QP)" sheet: Rnk / No. / Driver / D. Nat /
+// QP1-3 / Laps / Group. Drivers without a time are listed unranked under
+// "Not classified", so rows are anchored on the car number instead.
+const APEX_QCOL = {
+  POS: [24, 40],
+  CAR: [60, 80],
+  NAME: [85, 275],
+  GROUP: [545, 575],
+};
+
 // raceKey is stored on each record so it stays stable across reloads, but
 // deriveRaceKey() has changed shape a few times as more championships were
 // added (e.g. an old "round-4" from before races became series-aware). A
@@ -524,6 +534,11 @@ function isApexResultsPage(items) {
   return lines.some((l) => /^Rnk\b.*\bDriver\b.*\bPoints$/i.test(l.text));
 }
 
+function isApexQualifyingPage(items) {
+  const lines = clusterByY(items, 3);
+  return lines.some((l) => /^Rnk\b.*\bDriver\b.*\bGroup$/i.test(l.text));
+}
+
 // "WIBOWO Muhammad" / "SØRLIE SMISTAD Ole Alexander": the all-caps words are
 // the last name, the rest the first name(s).
 function splitApexName(raw) {
@@ -649,6 +664,65 @@ async function buildApexHeatRecord(file, pdf, items1) {
     printedAt,
     scoring: "high",
     rows,
+  };
+}
+
+function parseQualifyingRowsApex(items) {
+  const header = items.find((it) => /^Rnk\b/.test(it.text));
+  const headerY = header ? header.y : 0;
+  const carAnchors = items
+    .filter((it) => it.y > headerY + 5 && within(it.x, APEX_QCOL.CAR) && /^[0-9]+$/.test(it.text))
+    .sort((a, b) => a.y - b.y);
+
+  const rows = [];
+  for (const anchor of carAnchors) {
+    const line = items.filter((it) => Math.abs(it.y - anchor.y) < 3);
+    const rawName = line
+      .filter((it) => within(it.x, APEX_QCOL.NAME))
+      .sort((a, b) => a.x - b.x)
+      .map((it) => it.text)
+      .join(" ")
+      .replace(/\s+/g, " ")
+      .trim();
+    if (!rawName) continue;
+    const posItem = line.find((it) => within(it.x, APEX_QCOL.POS) && /^[0-9]+$/.test(it.text));
+    const groupItem = line.find((it) => within(it.x, APEX_QCOL.GROUP) && /^[A-Z]$/.test(it.text.trim()));
+    rows.push({
+      ...splitApexName(rawName),
+      car: anchor.text,
+      rank: posItem ? parseInt(posItem.text, 10) : null,
+      group: groupItem ? groupItem.text.trim() : null,
+    });
+  }
+  return rows;
+}
+
+async function buildApexQualifyingRecord(file, pdf, items1) {
+  const rows = [];
+  for (let p = 1; p <= pdf.numPages; p++) {
+    const items = p === 1 ? items1 : await extractPageItems(await pdf.getPage(p));
+    if (!isApexQualifyingPage(items)) break;
+    rows.push(...parseQualifyingRowsApex(items));
+  }
+  if (!rows.length) {
+    throw new Error("Kon geen qualifying-tabel herkennen in dit PDF.");
+  }
+  // Ranked drivers in rank order, then the unranked "Not classified" ones.
+  const ranked = rows.filter((r) => r.rank !== null).sort((a, b) => a.rank - b.rank);
+  const unranked = rows.filter((r) => r.rank === null);
+  const entries = [...ranked, ...unranked].map(({ rank, ...r }, idx) => ({ ...r, pos: idx + 1 }));
+
+  const { eventName, className, printedAt } = parseTitleBlockApex(items1);
+  const raceKey = deriveRaceKey(eventName);
+  return {
+    id: `${raceKey}::${className}`,
+    className,
+    eventName,
+    raceKey,
+    fileName: file.name,
+    uploadedAt: new Date().toISOString(),
+    printedAt,
+    entries,
   };
 }
 
@@ -971,6 +1045,9 @@ async function parseUploadedFile(file) {
   // Checked first: an Apex Timing heat is titled "Qualifying Heat ...", which
   // would otherwise be mistaken for a qualifying sheet.
   if (isApexTimingDoc(items1)) {
+    if (isApexQualifyingPage(items1)) {
+      return { docType: "qualifying", record: await buildApexQualifyingRecord(file, pdf, items1) };
+    }
     return { docType: "heat", record: await buildApexHeatRecord(file, pdf, items1) };
   }
   if (looksLikeQualifyingPdf(items1)) {
