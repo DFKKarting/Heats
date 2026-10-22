@@ -210,6 +210,11 @@ main {
   border-top: 1px solid rgba(245, 66, 66, 0.25);
 }
 
+.heats-actions {
+  display: flex;
+  gap: 8px;
+}
+
 .dropzone {
   border: 2px dashed rgba(245, 66, 66, 0.5);
   border-radius: 10px;

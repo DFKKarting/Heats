@@ -1093,6 +1093,7 @@ const parseStatus = document.getElementById("parseStatus");
 const heatsList = document.getElementById("heatsList");
 const classificationsContainer = document.getElementById("classificationsContainer");
 const resetBtn = document.getElementById("resetBtn");
+const refreshBtn = document.getElementById("refreshBtn");
 const searchInput = document.getElementById("searchInput");
 const searchResults = document.getElementById("searchResults");
 const toggleHeatsBtn = document.getElementById("toggleHeatsBtn");
@@ -2385,11 +2386,13 @@ render();
 // Read straight from GitHub rather than relative to the page: the app is often
 // opened as a local file (file://), which can't fetch sibling files and
 // wouldn't have the Action's newest commits anyway. raw.githubusercontent.com
-// allows cross-origin requests (also from file://) and caches ~5 minutes.
-const AUTO_IMPORT_BASE = "https://raw.githubusercontent.com/DFKKarting/Heats/master/";
+// allows cross-origin requests (also from file://), but caches a branch URL
+// for ~5 minutes - so look up the latest commit first (GitHub API, cached
+// ~1 minute, 60 requests/hour) and read that exact, always-fresh version.
+const AUTO_IMPORT_REPO = "DFKKarting/Heats";
 const AUTO_IMPORT_KEY = "kartingAutoImported.v1";
 const AUTO_IMPORT_INTERVAL_MS = 2 * 60 * 1000;
-let autoImportRunning = false;
+let autoImportRunning = null; // the in-flight run's promise, if any
 
 function loadAutoImported() {
   try {
@@ -2399,28 +2402,62 @@ function loadAutoImported() {
   }
 }
 
-async function autoImport() {
-  if (autoImportRunning) return;
-  autoImportRunning = true;
+async function autoImportBase() {
   try {
+    const resp = await fetch(`https://api.github.com/repos/${AUTO_IMPORT_REPO}/commits/master`, {
+      headers: { Accept: "application/vnd.github.sha" },
+      cache: "no-store",
+    });
+    if (resp.ok) return `https://raw.githubusercontent.com/${AUTO_IMPORT_REPO}/${(await resp.text()).trim()}/`;
+  } catch {
+    // fall through - e.g. rate-limited
+  }
+  return `https://raw.githubusercontent.com/${AUTO_IMPORT_REPO}/master/`;
+}
+
+// `manual`: started with the "Nu ophalen" button, so always report back. A
+// click while a run is already going (e.g. the one at startup) just waits for
+// that run instead of being silently ignored.
+async function autoImport(manual = false) {
+  if (autoImportRunning) {
+    if (manual) setStatus("Bezig met ophalen van nieuwe resultaten...");
+    return autoImportRunning;
+  }
+  autoImportRunning = runAutoImport(manual);
+  try {
+    await autoImportRunning;
+  } finally {
+    autoImportRunning = null;
+  }
+}
+
+async function runAutoImport(manual) {
+  refreshBtn.disabled = true;
+  if (manual) setStatus("Bezig met ophalen van nieuwe resultaten...");
+  try {
+    const base = await autoImportBase();
     let manifest;
     try {
-      const resp = await fetch(`${AUTO_IMPORT_BASE}data/apex/manifest.json`, { cache: "no-store" });
-      if (!resp.ok) return;
+      const resp = await fetch(`${base}data/apex/manifest.json`, { cache: "no-store" });
+      if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
       manifest = await resp.json();
     } catch {
-      return; // offline - manual upload only
+      if (manual) setStatus("Kon de resultaten niet ophalen — ben je online?", "err");
+      return;
     }
     const seen = loadAutoImported();
     const todo = (manifest.files || []).filter((f) => seen[f.path] !== f.sha1);
-    if (!todo.length) return;
+    if (!todo.length) {
+      if (manual) setStatus("Geen nieuwe resultaten — alles is al ingeladen.", "ok");
+      return;
+    }
 
     let heatCount = 0;
     let qualiCount = 0;
     for (const f of todo) {
       let blob;
       try {
-        const resp = await fetch(`${AUTO_IMPORT_BASE}${f.path}`, { cache: "no-store" });
+        const resp = await fetch(`${base}${f.path}`, { cache: "no-store" });
         if (!resp.ok) continue; // not there yet / network trouble - retry next round
         blob = await resp.blob();
       } catch {
@@ -2450,10 +2487,12 @@ async function autoImport() {
     if (heatCount) parts.push(`${heatCount} heat(s)`);
     if (qualiCount) parts.push(`${qualiCount} qualifying`);
     if (parts.length) setStatus(`Automatisch ingeladen van Apex Timing: ${parts.join(" en ")}.`, "ok");
+    else if (manual) setStatus("Geen nieuwe resultaten — alles is al ingeladen.", "ok");
   } finally {
-    autoImportRunning = false;
+    refreshBtn.disabled = false;
   }
 }
 
+refreshBtn.addEventListener("click", () => autoImport(true));
 autoImport();
-setInterval(autoImport, AUTO_IMPORT_INTERVAL_MS);
+setInterval(() => autoImport(), AUTO_IMPORT_INTERVAL_MS);
