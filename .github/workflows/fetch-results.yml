@@ -3,6 +3,10 @@ name: Apex-resultaten ophalen
 # Downloads new/revised result PDFs from apex-timing.com (see
 # scripts/fetch_apex.py and data/apex/sources.json) and commits them, so the
 # app can import them automatically.
+#
+# GitHub starts scheduled runs at most every 5 minutes (often later), so each
+# run keeps checking every minute for ~15 minutes itself; the next scheduled
+# run queues behind it (concurrency) and takes over, so there's no gap.
 on:
   schedule:
     - cron: "*/10 * * * *"
@@ -18,20 +22,21 @@ concurrency:
 jobs:
   fetch:
     runs-on: ubuntu-latest
+    timeout-minutes: 30
     steps:
       - uses: actions/checkout@v4
 
-      - name: Resultaten downloaden
-        run: python3 scripts/fetch_apex.py
-
-      - name: Wijzigingen committen
+      - name: Elke minuut resultaten ophalen
         run: |
-          git add data/apex
-          if git diff --cached --quiet; then
-            echo "Geen nieuwe resultaten."
-            exit 0
-          fi
           git config user.name "github-actions[bot]"
           git config user.email "41898283+github-actions[bot]@users.noreply.github.com"
-          git commit -m "Apex-resultaten bijgewerkt"
-          git push
+          for i in $(seq 1 15); do
+            python3 scripts/fetch_apex.py || echo "Ophalen mislukt, volgende poging over een minuut."
+            git add data/apex
+            if ! git diff --cached --quiet; then
+              git commit -m "Apex-resultaten bijgewerkt"
+              git pull --rebase origin master
+              git push
+            fi
+            sleep 60
+          done
