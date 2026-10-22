@@ -101,6 +101,18 @@ const GK4_QCOL = {
   NAME: [60, 224],
 };
 
+// IAME international events (e.g. the IAME Finals, "IWF26") are timed by Apex
+// Timing - a completely different template again: one-line "LASTNAME
+// Firstname" driver column, and points awarded the other way round (the
+// winner gets the MOST points, 50-44-41-...), so the standings sort highest
+// total first instead of lowest.
+const APEX_COL = {
+  RANK: [14, 30],
+  CAR: [55, 75],
+  NAME: [160, 270],
+  POINTS: [550, 590],
+};
+
 // raceKey is stored on each record so it stays stable across reloads, but
 // deriveRaceKey() has changed shape a few times as more championships were
 // added (e.g. an old "round-4" from before races became series-aware). A
@@ -500,6 +512,146 @@ function parseTitleBlockGK4(items, tableTopY) {
   return { eventName, className, heatLabel, revision: null };
 }
 
+function isApexTimingDoc(items) {
+  return items.some((it) => /Apex Timing/i.test(it.text));
+}
+
+// A results sheet (as opposed to the lap chart / analysis / starting grid /
+// stewards' documents bundled into the same Apex Timing download) has the
+// "Rnk No. Competitor Driver ... Points" header row.
+function isApexResultsPage(items) {
+  const lines = clusterByY(items, 3);
+  return lines.some((l) => /^Rnk\b.*\bDriver\b.*\bPoints$/i.test(l.text));
+}
+
+// "WIBOWO Muhammad" / "SØRLIE SMISTAD Ole Alexander": the all-caps words are
+// the last name, the rest the first name(s).
+function splitApexName(raw) {
+  const words = raw.split(/\s+/).filter(Boolean);
+  const isUpper = (w) => /\p{L}/u.test(w) && w === w.toUpperCase();
+  const lastName = words.filter(isUpper).join(" ");
+  const firstName = words.filter((w) => !isUpper(w)).join(" ");
+  return { firstName, lastName, fullName: `${firstName} ${lastName}`.trim() };
+}
+
+function parseRowsApex(items) {
+  const header = items.find((it) => /^Rnk\b/.test(it.text));
+  const headerY = header ? header.y : 0;
+  const rankAnchors = items
+    .filter((it) => it.y > headerY + 5 && within(it.x, APEX_COL.RANK) && isRowAnchorText(it.text))
+    .sort((a, b) => a.y - b.y);
+
+  const anchors = [];
+  for (const a of rankAnchors) {
+    if (anchors.length && Math.abs(anchors[anchors.length - 1].y - a.y) < 3) continue;
+    anchors.push(a);
+  }
+
+  const rows = [];
+  for (let i = 0; i < anchors.length; i++) {
+    const y0 = anchors[i].y;
+    const y1 = i + 1 < anchors.length ? anchors[i + 1].y : y0 + 14;
+    const band = items.filter((it) => it.y >= y0 - 5 && it.y < y1 - 5);
+
+    const carItem = band.find((it) => within(it.x, APEX_COL.CAR) && /^[0-9]+$/.test(it.text));
+    const rawName = band
+      .filter((it) => within(it.x, APEX_COL.NAME))
+      .sort((a, b) => a.x - b.x)
+      .map((it) => it.text)
+      .join(" ")
+      .replace(/\s+/g, " ")
+      .trim();
+    if (!rawName) continue;
+    const { firstName, lastName, fullName } = splitApexName(rawName);
+
+    const pointsItem = band.find((it) => within(it.x, APEX_COL.POINTS) && /^[0-9]+$/.test(it.text));
+    const anchorCode = anchors[i].text.toUpperCase();
+    const resultCode = /^[0-9]+$/.test(anchorCode) ? null : anchorCode;
+
+    rows.push({
+      car: carItem ? carItem.text : "",
+      firstName,
+      lastName,
+      fullName,
+      points: pointsItem ? parseInt(pointsItem.text, 10) : null,
+      resultCode,
+    });
+  }
+  return rows;
+}
+
+// Title block: heat ("Qualifying Heat E-F") and class ("X30 MINI") at the top,
+// event code + date range ("IWF26 (ITA)  20-24/10/2026") in the footer.
+function parseTitleBlockApex(items) {
+  const header = items.find((it) => /^Rnk\b/.test(it.text));
+  const headerY = header ? header.y : 140;
+  const top = clusterByY(
+    items.filter((it) => it.x < 300 && it.y < headerY - 3),
+    3
+  ).filter((l) => !/^Results$/i.test(l.text));
+  const heatLabel = top[0] ? top[0].text : "Heat";
+  const className = top[1] ? top[1].text : "Onbekende klasse";
+
+  const footer = items.find((it) => /\d{1,2}-\d{1,2}\/\d{1,2}\/\d{4}\s*$/.test(it.text));
+  const eventCode = footer ? footer.text.replace(/\s+\d{1,2}-\d{1,2}\/\d{1,2}\/\d{4}\s*$/, "").trim() : "";
+  const year = footer ? footer.text.match(/(\d{4})\s*$/)[1] : null;
+  const eventName = `IAME Finals${eventCode ? ` ${eventCode}` : ""}`;
+
+  // There's no "Printed:" stamp - use the session start date with the latest
+  // posting time instead, so a re-posted (revised) result still sorts newer.
+  let printedAt = null;
+  const start = items.map((it) => it.text.match(/Start(?: Time)?\s*:\s*(\d{2})\/(\d{2})\s*-\s*(\d{2}):(\d{2})/)).find(Boolean);
+  if (start && year) {
+    const [, dd, mm, hh, min] = start;
+    const postingLabel = items.find((it) => /^Posting Time/i.test(it.text));
+    const postingTimes = postingLabel
+      ? items
+          .filter((it) => Math.abs(it.y - postingLabel.y) < 10 && it.x > postingLabel.x)
+          .map((it) => it.text.match(/(\d{2}):(\d{2})\s*$/))
+          .filter(Boolean)
+          .map((m) => `${m[1]}:${m[2]}`)
+          .sort()
+      : [];
+    const time = postingTimes.length ? postingTimes[postingTimes.length - 1] : `${hh}:${min}`;
+    printedAt = `${year}-${mm}-${dd}T${time}:00`;
+  }
+  return { eventName, className, heatLabel, printedAt };
+}
+
+async function buildApexHeatRecord(file, pdf, items1) {
+  if (!isApexResultsPage(items1)) {
+    throw new Error("Geen resultatenpagina gevonden in dit Apex Timing PDF.");
+  }
+  // A big field can spill over onto the next page(s); the download then
+  // continues with lap chart / analysis pages, which aren't results.
+  const rows = parseRowsApex(items1);
+  for (let p = 2; p <= pdf.numPages; p++) {
+    const items = await extractPageItems(await pdf.getPage(p));
+    if (!isApexResultsPage(items)) break;
+    rows.push(...parseRowsApex(items));
+  }
+  if (!rows.length) {
+    throw new Error("Kon geen resultatentabel herkennen in dit PDF.");
+  }
+  rows.forEach((r, idx) => (r.rank = idx + 1));
+
+  const { eventName, className, heatLabel, printedAt } = parseTitleBlockApex(items1);
+  const raceKey = deriveRaceKey(eventName);
+  return {
+    id: `${raceKey}::${className}::${heatLabel}`,
+    className,
+    heatLabel,
+    eventName,
+    raceKey,
+    revision: null,
+    fileName: file.name,
+    uploadedAt: new Date().toISOString(),
+    printedAt,
+    scoring: "high",
+    rows,
+  };
+}
+
 function buildHeatRecord(file, items) {
   const gk4 = isGK4Heat(items);
   const { rows, tableTopY } = gk4 ? parseRowsGK4(items) : parseRows(items);
@@ -816,6 +968,11 @@ async function parseUploadedFile(file) {
   const page1 = await pdf.getPage(1);
   const items1 = await extractPageItems(page1);
 
+  // Checked first: an Apex Timing heat is titled "Qualifying Heat ...", which
+  // would otherwise be mistaken for a qualifying sheet.
+  if (isApexTimingDoc(items1)) {
+    return { docType: "heat", record: await buildApexHeatRecord(file, pdf, items1) };
+  }
   if (looksLikeQualifyingPdf(items1)) {
     return { docType: "qualifying", record: await parseQualifyingPdf(file, pdf, items1) };
   }
@@ -1492,6 +1649,8 @@ function computeClassifications(heatsSubset) {
       }
     }
 
+    // IAME Finals (Apex Timing) heats give the winner the most points.
+    const higherIsBetter = classHeats.some((h) => h.scoring === "high");
     const qualiMap = getQualiPosMap(raceKey, className);
     // Known once qualifying is uploaded: with 36 or fewer drivers in the whole
     // field there's no A/B split at all - everyone races one final together -
@@ -1501,7 +1660,7 @@ function computeClassifications(heatsSubset) {
     const subClassMap = getSubClassMap(raceKey, className);
     const drivers = [...driverMap.values()]
       .sort((a, b) => {
-        if (a.total !== b.total) return a.total - b.total;
+        if (a.total !== b.total) return higherIsBetter ? b.total - a.total : a.total - b.total;
         if (qualiMap) {
           const qa = qualiMap.get(a.fullName);
           const qb = qualiMap.get(b.fullName);
@@ -1539,7 +1698,9 @@ function computeClassifications(heatsSubset) {
       }
     }
 
-    const totalHeats = getTotalHeatsForClass(raceKey, className);
+    // The A/B-final projection assumes lowest-points-wins and the 36-driver
+    // A-final of the national series - neither applies to the IAME Finals.
+    const totalHeats = higherIsBetter ? null : getTotalHeatsForClass(raceKey, className);
     let projectedACutoff = null;
     let projectedBCutoff = null;
     let projectedSampleSize = 0;
@@ -1588,7 +1749,8 @@ function computeClassifications(heatsSubset) {
       projectedSampleNeeded,
       hasMultipleSubClasses,
       subClassOrder,
-      noFinalSplit,
+      noFinalSplit: noFinalSplit || higherIsBetter,
+      higherIsBetter,
     });
   }
 
@@ -1652,7 +1814,7 @@ function renderClassifications(classifications) {
 
   {
     const selected = classifications.find((c) => c.className === activeClass) || classifications[0];
-    const { className, heatCols, drivers, hasQualifying, qualiOnly, totalHeats, projectedACutoff, projectedBCutoff, projectedSampleSize, projectedSampleNeeded, hasMultipleSubClasses, subClassOrder, noFinalSplit } =
+    const { className, heatCols, drivers, hasQualifying, qualiOnly, totalHeats, projectedACutoff, projectedBCutoff, projectedSampleSize, projectedSampleNeeded, hasMultipleSubClasses, subClassOrder, noFinalSplit, higherIsBetter } =
       selected;
     // GK4 doesn't work with qualifying groups or an A/B-final split at all -
     // none of that is relevant there, so hide it entirely for GK4 races. A
@@ -1733,7 +1895,7 @@ function renderClassifications(classifications) {
         <p class="class-meta">${
           qualiOnly
             ? `Voorlopige volgorde op basis van de qualifying — er zijn nog geen heats geüpload voor deze klasse.`
-            : `Klassement over ${heatCols.length} heat(s) — punten opgeteld, laagste totaal bovenaan. Klik de ster om een rijder te highlighten.${hasQualifying ? " Bij gelijke punten beslist de qualifying (snelste tijd wint)." : ""}`
+            : `Klassement over ${heatCols.length} heat(s) — punten opgeteld, ${higherIsBetter ? "hoogste" : "laagste"} totaal bovenaan. Klik de ster om een rijder te highlighten.${hasQualifying ? " Bij gelijke punten beslist de qualifying (snelste tijd wint)." : ""}`
         }</p>
         ${unevenHeats ? '<p class="class-warning">⚠ Niet alle rijders hebben evenveel heats gereden — dit klassement is nog niet volledig.</p>' : ""}
         ${
@@ -1867,7 +2029,7 @@ function renderHighlighted(classifications) {
 
   const bodyRows = followed
     .map((d) => {
-      const isGK4Race = activeRace && activeRace.startsWith("gk4-round-");
+      const isGK4Race = (activeRace && activeRace.startsWith("gk4-round-")) || selected.noFinalSplit;
       const qualifiesA = !isGK4Race && d.classDriverCount > A_FINAL_CUTOFF && d.pos <= A_FINAL_CUTOFF;
       const qualifiesB = !isGK4Race && hasBFinal(d.classDriverCount) && d.pos > A_FINAL_CUTOFF && d.pos <= B_FINAL_CUTOFF;
       const restarted = !isGK4Race && allHeatsDone && hasBFinal(d.classDriverCount) && d.pos > A_FINAL_CUTOFF;
