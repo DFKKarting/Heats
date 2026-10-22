@@ -105,23 +105,9 @@ const GK4_QCOL = {
 // Timing - a completely different template again: one-line "LASTNAME
 // Firstname" driver column, and points awarded the other way round (the
 // winner gets the MOST points, 50-44-41-...), so the standings sort highest
-// total first instead of lowest.
-const APEX_COL = {
-  RANK: [14, 30],
-  CAR: [55, 75],
-  NAME: [160, 270],
-  POINTS: [550, 590],
-};
-
-// Apex Timing "Qualifying Practice (QP)" sheet: Rnk / No. / Driver / D. Nat /
-// QP1-3 / Laps / Group. Drivers without a time are listed unranked under
-// "Not classified", so rows are anchored on the car number instead.
-const APEX_QCOL = {
-  POS: [24, 40],
-  CAR: [60, 80],
-  NAME: [85, 275],
-  GROUP: [545, 575],
-};
+// total first instead of lowest. Column positions differ between its sheets
+// (heat results, grouped and single-series qualifying, ...), so they're read
+// from the header row instead of hardcoded - see apexColumns().
 
 // raceKey is stored on each record so it stays stable across reloads, but
 // deriveRaceKey() has changed shape a few times as more championships were
@@ -526,17 +512,36 @@ function isApexTimingDoc(items) {
   return items.some((it) => /Apex Timing/i.test(it.text));
 }
 
-// A results sheet (as opposed to the lap chart / analysis / starting grid /
-// stewards' documents bundled into the same Apex Timing download) has the
-// "Rnk No. Competitor Driver ... Points" header row.
-function isApexResultsPage(items) {
-  const lines = clusterByY(items, 3);
-  return lines.some((l) => /^Rnk\b.*\bDriver\b.*\bPoints$/i.test(l.text));
+// Column x-ranges keyed by the header label's first word, lowercased and
+// without a trailing dot ("rnk", "no", "driver", "points", "group", ...). A
+// value sits roughly under its header label - a little to its left when
+// right-aligned - and never reaches the next label.
+function apexColumns(items) {
+  const rnk = items.find((it) => /^Rnk$/i.test(it.text.trim()));
+  if (!rnk) return null;
+  const header = items.filter((it) => Math.abs(it.y - rnk.y) < 3).sort((a, b) => a.x - b.x);
+  const cols = {};
+  header.forEach((h, i) => {
+    const key = h.text.trim().split(/\s+/)[0].toLowerCase().replace(/\.$/, "");
+    const next = header[i + 1];
+    if (!cols[key]) cols[key] = [h.x - 6, next ? next.x - 2 : Infinity];
+  });
+  // Ranks are right-aligned (two digits start further left than the label),
+  // and the heat sheet has an unlabeled column of small numbers just right of
+  // Rnk - keep the rank range tight on that side so those aren't taken for ranks.
+  cols.rnk = [rnk.x - 12, Math.min(cols.rnk[1], rnk.x + 15)];
+  return cols.no && cols.driver ? { headerY: rnk.y, cols } : null;
 }
 
-function isApexQualifyingPage(items) {
-  const lines = clusterByY(items, 3);
-  return lines.some((l) => /^Rnk\b.*\bDriver\b.*\bGroup$/i.test(l.text));
+// A results sheet (as opposed to the lap chart / analysis / starting grid /
+// stewards' documents bundled into the same Apex Timing download) is titled
+// "Results" and has the Rnk / No. / Driver header row. With a Points column
+// it's a heat, without one a qualifying.
+function apexSheetType(items) {
+  if (!items.some((it) => it.text.trim() === "Results" && it.y < 130)) return null;
+  const layout = apexColumns(items);
+  if (!layout) return null;
+  return layout.cols.points ? "heat" : "qualifying";
 }
 
 // "WIBOWO Muhammad" / "SØRLIE SMISTAD Ole Alexander": the all-caps words are
@@ -550,10 +555,9 @@ function splitApexName(raw) {
 }
 
 function parseRowsApex(items) {
-  const header = items.find((it) => /^Rnk\b/.test(it.text));
-  const headerY = header ? header.y : 0;
+  const { headerY, cols } = apexColumns(items);
   const rankAnchors = items
-    .filter((it) => it.y > headerY + 5 && within(it.x, APEX_COL.RANK) && isRowAnchorText(it.text))
+    .filter((it) => it.y > headerY + 5 && within(it.x, cols.rnk) && isRowAnchorText(it.text))
     .sort((a, b) => a.y - b.y);
 
   const anchors = [];
@@ -568,9 +572,9 @@ function parseRowsApex(items) {
     const y1 = i + 1 < anchors.length ? anchors[i + 1].y : y0 + 14;
     const band = items.filter((it) => it.y >= y0 - 5 && it.y < y1 - 5);
 
-    const carItem = band.find((it) => within(it.x, APEX_COL.CAR) && /^[0-9]+$/.test(it.text));
+    const carItem = band.find((it) => within(it.x, cols.no) && /^[0-9]+$/.test(it.text));
     const rawName = band
-      .filter((it) => within(it.x, APEX_COL.NAME))
+      .filter((it) => within(it.x, cols.driver))
       .sort((a, b) => a.x - b.x)
       .map((it) => it.text)
       .join(" ")
@@ -579,7 +583,7 @@ function parseRowsApex(items) {
     if (!rawName) continue;
     const { firstName, lastName, fullName } = splitApexName(rawName);
 
-    const pointsItem = band.find((it) => within(it.x, APEX_COL.POINTS) && /^[0-9]+$/.test(it.text));
+    const pointsItem = band.find((it) => within(it.x, cols.points) && /^[0-9]+$/.test(it.text));
     const anchorCode = anchors[i].text.toUpperCase();
     const resultCode = /^[0-9]+$/.test(anchorCode) ? null : anchorCode;
 
@@ -634,7 +638,7 @@ function parseTitleBlockApex(items) {
 }
 
 async function buildApexHeatRecord(file, pdf, items1) {
-  if (!isApexResultsPage(items1)) {
+  if (apexSheetType(items1) !== "heat") {
     throw new Error("Geen resultatenpagina gevonden in dit Apex Timing PDF.");
   }
   // A big field can spill over onto the next page(s); the download then
@@ -642,7 +646,7 @@ async function buildApexHeatRecord(file, pdf, items1) {
   const rows = parseRowsApex(items1);
   for (let p = 2; p <= pdf.numPages; p++) {
     const items = await extractPageItems(await pdf.getPage(p));
-    if (!isApexResultsPage(items)) break;
+    if (apexSheetType(items) !== "heat") break;
     rows.push(...parseRowsApex(items));
   }
   if (!rows.length) {
@@ -667,26 +671,28 @@ async function buildApexHeatRecord(file, pdf, items1) {
   };
 }
 
+// Drivers without a time are listed unranked under "Not classified", so rows
+// are anchored on the car number instead of the rank. Grouped qualifying has a
+// Group column (A, B, ...); a single-series one doesn't.
 function parseQualifyingRowsApex(items) {
-  const header = items.find((it) => /^Rnk\b/.test(it.text));
-  const headerY = header ? header.y : 0;
+  const { headerY, cols } = apexColumns(items);
   const carAnchors = items
-    .filter((it) => it.y > headerY + 5 && within(it.x, APEX_QCOL.CAR) && /^[0-9]+$/.test(it.text))
+    .filter((it) => it.y > headerY + 5 && within(it.x, cols.no) && /^[0-9]+$/.test(it.text))
     .sort((a, b) => a.y - b.y);
 
   const rows = [];
   for (const anchor of carAnchors) {
     const line = items.filter((it) => Math.abs(it.y - anchor.y) < 3);
     const rawName = line
-      .filter((it) => within(it.x, APEX_QCOL.NAME))
+      .filter((it) => within(it.x, cols.driver))
       .sort((a, b) => a.x - b.x)
       .map((it) => it.text)
       .join(" ")
       .replace(/\s+/g, " ")
       .trim();
     if (!rawName) continue;
-    const posItem = line.find((it) => within(it.x, APEX_QCOL.POS) && /^[0-9]+$/.test(it.text));
-    const groupItem = line.find((it) => within(it.x, APEX_QCOL.GROUP) && /^[A-Z]$/.test(it.text.trim()));
+    const posItem = line.find((it) => within(it.x, cols.rnk) && /^[0-9]+$/.test(it.text));
+    const groupItem = cols.group && line.find((it) => within(it.x, cols.group) && /^[A-Z]$/.test(it.text.trim()));
     rows.push({
       ...splitApexName(rawName),
       car: anchor.text,
@@ -701,7 +707,7 @@ async function buildApexQualifyingRecord(file, pdf, items1) {
   const rows = [];
   for (let p = 1; p <= pdf.numPages; p++) {
     const items = p === 1 ? items1 : await extractPageItems(await pdf.getPage(p));
-    if (!isApexQualifyingPage(items)) break;
+    if (apexSheetType(items) !== "qualifying") break;
     rows.push(...parseQualifyingRowsApex(items));
   }
   if (!rows.length) {
@@ -1045,7 +1051,7 @@ async function parseUploadedFile(file) {
   // Checked first: an Apex Timing heat is titled "Qualifying Heat ...", which
   // would otherwise be mistaken for a qualifying sheet.
   if (isApexTimingDoc(items1)) {
-    if (isApexQualifyingPage(items1)) {
+    if (apexSheetType(items1) === "qualifying") {
       return { docType: "qualifying", record: await buildApexQualifyingRecord(file, pdf, items1) };
     }
     return { docType: "heat", record: await buildApexHeatRecord(file, pdf, items1) };
