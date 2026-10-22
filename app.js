@@ -1068,6 +1068,16 @@ function looksLikeQualifyingPdf(items) {
 async function parseUploadedFile(file) {
   const buf = await file.arrayBuffer();
   const pdf = await pdfjsLib.getDocument({ data: buf }).promise;
+  // Release each document once parsed - the automatic import can go through
+  // hundreds of PDFs in one go, and kept-open documents crash the tab.
+  try {
+    return await parseOpenedPdf(file, pdf);
+  } finally {
+    pdf.destroy();
+  }
+}
+
+async function parseOpenedPdf(file, pdf) {
   const page1 = await pdf.getPage(1);
   const items1 = await extractPageItems(page1);
 
@@ -2478,6 +2488,13 @@ async function runAutoImport(manual) {
       }
       // Marked even when parsing failed, so a broken file isn't retried forever.
       seen[f.path] = f.sha1;
+      // A first import can be hundreds of files - save progress along the
+      // way so an interrupted run doesn't start over from scratch.
+      if (Object.keys(seen).length % 20 === 0) {
+        saveHeats(heats);
+        saveQualifying(qualifying);
+        localStorage.setItem(AUTO_IMPORT_KEY, JSON.stringify(seen));
+      }
     }
     saveHeats(heats);
     saveQualifying(qualifying);

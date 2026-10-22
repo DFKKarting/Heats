@@ -9,6 +9,10 @@ Supported sources ("type" in sources.json):
   (e.g. IAME Finals).
 - "sportity": a Sportity web app event page, by its "url" (e.g. IAME Series
   Benelux) - its "<Class> Results + Groups" sections link the timing PDFs.
+- "camp": a motorsport-events.se/camp results folder, by its "url" (e.g. a
+  GK4 season: one folder per round, one subfolder per class). Optional
+  "match": only round folders whose name contains it (e.g. "GK4", to skip
+  other championships filed in the same season folder).
 
 Run by .github/workflows/fetch-results.yml on a schedule; can also be run by
 hand: python3 scripts/fetch_apex.py
@@ -97,10 +101,53 @@ def list_sportity(source):
     return docs
 
 
-LISTERS = {"apex": list_apex, "sportity": list_sportity}
+# File names in a camp results folder look like "06 Heat 1.pdf".
+CAMP_WANTED = re.compile(r"^\d+\s+(Qualifying|Total Qualifying Practice|Heat \d+(?: [A-Z]-[A-Z])?(?: Revision \d+)?)\.pdf$", re.I)
+
+
+def list_camp(source):
+    """Timing PDFs in a camp results folder and its round/class subfolders."""
+    base = source["url"].split("?", 1)[0]
+    root = urllib.parse.parse_qs(urllib.parse.urlparse(source["url"]).query)["dir"][0]
+    docs = []
+
+    def walk(folder, depth):
+        _, raw = fetch(f"{base}?dir={urllib.parse.quote(folder)}")
+        page = raw.decode("utf-8", "replace")
+        for m in re.finditer(r'href="\?dir=([^"]+)"', page):
+            sub = urllib.parse.unquote(html.unescape(m.group(1)))
+            if not sub.startswith(folder + "/") or depth >= 2:
+                continue
+            if depth == 0 and source.get("match") and source["match"].lower() not in sub.rsplit("/", 1)[-1].lower():
+                continue
+            walk(sub, depth + 1)
+        # A file row: link, then size and modification date - which together
+        # tell whether the file changed since the last download.
+        for m in re.finditer(r'<tr data-pdf="([^"]+)".*?</a>\s*</td>\s*<td[^>]*>\s*([^<]*?)\s*</td>\s*<td[^>]*>\s*([^<]*?)\s*</td>', page, re.S):
+            rel_path = html.unescape(m.group(1))
+            file_path = urllib.parse.unquote(rel_path)
+            name = file_path.rsplit("/", 1)[-1]
+            if not CAMP_WANTED.match(name):
+                continue
+            docs.append({
+                "className": file_path.rsplit("/", 2)[-2],
+                "id": hashlib.sha1(file_path.encode()).hexdigest()[:16],
+                "title": f"{file_path.rsplit('/', 3)[-3]} - {CAMP_WANTED.match(name).group(1)}",
+                "url": base + urllib.parse.quote(file_path),
+                "version": f"{m.group(2)} {m.group(3)}",
+            })
+
+    walk(root, 0)
+    return docs
+
+
+LISTERS = {"apex": list_apex, "sportity": list_sportity, "camp": list_camp}
 
 
 def source_slug(source):
+    if source.get("type") == "camp":
+        folder = urllib.parse.parse_qs(urllib.parse.urlparse(source["url"]).query)["dir"][0]
+        return "camp-" + re.sub(r"[^a-z0-9]+", "-", folder.lower()).strip("-")
     if source.get("type") == "sportity":
         parts = urllib.parse.urlparse(source["url"]).path.strip("/").split("/")
         return "sportity-" + "-".join(p[:8] for p in parts[1:])
@@ -127,8 +174,10 @@ def main():
             rel = f"data/apex/{slug}/{s['id']}.pdf"
             target = ROOT / rel
             # Sportity never changes a published file (a revision is a new
-            # upload), so don't download it again every minute.
-            if source.get("type") == "sportity" and rel in known and target.exists():
+            # upload), and a camp folder shows each file's size and date - so
+            # don't download those again every minute when nothing changed.
+            unchanged = source.get("type") == "sportity" or (s.get("version") and known.get(rel, {}).get("version") == s["version"])
+            if unchanged and rel in known and target.exists():
                 files.append(known[rel])
                 continue
             try:
@@ -150,11 +199,21 @@ def main():
                 "className": s["className"],
                 "title": s["title"],
                 "sha1": hashlib.sha1(body).hexdigest(),
+                **({"version": s["version"]} if s.get("version") else {}),
             })
 
     manifest = {"files": files}
     if manifest != {"files": previous.get("files", [])}:
         manifest_path.write_text(json.dumps(manifest, indent=1, ensure_ascii=False) + "\n")
+
+    # Drop downloads that are no longer listed (e.g. a source removed from
+    # sources.json). Entries of a source that was down this run were kept
+    # above, so their files stay.
+    listed = {f["path"] for f in files}
+    for pdf in DATA.glob("*/*.pdf"):
+        if pdf.relative_to(ROOT).as_posix() not in listed:
+            pdf.unlink()
+            print(f"verwijderd: {pdf.relative_to(ROOT).as_posix()}")
 
 
 if __name__ == "__main__":

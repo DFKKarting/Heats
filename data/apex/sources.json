@@ -1,8 +1,17 @@
 [
-  { "name": "IAME Finals IWF26", "path": "/rgmmc/2026/iwf/" },
+  {
+    "name": "IAME Finals IWF26",
+    "path": "/rgmmc/2026/iwf/"
+  },
   {
     "name": "IAME Series Benelux - Final Round Mariembourg",
     "type": "sportity",
     "url": "https://webapp.sportity.com/event/isb2026/4cbbd0c4-4ecd-4260-bc5c-934544dcadf6"
+  },
+  {
+    "name": "GK4 Kart Series 2026",
+    "type": "camp",
+    "url": "https://motorsport-events.se/camp/?dir=resultsmw%2F01%20results%202026%2F02%20GK4",
+    "match": "GK4"
   }
 ]
