@@ -1577,6 +1577,9 @@ resetBtn.addEventListener("click", () => {
   qualifying = qualifying.filter((q) => (q.raceKey || deriveRaceKey(q.eventName)) !== activeRace);
   saveHeats(heats);
   saveQualifying(qualifying);
+  // Let the automatic import bring this race back in on its next run (it
+  // only re-imports what's still published).
+  localStorage.removeItem(AUTO_IMPORT_KEY);
   render();
   setStatus(`Heats en qualifying van ${label} gewist.`, "ok");
 });
@@ -2372,3 +2375,73 @@ function render() {
 }
 
 render();
+
+/* ---------------- Automatic import ---------------- */
+
+// A scheduled GitHub Action (scripts/fetch_apex.py) downloads new result PDFs
+// from Apex Timing into data/apex/ and lists them in manifest.json. Import
+// every file we haven't seen in this exact version (by hash) yet - a revised
+// PDF gets a new hash and is merged like a manual re-upload would be.
+const AUTO_IMPORT_KEY = "kartingAutoImported.v1";
+const AUTO_IMPORT_INTERVAL_MS = 2 * 60 * 1000;
+let autoImportRunning = false;
+
+function loadAutoImported() {
+  try {
+    return JSON.parse(localStorage.getItem(AUTO_IMPORT_KEY)) || {};
+  } catch {
+    return {};
+  }
+}
+
+async function autoImport() {
+  if (autoImportRunning) return;
+  autoImportRunning = true;
+  try {
+    let manifest;
+    try {
+      const resp = await fetch("data/apex/manifest.json", { cache: "no-store" });
+      if (!resp.ok) return;
+      manifest = await resp.json();
+    } catch {
+      return; // no manifest (e.g. opened as a local file) - manual upload only
+    }
+    const seen = loadAutoImported();
+    const todo = (manifest.files || []).filter((f) => seen[f.path] !== f.sha1);
+    if (!todo.length) return;
+
+    let heatCount = 0;
+    let qualiCount = 0;
+    for (const f of todo) {
+      try {
+        const blob = await (await fetch(f.path, { cache: "no-store" })).blob();
+        const file = new File([blob], f.path.split("/").pop(), { type: "application/pdf" });
+        const { docType, record } = await parseUploadedFile(file);
+        if (docType === "qualifying") {
+          mergeQualifying(record);
+          qualiCount++;
+        } else {
+          mergeHeat(record);
+          heatCount++;
+        }
+      } catch (e) {
+        console.warn(`Automatisch inlezen mislukt voor ${f.path}:`, e);
+      }
+      // Marked even when it failed, so a broken file isn't retried forever.
+      seen[f.path] = f.sha1;
+    }
+    saveHeats(heats);
+    saveQualifying(qualifying);
+    localStorage.setItem(AUTO_IMPORT_KEY, JSON.stringify(seen));
+    render();
+    const parts = [];
+    if (heatCount) parts.push(`${heatCount} heat(s)`);
+    if (qualiCount) parts.push(`${qualiCount} qualifying`);
+    if (parts.length) setStatus(`Automatisch ingeladen van Apex Timing: ${parts.join(" en ")}.`, "ok");
+  } finally {
+    autoImportRunning = false;
+  }
+}
+
+autoImport();
+setInterval(autoImport, AUTO_IMPORT_INTERVAL_MS);

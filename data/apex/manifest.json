@@ -1,0 +1,270 @@
+{
+ "files": [
+  {
+   "path": "data/apex/rgmmc-2026-iwf/x30mini_135.pdf",
+   "event": "IAME Finals IWF26",
+   "className": "X30 MINI",
+   "title": "Qualifying Practice",
+   "sha1": "0c4e6d9ebc0358ea5c1c16181def52d66b8202cf"
+  },
+  {
+   "path": "data/apex/rgmmc-2026-iwf/x30mini_175.pdf",
+   "event": "IAME Finals IWF26",
+   "className": "X30 MINI",
+   "title": "Qualifying Heat E-F",
+   "sha1": "93be4e18dac834ef933a7cb7e549d152fcdd7968"
+  },
+  {
+   "path": "data/apex/rgmmc-2026-iwf/x30mini_158.pdf",
+   "event": "IAME Finals IWF26",
+   "className": "X30 MINI",
+   "title": "Qualifying Heat C-D",
+   "sha1": "1baa46532a5591f3e6d0a14aa79e888c5e75607f"
+  },
+  {
+   "path": "data/apex/rgmmc-2026-iwf/x30mini_137.pdf",
+   "event": "IAME Finals IWF26",
+   "className": "X30 MINI",
+   "title": "Qualifying Heat A-B",
+   "sha1": "6248ba85c4c909e5aa7d12067bada7676b611c84"
+  },
+  {
+   "path": "data/apex/rgmmc-2026-iwf/x30mini_160.pdf",
+   "event": "IAME Finals IWF26",
+   "className": "X30 MINI",
+   "title": "Qualifying Heat C-F",
+   "sha1": "fa7f5aa0193fa460caedd0f7b7560fb76511c425"
+  },
+  {
+   "path": "data/apex/rgmmc-2026-iwf/x30mini_149.pdf",
+   "event": "IAME Finals IWF26",
+   "className": "X30 MINI",
+   "title": "Qualifying Heat B-D",
+   "sha1": "dbedec26f8828de24decfc7d9fc1e956ff9b45e6"
+  },
+  {
+   "path": "data/apex/rgmmc-2026-iwf/x30mini_140.pdf",
+   "event": "IAME Finals IWF26",
+   "className": "X30 MINI",
+   "title": "Qualifying Heat A-E",
+   "sha1": "9324206dceae5c07a2e7de883f20b08943bf7174"
+  },
+  {
+   "path": "data/apex/rgmmc-2026-iwf/x30mini_151.pdf",
+   "event": "IAME Finals IWF26",
+   "className": "X30 MINI",
+   "title": "Qualifying Heat B-F",
+   "sha1": "fc5eb648e7cf7b2d9ca58bcfaa2b7dcd8a27690a"
+  },
+  {
+   "path": "data/apex/rgmmc-2026-iwf/x30mini_159.pdf",
+   "event": "IAME Finals IWF26",
+   "className": "X30 MINI",
+   "title": "Qualifying Heat C-E",
+   "sha1": "d20816facc8e1467202abc8474a9ff4731c336d4"
+  },
+  {
+   "path": "data/apex/rgmmc-2026-iwf/x30mini_139.pdf",
+   "event": "IAME Finals IWF26",
+   "className": "X30 MINI",
+   "title": "Qualifying Heat A-D",
+   "sha1": "e1f4adc59294aa0f77412fe7d9bbb333cebd2a27"
+  },
+  {
+   "path": "data/apex/rgmmc-2026-iwf/x30junior_368.pdf",
+   "event": "IAME Finals IWF26",
+   "className": "X30 JUNIOR",
+   "title": "Qualifying Practice",
+   "sha1": "9dc802ec46e7ab5bc8e2dc4164a2372d17c5d6fd"
+  },
+  {
+   "path": "data/apex/rgmmc-2026-iwf/x30junior_522.pdf",
+   "event": "IAME Finals IWF26",
+   "className": "X30 JUNIOR",
+   "title": "Qualifying Heat E-F",
+   "sha1": "756146f2767472a623a170d7bafa4c7bfcfa0572"
+  },
+  {
+   "path": "data/apex/rgmmc-2026-iwf/x30junior_517.pdf",
+   "event": "IAME Finals IWF26",
+   "className": "X30 JUNIOR",
+   "title": "Qualifying Heat C-D",
+   "sha1": "e34edf908707bab6cd205a00ea1d8e040764abac"
+  },
+  {
+   "path": "data/apex/rgmmc-2026-iwf/x30junior_508.pdf",
+   "event": "IAME Finals IWF26",
+   "className": "X30 JUNIOR",
+   "title": "Qualifying Heat A-B",
+   "sha1": "e94c75528c5dcf90562c25969218c103c897235d"
+  },
+  {
+   "path": "data/apex/rgmmc-2026-iwf/x30junior_518.pdf",
+   "event": "IAME Finals IWF26",
+   "className": "X30 JUNIOR",
+   "title": "Qualifying Heat C-F",
+   "sha1": "2aba0a6960eb279fb54f9e4b251be94090385abe"
+  },
+  {
+   "path": "data/apex/rgmmc-2026-iwf/x30junior_509.pdf",
+   "event": "IAME Finals IWF26",
+   "className": "X30 JUNIOR",
+   "title": "Qualifying Heat B-D",
+   "sha1": "b720bea9a068bc6a17a49b3455858ec16bed500b"
+  },
+  {
+   "path": "data/apex/rgmmc-2026-iwf/x30junior_503.pdf",
+   "event": "IAME Finals IWF26",
+   "className": "X30 JUNIOR",
+   "title": "Qualifying Heat A-E",
+   "sha1": "be610091095b2fea9e1ee14aadfb536a5a4d969f"
+  },
+  {
+   "path": "data/apex/rgmmc-2026-iwf/x30junior_520.pdf",
+   "event": "IAME Finals IWF26",
+   "className": "X30 JUNIOR",
+   "title": "Qualifying Heat B-F",
+   "sha1": "30546a0908f4a041deff10018edade705d96fbff"
+  },
+  {
+   "path": "data/apex/rgmmc-2026-iwf/x30junior_507.pdf",
+   "event": "IAME Finals IWF26",
+   "className": "X30 JUNIOR",
+   "title": "Qualifying Heat C-E",
+   "sha1": "53be9aa5f579b5733f7d587141d7b938e65f2ca1"
+  },
+  {
+   "path": "data/apex/rgmmc-2026-iwf/x30senior_287.pdf",
+   "event": "IAME Finals IWF26",
+   "className": "X30 SENIOR",
+   "title": "Qualifying Practice",
+   "sha1": "a5cf2cb713e87fcb303ead619061a5b46be327b2"
+  },
+  {
+   "path": "data/apex/rgmmc-2026-iwf/x30senior_557.pdf",
+   "event": "IAME Finals IWF26",
+   "className": "X30 SENIOR",
+   "title": "Qualifying Heat E-F",
+   "sha1": "c2b788a3370cb6b4e18edb13171318c275f87839"
+  },
+  {
+   "path": "data/apex/rgmmc-2026-iwf/x30senior_550.pdf",
+   "event": "IAME Finals IWF26",
+   "className": "X30 SENIOR",
+   "title": "Qualifying Heat C-D",
+   "sha1": "ed6a6378a92b76b6380c0df5eefb74e0145dd6e6"
+  },
+  {
+   "path": "data/apex/rgmmc-2026-iwf/x30senior_539.pdf",
+   "event": "IAME Finals IWF26",
+   "className": "X30 SENIOR",
+   "title": "Qualifying Heat A-B",
+   "sha1": "55507154232e42ee59983ae695a1a7c347e87390"
+  },
+  {
+   "path": "data/apex/rgmmc-2026-iwf/x30senior_552.pdf",
+   "event": "IAME Finals IWF26",
+   "className": "X30 SENIOR",
+   "title": "Qualifying Heat C-F",
+   "sha1": "5822d9b88dd7cd45136aa63df77adb88e1c1c1cd"
+  },
+  {
+   "path": "data/apex/rgmmc-2026-iwf/x30senior_546.pdf",
+   "event": "IAME Finals IWF26",
+   "className": "X30 SENIOR",
+   "title": "Qualifying Heat B-D",
+   "sha1": "22367ba69f24b9d3962e294a8cec51080cec1e4a"
+  },
+  {
+   "path": "data/apex/rgmmc-2026-iwf/x30senior_542.pdf",
+   "event": "IAME Finals IWF26",
+   "className": "X30 SENIOR",
+   "title": "Qualifying Heat A-E",
+   "sha1": "19c0490c82df4101631803dc95f1d64cfee95d95"
+  },
+  {
+   "path": "data/apex/rgmmc-2026-iwf/s125junior_575.pdf",
+   "event": "IAME Finals IWF26",
+   "className": "S125 JUNIOR",
+   "title": "Qualifying Practice",
+   "sha1": "c59c3dd816817990b24b86e70c658ca3e1803769"
+  },
+  {
+   "path": "data/apex/rgmmc-2026-iwf/s125junior_576.pdf",
+   "event": "IAME Finals IWF26",
+   "className": "S125 JUNIOR",
+   "title": "Qualifying Heat 1",
+   "sha1": "dec423b41ef10c98f94d9cd92e6d6f48415eb1d2"
+  },
+  {
+   "path": "data/apex/rgmmc-2026-iwf/s125junior_577.pdf",
+   "event": "IAME Finals IWF26",
+   "className": "S125 JUNIOR",
+   "title": "Qualifying Heat 2",
+   "sha1": "90f7fa89985c1c1c7640db5339f223c8a6c63beb"
+  },
+  {
+   "path": "data/apex/rgmmc-2026-iwf/s125junior_578.pdf",
+   "event": "IAME Finals IWF26",
+   "className": "S125 JUNIOR",
+   "title": "Qualifying Heat 3",
+   "sha1": "00ca553ca278e9610af70c886f7ba1bfe7519f22"
+  },
+  {
+   "path": "data/apex/rgmmc-2026-iwf/s125senior_620.pdf",
+   "event": "IAME Finals IWF26",
+   "className": "S125 SENIOR",
+   "title": "Qualifying Practice",
+   "sha1": "5e6520083b969179e6ac4a09000ebcdad3534773"
+  },
+  {
+   "path": "data/apex/rgmmc-2026-iwf/s125senior_622.pdf",
+   "event": "IAME Finals IWF26",
+   "className": "S125 SENIOR",
+   "title": "Qualifying Heat 1",
+   "sha1": "a98d88c3ae9fd2d3386250b3c8349efc634d6421"
+  },
+  {
+   "path": "data/apex/rgmmc-2026-iwf/s125senior_624.pdf",
+   "event": "IAME Finals IWF26",
+   "className": "S125 SENIOR",
+   "title": "Qualifying Heat 2",
+   "sha1": "3e57b7a9dcbffefb7556eea43e5742353a214c07"
+  },
+  {
+   "path": "data/apex/rgmmc-2026-iwf/s125senior_625.pdf",
+   "event": "IAME Finals IWF26",
+   "className": "S125 SENIOR",
+   "title": "Qualifying Heat 3",
+   "sha1": "f97b1775fe180f34ea07525f9335f8cfedb2f60d"
+  },
+  {
+   "path": "data/apex/rgmmc-2026-iwf/x30master_229.pdf",
+   "event": "IAME Finals IWF26",
+   "className": "X30 MASTER",
+   "title": "Qualifying Practice",
+   "sha1": "855cc2cdd31406eadb45db8f29e93d26774c959e"
+  },
+  {
+   "path": "data/apex/rgmmc-2026-iwf/x30master_231.pdf",
+   "event": "IAME Finals IWF26",
+   "className": "X30 MASTER",
+   "title": "Qualifying Heat 1",
+   "sha1": "9f6a757b28a0196277af86b60d4dd019d0f54468"
+  },
+  {
+   "path": "data/apex/rgmmc-2026-iwf/x30master_235.pdf",
+   "event": "IAME Finals IWF26",
+   "className": "X30 MASTER",
+   "title": "Qualifying Heat 2",
+   "sha1": "cc51925fa799272b8855d0e004c6ca13ebb9fcde"
+  },
+  {
+   "path": "data/apex/rgmmc-2026-iwf/x30master_424.pdf",
+   "event": "IAME Finals IWF26",
+   "className": "X30 MASTER",
+   "title": "Qualifying Heat 3",
+   "sha1": "081cf14731718104785a32c3583b639e97b4a4bf"
+  }
+ ]
+}
