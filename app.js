@@ -1671,6 +1671,144 @@ function attachFinalNeeds(drivers, heatCols, totalHeats, aCutoff) {
   }
 }
 
+// IAME Finals / Eurocup format (highest points wins): every qualifying group
+// races every other group, then the top 72 of that intermediate ranking go to
+// one or two Super Heats (1st -> SH A, 2nd -> SH B, 3rd -> SH A, ...) whose
+// points are added on top, and the top 36 of that total make the final.
+const SUPER_HEAT_CUTOFF = 72;
+const FINAL_CUTOFF = 36;
+
+function isSuperHeat(heat) {
+  return /super/i.test(heat.heatLabel);
+}
+
+function computeSuperHeatFormat(drivers, heatCols, raceKey, className, qualiMap) {
+  const fieldSize = Math.max(drivers.length, qualiMap ? qualiMap.size : 0);
+  const twoSuperHeats = fieldSize > FINAL_CUTOFF;
+
+  // Super heat(s) raced: the standings now decide the final.
+  if (heatCols.some(isSuperHeat)) {
+    return { phase: "final", fieldSize, cutoffN: fieldSize > FINAL_CUTOFF ? FINAL_CUTOFF : null };
+  }
+
+  if (twoSuperHeats) {
+    for (const d of drivers) {
+      if (d.pos <= SUPER_HEAT_CUTOFF) d.superHeat = d.pos % 2 === 1 ? "A" : "B";
+    }
+  }
+
+  const result = {
+    phase: "heats",
+    fieldSize,
+    twoSuperHeats,
+    cutoffN: fieldSize > SUPER_HEAT_CUTOFF ? SUPER_HEAT_CUTOFF : null,
+    totalHeats: getTotalHeatsForClass(raceKey, className),
+    projectedCutoff: null,
+    sampleSize: 0,
+    sampleNeeded: null,
+  };
+  if (!result.cutoffN || !result.totalHeats) return result;
+
+  // Same scaled-sample projection as the national-series A-final estimate,
+  // just ranked highest-first.
+  const projected = drivers
+    .filter((d) => d.heatsCount > 0)
+    .map((d) => Math.round((d.total / d.heatsCount) * result.totalHeats))
+    .sort((a, b) => b - a);
+  const share = Math.max(1, Math.round((result.cutoffN * projected.length) / fieldSize));
+  result.sampleSize = projected.length;
+  result.sampleNeeded = Math.max(share, 10);
+  if (result.sampleNeeded <= projected.length) {
+    result.projectedCutoff = projected[share - 1];
+    attachSuperHeatNeeds(drivers, heatCols, result.totalHeats, result.projectedCutoff, result.cutoffN);
+  }
+  return result;
+}
+
+// Like attachFinalNeeds, but for highest-points-wins: how many points a driver
+// still has to collect to end at or above the estimated super heat cutoff.
+function attachSuperHeatNeeds(drivers, heatCols, totalHeats, cutoff, cutoffN) {
+  const groupCount = totalHeats + 1;
+  const totalPairHeats = (groupCount * (groupCount - 1)) / 2;
+  const remainingShare = Math.max(0, 1 - heatCols.length / totalPairHeats);
+  const margin = remainingShare > 0 ? Math.ceil(1 + 5 * remainingShare) : 0;
+  const pointsByRank = new Map();
+  for (const h of heatCols) {
+    for (const row of h.rows) {
+      if (row.points === null || row.resultCode) continue;
+      if (!pointsByRank.has(row.rank) || row.points < pointsByRank.get(row.rank)) pointsByRank.set(row.rank, row.points);
+    }
+  }
+  if (!pointsByRank.size) return;
+  const maxRank = Math.max(...pointsByRank.keys());
+  const bestPerHeat = Math.max(...pointsByRank.values());
+  const worstPerHeat = Math.min(...pointsByRank.values());
+  const allDone = drivers.every((d) => d.heatsCount >= totalHeats);
+
+  for (const d of drivers) {
+    const remaining = totalHeats - d.heatsCount;
+    const needed = cutoff - d.total;
+    if (allDone) {
+      d.aNeed = { status: d.pos <= cutoffN ? "in" : "out-done", remaining: 0, needed };
+    } else if (remaining <= 0) {
+      d.aNeed = { status: d.total >= cutoff + margin ? "in" : d.total < cutoff - margin ? "out-done" : "edge", remaining: 0, needed };
+    } else if (d.total + remaining * worstPerHeat >= cutoff + margin) {
+      d.aNeed = { status: "safe", remaining, needed };
+    } else if (d.total + remaining * bestPerHeat < cutoff - margin) {
+      d.aNeed = { status: "out", remaining, needed };
+    } else {
+      const avgPoints = needed / remaining;
+      if (avgPoints > bestPerHeat) {
+        d.aNeed = { status: "edge", remaining, needed };
+      } else {
+        let maxPos = 1;
+        for (let q = 1; q <= maxRank; q++) if ((pointsByRank.get(q) ?? 0) >= avgPoints) maxPos = q;
+        d.aNeed = { status: "need", remaining, needed, avgPoints, maxPos };
+      }
+    }
+  }
+}
+
+function superHeatProjectionText(sf, hasQualifying) {
+  if (sf.phase === "final") {
+    return sf.cutoffN
+      ? `🏁 Super heat(s) gereden — punten van heats + super heat opgeteld. De top ${sf.cutoffN} gaat naar de finale.`
+      : `🏁 Super heat(s) gereden — iedereen (${sf.fieldSize} rijders) start in de finale.`;
+  }
+  const split = sf.twoSuperHeats
+    ? ` Daar worden ze verdeeld over super heat A (P1, P3, P5, …) en B (P2, P4, P6, …); de badge toont waar je nu zou starten.`
+    : ` Met ${FINAL_CUTOFF} of minder rijders is er één super heat met iedereen.`;
+  const afterwards = ` Na de super heat(s) gaat de top ${FINAL_CUTOFF} (heats + super heat opgeteld) naar de finale.`;
+  if (!sf.cutoffN) {
+    return `📊 Alle ${sf.fieldSize} rijders gaan door naar de super heats (max ${SUPER_HEAT_CUTOFF}).${split}${afterwards}`;
+  }
+  const estimate = !sf.totalHeats
+    ? hasQualifying
+      ? " Kon het aantal groepen niet bepalen uit de qualifying-PDF, dus nog geen puntenschatting."
+      : " Upload de qualifying-PDF van deze klasse om een puntenschatting te zien."
+    : sf.projectedCutoff !== null
+      ? ` Geschatte grens: <strong>~${sf.projectedCutoff} punten</strong> — o.b.v. gemiddelde punten per heat (${sf.totalHeats} heats per rijder, ${sf.sampleSize} rijders met data), kan nog wijzigen.`
+      : ` Nog geen puntenschatting mogelijk — nog ${sf.sampleNeeded - sf.sampleSize} rijder(s) met minstens 1 heat nodig.`;
+  return `📊 Top ${SUPER_HEAT_CUTOFF} gaat door naar de super heats.${estimate}${split}${afterwards}`;
+}
+
+function superNeedCell(d, cutoffN) {
+  const n = d.aNeed;
+  if (!n) return `<td class="a-need">–</td>`;
+  const limit = d.total + n.needed;
+  if (n.status === "edge") return `<td class="a-need a-edge" title="Te dicht bij de geschatte grens (~${limit}) om te zeggen.">≈ Op de grens</td>`;
+  if (n.status === "in") return `<td class="a-need a-safe" title="Alle heats gereden — bij de eerste ${cutoffN}">✓ Super heat</td>`;
+  if (n.status === "out-done") return `<td class="a-need a-out" title="Alle heats gereden — buiten de eerste ${cutoffN}">✗ Niet gehaald</td>`;
+  if (n.status === "safe") return `<td class="a-need a-safe" title="Nog ${n.remaining} heat(s) — ook met de slechtste uitslagen boven de grens (~${limit})">✓ Veilig</td>`;
+  if (n.status === "out") return `<td class="a-need a-out" title="Nog ${n.remaining} heat(s) — zelfs met alleen winnen niet meer haalbaar (grens ~${limit})">✗ Buiten bereik</td>`;
+  const tip =
+    n.remaining === 1
+      ? `Nog 1 heat. Om de geschatte grens (~${limit}) te halen heb je nog minstens ${n.needed} punten nodig: eindig op P${n.maxPos} of beter.`
+      : `Nog ${n.remaining} heats. Om de geschatte grens (~${limit}) te halen heb je nog minstens ${n.needed} punten nodig, gemiddeld ${Math.ceil(n.avgPoints * 10) / 10} per heat. Eindig dus gemiddeld op P${n.maxPos} of beter.`;
+  const text = n.remaining === 1 ? `Laatste heat: P${n.maxPos} of beter` : `Gemiddeld P${n.maxPos} of beter`;
+  return `<td class="a-need a-required" title="${tip}">${text}</td>`;
+}
+
 function needCell(d, key) {
   const n = d[key];
   if (!n) return `<td class="a-need">–</td>`;
@@ -1813,6 +1951,7 @@ function computeClassifications(heatsSubset) {
     if (totalHeats && projectedACutoff !== null) {
       attachFinalNeeds(drivers, heatCols, totalHeats, projectedACutoff);
     }
+    const superFormat = higherIsBetter ? computeSuperHeatFormat(drivers, heatCols, raceKey, className, qualiMap) : null;
 
     classifications.push({
       className,
@@ -1828,6 +1967,7 @@ function computeClassifications(heatsSubset) {
       subClassOrder,
       noFinalSplit: noFinalSplit || higherIsBetter,
       higherIsBetter,
+      superFormat,
     });
   }
 
@@ -1891,8 +2031,11 @@ function renderClassifications(classifications) {
 
   {
     const selected = classifications.find((c) => c.className === activeClass) || classifications[0];
-    const { className, heatCols, drivers, hasQualifying, qualiOnly, totalHeats, projectedACutoff, projectedBCutoff, projectedSampleSize, projectedSampleNeeded, hasMultipleSubClasses, subClassOrder, noFinalSplit, higherIsBetter } =
+    const { className, heatCols, drivers, hasQualifying, qualiOnly, totalHeats, projectedACutoff, projectedBCutoff, projectedSampleSize, projectedSampleNeeded, hasMultipleSubClasses, subClassOrder, noFinalSplit, higherIsBetter, superFormat } =
       selected;
+    // IAME Finals / Eurocup: own cutoff (top 72 to the super heats, then top
+    // 36 to the final) instead of the national-series A/B-final split.
+    const sf = !qualiOnly ? superFormat : null;
     // GK4 doesn't work with qualifying groups or an A/B-final split at all -
     // none of that is relevant there, so hide it entirely for GK4 races. A
     // qualifying-only preliminary list (no heats raced yet) doesn't have a
@@ -1903,7 +2046,8 @@ function renderClassifications(classifications) {
     const showHeatsUI = showHeatColumns && heatCols.length > 0;
     const block = document.createElement("section");
     block.className = "panel class-block";
-    const aNeedAvailable = !suppressFinals && projectedACutoff !== null;
+    const aNeedAvailable = sf ? sf.projectedCutoff != null : !suppressFinals && projectedACutoff !== null;
+    const needLabel = sf ? "Nodig voor super heat" : "Nodig voor A";
     const showANeed = aNeedAvailable && showANeedPref;
     const colCount = 4 + (showHeatsUI ? 1 : 0) + (showANeed ? 1 : 0); // Pos, Rijder, [Resultaten], Totaal, Heats, [A-finale]
     // Once every heat is raced, renumber the B-final group starting back at 1
@@ -1930,22 +2074,31 @@ function renderClassifications(classifications) {
       if (qualifiesA) posTitleParts.push("Kwalificeert voor de A-finale");
       if (qualifiesB) posTitleParts.push("Kwalificeert voor de B-finale");
       if (restarted) posTitleParts.push(`Startnummer B-finale (eindpositie na de heats: P${d.pos})`);
+      const sfIn = !!sf && !!sf.cutoffN && d.pos <= sf.cutoffN;
+      if (sfIn) posTitleParts.push(sf.phase === "final" ? "Kwalificeert voor de finale" : "Kwalificeert voor de super heats");
       if (d.qualiPos !== undefined) posTitleParts.push(`Qualifying P${d.qualiPos}`);
+      const superHeatBadge =
+        sf && d.superHeat
+          ? `<span class="sub-class-badge" style="${subClassStyle(d.superHeat, ["A", "B"])}" title="Zou nu in super heat ${d.superHeat} starten (oneven posities in A, even in B)">SH ${d.superHeat}</span>`
+          : "";
       const weightBadge =
         hasMultipleSubClasses && d.subClass
           ? `<span class="sub-class-badge" style="${subClassStyle(d.subClass, subClassOrder)}" title="${d.subClassPos}e van ${d.subClassSize} in de ${d.subClass}-klasse">${d.subClass} · P${d.subClassPos}</span>`
           : "";
-      let html = `<tr class="${isHighlighted ? "highlighted" : ""} ${qualifiesA ? "qualifies-a" : ""} ${qualifiesB ? "qualifies-b" : ""}" data-key="${d.key.replace(/"/g, "&quot;")}">
+      let html = `<tr class="${isHighlighted ? "highlighted" : ""} ${qualifiesA || sfIn ? "qualifies-a" : ""} ${qualifiesB ? "qualifies-b" : ""}" data-key="${d.key.replace(/"/g, "&quot;")}">
           <td class="pos ${d.pos === 1 ? "pos-first" : ""}" title="${posTitleParts.join(" · ")}">${displayPos}</td>
           <td class="name-cell">
             <button type="button" class="star-btn ${isHighlighted ? "starred" : ""}" title="Highlight rijder" aria-label="Highlight ${d.fullName}">${isHighlighted ? "★" : "☆"}</button>
-            ${d.fullName} <span class="car-number">#${d.car}</span>${weightBadge}
+            ${d.fullName} <span class="car-number">#${d.car}</span>${weightBadge}${superHeatBadge}
           </td>
           ${resultsCell}
           <td class="num total">${d.total !== null ? d.total : "–"}</td>
           <td class="num">${d.heatsCount}</td>
-          ${showANeed ? needCell(d, "aNeed") : ""}
+          ${showANeed ? (sf ? superNeedCell(d, sf.cutoffN) : needCell(d, "aNeed")) : ""}
         </tr>`;
+      if (sf && sf.cutoffN && d.pos === sf.cutoffN && drivers.length > sf.cutoffN) {
+        html += `<tr class="cutoff-row"><td colspan="${colCount}">${sf.phase === "final" ? "Finale" : "Super heat"} grens — top ${sf.cutoffN}</td></tr>`;
+      }
       if (!suppressFinals && d.pos === A_FINAL_CUTOFF && drivers.length > A_FINAL_CUTOFF) {
         html += `<tr class="cutoff-row"><td colspan="${colCount}">A-finale grens — top ${A_FINAL_CUTOFF}</td></tr>`;
       }
@@ -1975,6 +2128,7 @@ function renderClassifications(classifications) {
             : `Klassement over ${heatCols.length} heat(s) — punten opgeteld, ${higherIsBetter ? "hoogste" : "laagste"} totaal bovenaan. Klik de ster om een rijder te highlighten.${hasQualifying ? " Bij gelijke punten beslist de qualifying (snelste tijd wint)." : ""}`
         }</p>
         ${unevenHeats ? '<p class="class-warning">⚠ Niet alle rijders hebben evenveel heats gereden — dit klassement is nog niet volledig.</p>' : ""}
+        ${sf ? `<p class="class-projection">${superHeatProjectionText(sf, hasQualifying)}</p>` : ""}
         ${
           suppressFinals
             ? ""
@@ -2003,7 +2157,7 @@ function renderClassifications(classifications) {
             aNeedAvailable
               ? `<label class="show-heats-toggle">
                   <input type="checkbox" class="show-aneed-checkbox" ${showANeedPref ? "checked" : ""} />
-                  Toon "Nodig voor A"
+                  Toon "${needLabel}"
                 </label>`
               : ""
           }
@@ -2017,7 +2171,7 @@ function renderClassifications(classifications) {
                 ${resultsHeaderCell}
                 <th class="num">Totaal</th>
                 <th class="num">Heats</th>
-                ${showANeed ? '<th title="Wat je in de resterende heats nog nodig hebt voor de A-finale, o.b.v. de geschatte grens">Nodig voor A</th>' : ""}
+                ${showANeed ? `<th title="Wat je in de resterende heats nog nodig hebt, o.b.v. de geschatte grens">${needLabel}</th>` : ""}
               </tr>
             </thead>
             <tbody>${bodyRows}</tbody>
