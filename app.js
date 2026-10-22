@@ -2382,6 +2382,11 @@ render();
 // from Apex Timing into data/apex/ and lists them in manifest.json. Import
 // every file we haven't seen in this exact version (by hash) yet - a revised
 // PDF gets a new hash and is merged like a manual re-upload would be.
+// Read straight from GitHub rather than relative to the page: the app is often
+// opened as a local file (file://), which can't fetch sibling files and
+// wouldn't have the Action's newest commits anyway. raw.githubusercontent.com
+// allows cross-origin requests (also from file://) and caches ~5 minutes.
+const AUTO_IMPORT_BASE = "https://raw.githubusercontent.com/DFKKarting/Heats/master/";
 const AUTO_IMPORT_KEY = "kartingAutoImported.v1";
 const AUTO_IMPORT_INTERVAL_MS = 2 * 60 * 1000;
 let autoImportRunning = false;
@@ -2400,11 +2405,11 @@ async function autoImport() {
   try {
     let manifest;
     try {
-      const resp = await fetch("data/apex/manifest.json", { cache: "no-store" });
+      const resp = await fetch(`${AUTO_IMPORT_BASE}data/apex/manifest.json`, { cache: "no-store" });
       if (!resp.ok) return;
       manifest = await resp.json();
     } catch {
-      return; // no manifest (e.g. opened as a local file) - manual upload only
+      return; // offline - manual upload only
     }
     const seen = loadAutoImported();
     const todo = (manifest.files || []).filter((f) => seen[f.path] !== f.sha1);
@@ -2413,8 +2418,15 @@ async function autoImport() {
     let heatCount = 0;
     let qualiCount = 0;
     for (const f of todo) {
+      let blob;
       try {
-        const blob = await (await fetch(f.path, { cache: "no-store" })).blob();
+        const resp = await fetch(`${AUTO_IMPORT_BASE}${f.path}`, { cache: "no-store" });
+        if (!resp.ok) continue; // not there yet / network trouble - retry next round
+        blob = await resp.blob();
+      } catch {
+        continue;
+      }
+      try {
         const file = new File([blob], f.path.split("/").pop(), { type: "application/pdf" });
         const { docType, record } = await parseUploadedFile(file);
         if (docType === "qualifying") {
@@ -2427,7 +2439,7 @@ async function autoImport() {
       } catch (e) {
         console.warn(`Automatisch inlezen mislukt voor ${f.path}:`, e);
       }
-      // Marked even when it failed, so a broken file isn't retried forever.
+      // Marked even when parsing failed, so a broken file isn't retried forever.
       seen[f.path] = f.sha1;
     }
     saveHeats(heats);
