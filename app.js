@@ -590,9 +590,9 @@ function parseRowsApex(items) {
     const codeItem = band.find((it) => /^(DSQ|DQ|DNF|DNS|EXC|NC)$/i.test(it.text.trim()));
     const pointsItem = band.find((it) => within(it.x, cols.points) && /^-?[0-9]+$/.test(it.text.trim()));
     const resultCode = rankItem ? null : codeItem ? codeItem.text.trim().toUpperCase() : "NC";
-    // A non-finisher without a printed points value still raced (or was
-    // entered in) this heat - count it as 0 instead of dropping the heat.
-    const points = pointsItem ? parseInt(pointsItem.text, 10) : resultCode ? 0 : null;
+    // A non-finisher without a printed points value gets its points filled in
+    // per the regulations afterwards (see fillMissingApexPoints).
+    const points = pointsItem ? parseInt(pointsItem.text, 10) : null;
 
     rows.push({
       car: anchors[i].text,
@@ -644,6 +644,21 @@ function parseTitleBlockApex(items) {
   return { eventName, className, heatLabel, printedAt };
 }
 
+// The sheet normally prints a non-finisher's points itself (often negative),
+// but not always. Fill the gap with the regulations' rule: the last
+// classified driver's points minus 5 for a DSQ/black flag, minus 1 for a
+// non-starter - so the heat still counts for that driver.
+function fillMissingApexPoints(rows) {
+  const classified = rows.filter((r) => !r.resultCode && r.points !== null);
+  if (!classified.length) return;
+  const lastPoints = Math.min(...classified.map((r) => r.points));
+  for (const r of rows) {
+    if (r.points !== null || !r.resultCode) continue;
+    r.points = /^(DSQ|DQ|EXC)$/.test(r.resultCode) ? lastPoints - 5 : lastPoints - 1;
+    r.pointsEstimated = true;
+  }
+}
+
 async function buildApexHeatRecord(file, pdf, items1) {
   if (apexSheetType(items1) !== "heat") {
     throw new Error("Geen resultatenpagina gevonden in dit Apex Timing PDF.");
@@ -660,6 +675,7 @@ async function buildApexHeatRecord(file, pdf, items1) {
     throw new Error("Kon geen resultatentabel herkennen in dit PDF.");
   }
   rows.forEach((r, idx) => (r.rank = idx + 1));
+  fillMissingApexPoints(rows);
 
   const { eventName, className, heatLabel, printedAt } = parseTitleBlockApex(items1);
   const raceKey = deriveRaceKey(eventName);
