@@ -1,19 +1,21 @@
 name: Apex-resultaten ophalen
 
-# Downloads new/revised result PDFs from apex-timing.com (see
-# scripts/fetch_apex.py and data/apex/sources.json) and commits them, so the
-# app can import them automatically.
+# Downloads new/revised result PDFs (see scripts/fetch_apex.py and
+# data/apex/sources.json) and commits them, so the app can import them
+# automatically.
 #
-# GitHub starts scheduled runs at most every 5 minutes (often later), so each
-# run keeps checking every minute for ~15 minutes itself; the next scheduled
-# run queues behind it (concurrency) and takes over, so there's no gap.
+# Each run keeps checking about every minute for ~14 minutes, then starts the
+# next run itself - GitHub's own schedule (cron) is unreliable for frequent
+# runs (often hours late or skipped), so it's only a fallback here to restart
+# the chain if it ever breaks. Stop it via Actions -> "Disable workflow".
 on:
   schedule:
-    - cron: "*/10 * * * *"
+    - cron: "*/15 * * * *"
   workflow_dispatch:
 
 permissions:
   contents: write
+  actions: write
 
 concurrency:
   group: fetch-results
@@ -30,7 +32,9 @@ jobs:
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898283+github-actions[bot]@users.noreply.github.com"
-          for i in $(seq 1 15); do
+          end=$((SECONDS + 14 * 60))
+          while [ $SECONDS -lt $end ]; do
+            git pull -q --rebase origin master || true
             python3 scripts/fetch_apex.py || echo "Ophalen mislukt, volgende poging over een minuut."
             git add data/apex
             if ! git diff --cached --quiet; then
@@ -38,5 +42,11 @@ jobs:
               git pull --rebase origin master
               git push
             fi
-            sleep 60
+            sleep 45
           done
+
+      - name: Volgende run starten
+        if: ${{ !cancelled() }}
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh workflow run fetch-results.yml --ref master
