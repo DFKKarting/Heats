@@ -554,14 +554,18 @@ function splitApexName(raw) {
   return { firstName, lastName, fullName: `${firstName} ${lastName}`.trim() };
 }
 
+// Classified drivers have a rank; DSQ/DNS/DNF drivers are listed after them
+// under "Not classified" (often on the next page) with no rank, just a code
+// in the Gap column and sometimes negative points - so rows are anchored on
+// the car number, not the rank, or those drivers would silently disappear.
 function parseRowsApex(items) {
   const { headerY, cols } = apexColumns(items);
-  const rankAnchors = items
-    .filter((it) => it.y > headerY + 5 && within(it.x, cols.rnk) && isRowAnchorText(it.text))
+  const carAnchors = items
+    .filter((it) => it.y > headerY + 5 && within(it.x, cols.no) && /^[0-9]+$/.test(it.text))
     .sort((a, b) => a.y - b.y);
 
   const anchors = [];
-  for (const a of rankAnchors) {
+  for (const a of carAnchors) {
     if (anchors.length && Math.abs(anchors[anchors.length - 1].y - a.y) < 3) continue;
     anchors.push(a);
   }
@@ -572,7 +576,6 @@ function parseRowsApex(items) {
     const y1 = i + 1 < anchors.length ? anchors[i + 1].y : y0 + 14;
     const band = items.filter((it) => it.y >= y0 - 5 && it.y < y1 - 5);
 
-    const carItem = band.find((it) => within(it.x, cols.no) && /^[0-9]+$/.test(it.text));
     const rawName = band
       .filter((it) => within(it.x, cols.driver))
       .sort((a, b) => a.x - b.x)
@@ -583,16 +586,20 @@ function parseRowsApex(items) {
     if (!rawName) continue;
     const { firstName, lastName, fullName } = splitApexName(rawName);
 
-    const pointsItem = band.find((it) => within(it.x, cols.points) && /^[0-9]+$/.test(it.text));
-    const anchorCode = anchors[i].text.toUpperCase();
-    const resultCode = /^[0-9]+$/.test(anchorCode) ? null : anchorCode;
+    const rankItem = band.find((it) => within(it.x, cols.rnk) && /^[0-9]+$/.test(it.text));
+    const codeItem = band.find((it) => /^(DSQ|DQ|DNF|DNS|EXC|NC)$/i.test(it.text.trim()));
+    const pointsItem = band.find((it) => within(it.x, cols.points) && /^-?[0-9]+$/.test(it.text.trim()));
+    const resultCode = rankItem ? null : codeItem ? codeItem.text.trim().toUpperCase() : "NC";
+    // A non-finisher without a printed points value still raced (or was
+    // entered in) this heat - count it as 0 instead of dropping the heat.
+    const points = pointsItem ? parseInt(pointsItem.text, 10) : resultCode ? 0 : null;
 
     rows.push({
-      car: carItem ? carItem.text : "",
+      car: anchors[i].text,
       firstName,
       lastName,
       fullName,
-      points: pointsItem ? parseInt(pointsItem.text, 10) : null,
+      points,
       resultCode,
     });
   }
@@ -1277,11 +1284,11 @@ function findQualifyingFor(raceKey, className) {
   return inRace.find((q) => q.className === className) || inRace.find((q) => classesMatch(q.className, className));
 }
 
-function getQualiPosMap(raceKey, className) {
+function getQualiPosMap(raceKey, className, driverId = (e) => e.fullName) {
   const q = findQualifyingFor(raceKey, className);
   if (!q) return null;
   const map = new Map();
-  for (const e of q.entries) map.set(e.fullName, e.pos);
+  for (const e of q.entries) map.set(driverId(e), e.pos);
   return map;
 }
 
@@ -1854,14 +1861,22 @@ function computeClassifications(heatsSubset) {
       .slice()
       .sort((a, b) => a.heatLabel.localeCompare(b.heatLabel, undefined, { numeric: true }));
 
-    const driverMap = new Map(); // fullName -> { fullName, perHeat: {id: points}, total, heatsCount }
+    // IAME Finals (Apex Timing) heats give the winner the most points.
+    const higherIsBetter = classHeats.some((h) => h.scoring === "high");
+    // Apex Timing doesn't write a name the same way on every sheet (e.g.
+    // "MEUNIER Senna" in the heats vs "SENNA Meunier" in the qualifying), but
+    // the car number is fixed for the whole event there - match on that.
+    const driverId = (row) => (higherIsBetter && row.car ? `#${row.car}` : row.fullName);
+
+    const driverMap = new Map(); // driverId -> { id, fullName, perHeat: {id: points}, total, heatsCount }
     for (const h of heatCols) {
       for (const row of h.rows) {
         if (row.points === null) continue;
-        if (!driverMap.has(row.fullName)) {
-          driverMap.set(row.fullName, { fullName: row.fullName, car: row.car, perHeat: {}, total: 0, heatsCount: 0, subClass: null });
+        const id = driverId(row);
+        if (!driverMap.has(id)) {
+          driverMap.set(id, { id, fullName: row.fullName, car: row.car, perHeat: {}, total: 0, heatsCount: 0, subClass: null });
         }
-        const d = driverMap.get(row.fullName);
+        const d = driverMap.get(id);
         d.perHeat[h.id] = { points: row.points, code: row.resultCode, heatPos: row.rank };
         d.total += row.points;
         d.heatsCount += 1;
@@ -1870,9 +1885,7 @@ function computeClassifications(heatsSubset) {
       }
     }
 
-    // IAME Finals (Apex Timing) heats give the winner the most points.
-    const higherIsBetter = classHeats.some((h) => h.scoring === "high");
-    const qualiMap = getQualiPosMap(raceKey, className);
+    const qualiMap = getQualiPosMap(raceKey, className, driverId);
     // Known once qualifying is uploaded: with 36 or fewer drivers in the whole
     // field there's no A/B split at all - everyone races one final together -
     // so none of the A/B-final UI (banner, badges, "Nodig voor A" column)
@@ -1883,8 +1896,8 @@ function computeClassifications(heatsSubset) {
       .sort((a, b) => {
         if (a.total !== b.total) return higherIsBetter ? b.total - a.total : a.total - b.total;
         if (qualiMap) {
-          const qa = qualiMap.get(a.fullName);
-          const qb = qualiMap.get(b.fullName);
+          const qa = qualiMap.get(a.id);
+          const qb = qualiMap.get(b.id);
           if (qa !== undefined && qb !== undefined && qa !== qb) return qa - qb;
           if (qa !== undefined && qb === undefined) return -1;
           if (qb !== undefined && qa === undefined) return 1;
@@ -1896,7 +1909,7 @@ function computeClassifications(heatsSubset) {
         ...d,
         pos: idx + 1,
         key: `${className}::${d.fullName}`,
-        qualiPos: qualiMap ? qualiMap.get(d.fullName) : undefined,
+        qualiPos: qualiMap ? qualiMap.get(d.id) : undefined,
         subClass: d.subClass || (subClassMap ? subClassMap.get(d.fullName) : undefined) || null,
       }));
 
