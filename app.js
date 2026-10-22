@@ -1104,6 +1104,7 @@ const heatsList = document.getElementById("heatsList");
 const classificationsContainer = document.getElementById("classificationsContainer");
 const resetBtn = document.getElementById("resetBtn");
 const refreshBtn = document.getElementById("refreshBtn");
+const importLog = document.getElementById("importLog");
 const searchInput = document.getElementById("searchInput");
 const searchResults = document.getElementById("searchResults");
 const toggleHeatsBtn = document.getElementById("toggleHeatsBtn");
@@ -2425,6 +2426,36 @@ async function autoImportBase() {
   return `https://raw.githubusercontent.com/${AUTO_IMPORT_REPO}/master/`;
 }
 
+// Which heats/qualifyings the last automatic import brought in, newest race
+// first - each line jumps to that race and class. A first import can be
+// hundreds of files, so only the first few are listed.
+const IMPORT_LOG_MAX = 10;
+function renderImportLog(loaded) {
+  if (!loaded.length) {
+    importLog.innerHTML = "";
+    return;
+  }
+  const esc = (t) => String(t).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/"/g, "&quot;");
+  const shown = loaded.slice(0, IMPORT_LOG_MAX);
+  const rest = loaded.length - shown.length;
+  importLog.innerHTML = `<ul>${shown
+    .map(
+      (l) => `<li><button type="button" class="import-log-item" data-race="${esc(l.raceKey)}" data-class="${esc(l.className)}" title="Toon dit klassement">
+          <span class="import-log-race">${esc(deriveRaceLabel(l.eventName))}</span> · ${esc(l.className)} · <strong>${esc(l.label)}</strong>${l.revised ? ' <span class="import-log-tag">herzien</span>' : ""}
+        </button></li>`
+    )
+    .join("")}${rest > 0 ? `<li class="import-log-more">+ ${rest} meer</li>` : ""}</ul>`;
+  importLog.querySelectorAll(".import-log-item").forEach((btn) =>
+    btn.addEventListener("click", () => {
+      activeRace = btn.dataset.race;
+      saveActiveRace(activeRace);
+      activeClass = btn.dataset.class;
+      localStorage.setItem(ACTIVE_CLASS_KEY, activeClass);
+      render();
+    })
+  );
+}
+
 // `manual`: started with the "Nu ophalen" button, so always report back. A
 // click while a run is already going (e.g. the one at startup) just waits for
 // that run instead of being silently ignored.
@@ -2464,6 +2495,7 @@ async function runAutoImport(manual) {
 
     let heatCount = 0;
     let qualiCount = 0;
+    const loaded = [];
     for (const f of todo) {
       let blob;
       try {
@@ -2476,12 +2508,17 @@ async function runAutoImport(manual) {
       try {
         const file = new File([blob], f.path.split("/").pop(), { type: "application/pdf" });
         const { docType, record } = await parseUploadedFile(file);
-        if (docType === "qualifying") {
-          mergeQualifying(record);
-          qualiCount++;
-        } else {
-          mergeHeat(record);
-          heatCount++;
+        const outcome = docType === "qualifying" ? mergeQualifying(record) : mergeHeat(record);
+        if (docType === "qualifying") qualiCount++;
+        else heatCount++;
+        if (outcome !== "skipped-older-revision") {
+          loaded.push({
+            raceKey: record.raceKey,
+            eventName: record.eventName,
+            className: record.className,
+            label: docType === "qualifying" ? "Qualifying" : record.heatLabel,
+            revised: outcome === "replaced-with-revision",
+          });
         }
       } catch (e) {
         console.warn(`Automatisch inlezen mislukt voor ${f.path}:`, e);
@@ -2503,8 +2540,10 @@ async function runAutoImport(manual) {
     const parts = [];
     if (heatCount) parts.push(`${heatCount} heat(s)`);
     if (qualiCount) parts.push(`${qualiCount} qualifying`);
-    if (parts.length) setStatus(`Automatisch ingeladen: ${parts.join(" en ")}.`, "ok");
-    else if (manual) setStatus("Geen nieuwe resultaten — alles is al ingeladen.", "ok");
+    if (parts.length) {
+      setStatus(`Automatisch ingeladen: ${parts.join(" en ")}.`, "ok");
+      renderImportLog(loaded);
+    } else if (manual) setStatus("Geen nieuwe resultaten — alles is al ingeladen.", "ok");
   } finally {
     refreshBtn.disabled = false;
   }

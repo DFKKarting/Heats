@@ -235,6 +235,22 @@ main {
 .status.ok { color: var(--green); }
 .status.err { color: var(--red-soft); }
 
+.import-log ul { list-style: none; margin: 8px 0 0; padding: 0; display: flex; flex-direction: column; align-items: center; gap: 4px; }
+.import-log-item {
+  background: none;
+  border: 1px solid rgba(245, 66, 66, 0.25);
+  border-radius: 6px;
+  color: inherit;
+  font: inherit;
+  font-size: .85rem;
+  padding: 3px 10px;
+  cursor: pointer;
+}
+.import-log-item:hover { border-color: rgba(245, 66, 66, 0.6); }
+.import-log-race { opacity: .7; }
+.import-log-tag { color: var(--red-soft); font-size: .8em; font-weight: 600; }
+.import-log-more { font-size: .8rem; opacity: .7; }
+
 .btn-outline, .btn-danger {
   background: #242424;
   color: #ffffff;
