@@ -2486,7 +2486,7 @@ async function runAutoImport(manual) {
     const parts = [];
     if (heatCount) parts.push(`${heatCount} heat(s)`);
     if (qualiCount) parts.push(`${qualiCount} qualifying`);
-    if (parts.length) setStatus(`Automatisch ingeladen van Apex Timing: ${parts.join(" en ")}.`, "ok");
+    if (parts.length) setStatus(`Automatisch ingeladen: ${parts.join(" en ")}.`, "ok");
     else if (manual) setStatus("Geen nieuwe resultaten — alles is al ingeladen.", "ok");
   } finally {
     refreshBtn.disabled = false;
