@@ -68,7 +68,7 @@
    "event": "IAME Finals IWF26",
    "className": "X30 MINI",
    "title": "Qualifying Heat A-D",
-   "sha1": "32fa18b10de459a91567816f37573c054d50d804"
+   "sha1": "00dc38a6c4de0837f73d1f9856dc66a44d41e6b2"
   },
   {
    "path": "data/apex/rgmmc-2026-iwf/x30junior_368.pdf",
@@ -131,14 +131,14 @@
    "event": "IAME Finals IWF26",
    "className": "X30 JUNIOR",
    "title": "Qualifying Heat C-E",
-   "sha1": "55b697dea8397ecd19f13f81a27f6e567e68e0b7"
+   "sha1": "de1df0a9216c275afdd1a4a3d4eaa537c9bba021"
   },
   {
    "path": "data/apex/rgmmc-2026-iwf/x30junior_510.pdf",
    "event": "IAME Finals IWF26",
    "className": "X30 JUNIOR",
    "title": "Qualifying Heat A-D",
-   "sha1": "b548f4225ba7f7e122ada1e71acdbdfb00dede14"
+   "sha1": "85803c9c96740aa8a6c51fecef41d57ee0b11167"
   },
   {
    "path": "data/apex/rgmmc-2026-iwf/x30senior_287.pdf",
@@ -194,7 +194,21 @@
    "event": "IAME Finals IWF26",
    "className": "X30 SENIOR",
    "title": "Qualifying Heat B-F",
-   "sha1": "a6c97b3a587c554b2cdda5610e1125def1ca9d24"
+   "sha1": "d723c4c8798743256d710c3fdce2ff73c259d663"
+  },
+  {
+   "path": "data/apex/rgmmc-2026-iwf/x30senior_551.pdf",
+   "event": "IAME Finals IWF26",
+   "className": "X30 SENIOR",
+   "title": "Qualifying Heat C-E",
+   "sha1": "0ad1219c448e094ebdc6d76cfc3d11b95698a499"
+  },
+  {
+   "path": "data/apex/rgmmc-2026-iwf/x30senior_541.pdf",
+   "event": "IAME Finals IWF26",
+   "className": "X30 SENIOR",
+   "title": "Qualifying Heat A-D",
+   "sha1": "c70b57fae2b0085f7d415ba564a69a2628328349"
   },
   {
    "path": "data/apex/rgmmc-2026-iwf/s125junior_575.pdf",
@@ -454,6 +468,1534 @@
    "className": "X30 Senior",
    "title": "Total Qualifying Practice",
    "sha1": "58368c2fcfca67a2aeb2540893d0f49038b47a8a"
+  },
+  {
+   "path": "data/apex/camp-resultsmw-01-results-2026-02-gk4/8b5742dc88a63cfd.pdf",
+   "event": "GK4 Kart Series 2026",
+   "className": "Formula Honda Jun-Sen",
+   "title": "01 Round 1 GK4 Mariembourg - Heat 2",
+   "sha1": "92837f843c36d95a6e82bce1b7e1f6b95e34e06d",
+   "version": "125.66 KB 08.03.2026, 14:10"
+  },
+  {
+   "path": "data/apex/camp-resultsmw-01-results-2026-02-gk4/69fbe3eb6b396e26.pdf",
+   "event": "GK4 Kart Series 2026",
+   "className": "Formula Honda Jun-Sen",
+   "title": "01 Round 1 GK4 Mariembourg - Heat 1",
+   "sha1": "6789f68c473de08a22686a8cd716236e1f2f2df5",
+   "version": "125.89 KB 08.03.2026, 11:59"
+  },
+  {
+   "path": "data/apex/camp-resultsmw-01-results-2026-02-gk4/a7531b7ac50cb5bc.pdf",
+   "event": "GK4 Kart Series 2026",
+   "className": "Formula Honda Jun-Sen",
+   "title": "01 Round 1 GK4 Mariembourg - Qualifying",
+   "sha1": "abc2ed2337c5b6614187811914d121a7f043f5d2",
+   "version": "113.04 KB 08.03.2026, 10:29"
+  },
+  {
+   "path": "data/apex/camp-resultsmw-01-results-2026-02-gk4/2379a767584c48de.pdf",
+   "event": "GK4 Kart Series 2026",
+   "className": "Honda Cadet",
+   "title": "01 Round 1 GK4 Mariembourg - Heat 2",
+   "sha1": "7cb6fb9308d489c94cbeb253e8a29124ffc70d3e",
+   "version": "124.56 KB 07.03.2026, 14:41"
+  },
+  {
+   "path": "data/apex/camp-resultsmw-01-results-2026-02-gk4/f4598d98b2e6503c.pdf",
+   "event": "GK4 Kart Series 2026",
+   "className": "Honda Cadet",
+   "title": "01 Round 1 GK4 Mariembourg - Heat 1",
+   "sha1": "64395b729a4ce9eccf57e74c89e04531cfbe57cd",
+   "version": "126.1 KB 07.03.2026, 12:16"
+  },
+  {
+   "path": "data/apex/camp-resultsmw-01-results-2026-02-gk4/873e4fe17b1d51fb.pdf",
+   "event": "GK4 Kart Series 2026",
+   "className": "Honda Cadet",
+   "title": "01 Round 1 GK4 Mariembourg - qualifying",
+   "sha1": "dbbe040bae5d0b09c9905e24b5291cd4e0b93a2f",
+   "version": "113.77 KB 07.03.2026, 10:36"
+  },
+  {
+   "path": "data/apex/camp-resultsmw-01-results-2026-02-gk4/a6d8ebcc55d331c0.pdf",
+   "event": "GK4 Kart Series 2026",
+   "className": "KA 100 140 -155",
+   "title": "01 Round 1 GK4 Mariembourg - Heat 2",
+   "sha1": "46cc7793ea905f09350431a384281781e578b5f6",
+   "version": "125.21 KB 08.03.2026, 15:31"
+  },
+  {
+   "path": "data/apex/camp-resultsmw-01-results-2026-02-gk4/b39a3fd2c1ad0470.pdf",
+   "event": "GK4 Kart Series 2026",
+   "className": "KA 100 140 -155",
+   "title": "01 Round 1 GK4 Mariembourg - Heat 1",
+   "sha1": "5a19704ac4ed7475e911839cbf129ee9f55e4c24",
+   "version": "125.26 KB 08.03.2026, 13:06"
+  },
+  {
+   "path": "data/apex/camp-resultsmw-01-results-2026-02-gk4/767a7e5a98dcc03d.pdf",
+   "event": "GK4 Kart Series 2026",
+   "className": "KA 100 140 -155",
+   "title": "01 Round 1 GK4 Mariembourg - Qualifying",
+   "sha1": "900a41ae2143dfab76f611a104c1f7b8756375ff",
+   "version": "110.64 KB 08.03.2026, 11:17"
+  },
+  {
+   "path": "data/apex/camp-resultsmw-01-results-2026-02-gk4/4ce7e923fcc8bcb3.pdf",
+   "event": "GK4 Kart Series 2026",
+   "className": "Mini",
+   "title": "01 Round 1 GK4 Mariembourg - Heat 2",
+   "sha1": "8e57afdcef803dbb2729600625dd10aa6d63ed81",
+   "version": "123.82 KB 07.03.2026, 15:15"
+  },
+  {
+   "path": "data/apex/camp-resultsmw-01-results-2026-02-gk4/fe7dbddf16250d8a.pdf",
+   "event": "GK4 Kart Series 2026",
+   "className": "Mini",
+   "title": "01 Round 1 GK4 Mariembourg - Heat 1",
+   "sha1": "a1c8196e551d2ac9cfb7e55a0bfd6ed090e4f77f",
+   "version": "166.82 KB 07.03.2026, 14:07"
+  },
+  {
+   "path": "data/apex/camp-resultsmw-01-results-2026-02-gk4/ff08cc46e5f84d9c.pdf",
+   "event": "GK4 Kart Series 2026",
+   "className": "Mini",
+   "title": "01 Round 1 GK4 Mariembourg - qualifying",
+   "sha1": "39f9e69411bb95605aa7e033a33eca83f3842727",
+   "version": "111.59 KB 07.03.2026, 10:45"
+  },
+  {
+   "path": "data/apex/camp-resultsmw-01-results-2026-02-gk4/81938b1f0a439721.pdf",
+   "event": "GK4 Kart Series 2026",
+   "className": "Mini Rookie",
+   "title": "01 Round 1 GK4 Mariembourg - Heat 2",
+   "sha1": "efa3947f5137e4b255763026c8377e7fac19d57a",
+   "version": "167.62 KB 07.03.2026, 16:02"
+  },
+  {
+   "path": "data/apex/camp-resultsmw-01-results-2026-02-gk4/cafa78dd68224aa4.pdf",
+   "event": "GK4 Kart Series 2026",
+   "className": "Mini Rookie",
+   "title": "01 Round 1 GK4 Mariembourg - Heat 1",
+   "sha1": "ac869aa090c8e792586f59199fa10e62cdd8eaa7",
+   "version": "124.63 KB 07.03.2026, 12:24"
+  },
+  {
+   "path": "data/apex/camp-resultsmw-01-results-2026-02-gk4/5f6a1074cadbbb31.pdf",
+   "event": "GK4 Kart Series 2026",
+   "className": "Mini Rookie",
+   "title": "01 Round 1 GK4 Mariembourg - qualifying",
+   "sha1": "7e6958d931abfb07ccec161cd2655509e995dac1",
+   "version": "111.98 KB 07.03.2026, 10:42"
+  },
+  {
+   "path": "data/apex/camp-resultsmw-01-results-2026-02-gk4/584ac58f11311bd1.pdf",
+   "event": "GK4 Kart Series 2026",
+   "className": "Open Shifter",
+   "title": "01 Round 1 GK4 Mariembourg - Heat 2",
+   "sha1": "f7b3501b7be465d7af0f46836bf354d1d5fd4539",
+   "version": "126.63 KB 08.03.2026, 15:09"
+  },
+  {
+   "path": "data/apex/camp-resultsmw-01-results-2026-02-gk4/fce7a6866fdb5006.pdf",
+   "event": "GK4 Kart Series 2026",
+   "className": "Open Shifter",
+   "title": "01 Round 1 GK4 Mariembourg - Heat 1",
+   "sha1": "b1001d50e406b1703baa065d4bee313d2e015944",
+   "version": "127.36 KB 08.03.2026, 12:48"
+  },
+  {
+   "path": "data/apex/camp-resultsmw-01-results-2026-02-gk4/25a6276a4f42c5fa.pdf",
+   "event": "GK4 Kart Series 2026",
+   "className": "Open Shifter",
+   "title": "01 Round 1 GK4 Mariembourg - Qualifying",
+   "sha1": "6f10f5aa9a0ea2dc3a12a93b6d261b2bfadca054",
+   "version": "112.87 KB 08.03.2026, 11:04"
+  },
+  {
+   "path": "data/apex/camp-resultsmw-01-results-2026-02-gk4/e1b140a9e5101d15.pdf",
+   "event": "GK4 Kart Series 2026",
+   "className": "Rotax Max Junior",
+   "title": "01 Round 1 GK4 Mariembourg - Heat 2",
+   "sha1": "e093a89de70fa54c20684d2ab0b47d70ed7dad3f",
+   "version": "121.3 KB 08.03.2026, 14:30"
+  },
+  {
+   "path": "data/apex/camp-resultsmw-01-results-2026-02-gk4/bda91b76da411d4d.pdf",
+   "event": "GK4 Kart Series 2026",
+   "className": "Rotax Max Junior",
+   "title": "01 Round 1 GK4 Mariembourg - Heat 1",
+   "sha1": "077bc6b2161c8991c2faf8d3e491e88d925043b6",
+   "version": "122.13 KB 08.03.2026, 12:17"
+  },
+  {
+   "path": "data/apex/camp-resultsmw-01-results-2026-02-gk4/6fa8ab05a18e637e.pdf",
+   "event": "GK4 Kart Series 2026",
+   "className": "Rotax Max Junior",
+   "title": "01 Round 1 GK4 Mariembourg - Qualifying",
+   "sha1": "6d73f35c943e4e80f1aab8a3156bcb2797b4f310",
+   "version": "109.51 KB 08.03.2026, 10:37"
+  },
+  {
+   "path": "data/apex/camp-resultsmw-01-results-2026-02-gk4/2ea815a4f102903c.pdf",
+   "event": "GK4 Kart Series 2026",
+   "className": "Rotax Max Senior",
+   "title": "01 Round 1 GK4 Mariembourg - Heat 2",
+   "sha1": "348fd519900b3b90d809fd8d448dfe77d8534a63",
+   "version": "126.23 KB 08.03.2026, 14:51"
+  },
+  {
+   "path": "data/apex/camp-resultsmw-01-results-2026-02-gk4/7eaf17934126985f.pdf",
+   "event": "GK4 Kart Series 2026",
+   "className": "Rotax Max Senior",
+   "title": "01 Round 1 GK4 Mariembourg - Heat 1",
+   "sha1": "5038ea3c2f3ca2914e69f7e9477049d5caffa282",
+   "version": "125.22 KB 08.03.2026, 12:27"
+  },
+  {
+   "path": "data/apex/camp-resultsmw-01-results-2026-02-gk4/067885d8142f0ee1.pdf",
+   "event": "GK4 Kart Series 2026",
+   "className": "Rotax Max Senior",
+   "title": "01 Round 1 GK4 Mariembourg - Qualifying",
+   "sha1": "abc57342c85e34eb6b2c2372979174c39342bc6a",
+   "version": "112.25 KB 08.03.2026, 10:48"
+  },
+  {
+   "path": "data/apex/camp-resultsmw-01-results-2026-02-gk4/8f0fd634bf4243e6.pdf",
+   "event": "GK4 Kart Series 2026",
+   "className": "X30 Junior",
+   "title": "01 Round 1 GK4 Mariembourg - Heat 2",
+   "sha1": "06e01b7f62408ec06c1dc1b65267461faa989a83",
+   "version": "127.21 KB 07.03.2026, 15:52"
+  },
+  {
+   "path": "data/apex/camp-resultsmw-01-results-2026-02-gk4/8103900516a5e318.pdf",
+   "event": "GK4 Kart Series 2026",
+   "className": "X30 Junior",
+   "title": "01 Round 1 GK4 Mariembourg - Heat 1",
+   "sha1": "2c63074b54d2946adfd60f922f4b3e095f9dc246",
+   "version": "126.54 KB 07.03.2026, 13:29"
+  },
+  {
+   "path": "data/apex/camp-resultsmw-01-results-2026-02-gk4/40e6a5e67ba2ece0.pdf",
+   "event": "GK4 Kart Series 2026",
+   "className": "X30 Junior",
+   "title": "01 Round 1 GK4 Mariembourg - qualifying",
+   "sha1": "60f660364136e9a16d68b1f025aa79df762d15f5",
+   "version": "113.52 KB 07.03.2026, 11:11"
+  },
+  {
+   "path": "data/apex/camp-resultsmw-01-results-2026-02-gk4/8b7dd92ef69a0c93.pdf",
+   "event": "GK4 Kart Series 2026",
+   "className": "X30 Senior",
+   "title": "01 Round 1 GK4 Mariembourg - Heat 2",
+   "sha1": "2e920c08b30281421f0a911a95b26b40b0014ca0",
+   "version": "125.36 KB 07.03.2026, 16:14"
+  },
+  {
+   "path": "data/apex/camp-resultsmw-01-results-2026-02-gk4/824b0ed3ea16b9cf.pdf",
+   "event": "GK4 Kart Series 2026",
+   "className": "X30 Senior",
+   "title": "01 Round 1 GK4 Mariembourg - Heat 1",
+   "sha1": "85399fe15ec1a6b8ef61ec064e90715f1c0f58ce",
+   "version": "125.37 KB 07.03.2026, 13:43"
+  },
+  {
+   "path": "data/apex/camp-resultsmw-01-results-2026-02-gk4/58144af1127ed0b7.pdf",
+   "event": "GK4 Kart Series 2026",
+   "className": "X30 Senior",
+   "title": "01 Round 1 GK4 Mariembourg - qualifying",
+   "sha1": "c15cdd56173fb7b5a5002dbe8f255c040f1dbb0d",
+   "version": "112.34 KB 07.03.2026, 11:27"
+  },
+  {
+   "path": "data/apex/camp-resultsmw-01-results-2026-02-gk4/ab9b6c6a1a06c654.pdf",
+   "event": "GK4 Kart Series 2026",
+   "className": "X30 Senior Nat",
+   "title": "01 Round 1 GK4 Mariembourg - Heat 2",
+   "sha1": "ad6dc74c85b4d3e0a7cccc69fa94efd3f4ccce74",
+   "version": "125.43 KB 07.03.2026, 15:29"
+  },
+  {
+   "path": "data/apex/camp-resultsmw-01-results-2026-02-gk4/7a67e89ea43b5b22.pdf",
+   "event": "GK4 Kart Series 2026",
+   "className": "X30 Senior Nat",
+   "title": "01 Round 1 GK4 Mariembourg - Heat 1",
+   "sha1": "08d8a78f95ba80b63babda6ebeb193e8d4e72312",
+   "version": "125.67 KB 07.03.2026, 13:10"
+  },
+  {
+   "path": "data/apex/camp-resultsmw-01-results-2026-02-gk4/d912d609e26fa06e.pdf",
+   "event": "GK4 Kart Series 2026",
+   "className": "X30 Senior Nat",
+   "title": "01 Round 1 GK4 Mariembourg - qualifying",
+   "sha1": "7c0b391bfb41c62b4a1f2f0e61bf6af89bf9d9f9",
+   "version": "112.4 KB 07.03.2026, 10:58"
+  },
+  {
+   "path": "data/apex/camp-resultsmw-01-results-2026-02-gk4/46a404930f9423a1.pdf",
+   "event": "GK4 Kart Series 2026",
+   "className": "Formula Honda",
+   "title": "03 Round 2 GK4 Genk - Qualifying",
+   "sha1": "509b0e53c55084e4ee4136f9b4f7b89da06bec45",
+   "version": "113.44 KB 26.04.2026, 16:59"
+  },
+  {
+   "path": "data/apex/camp-resultsmw-01-results-2026-02-gk4/fa1d1529c1ad2414.pdf",
+   "event": "GK4 Kart Series 2026",
+   "className": "Honda Cadet",
+   "title": "03 Round 2 GK4 Genk - Heat 2",
+   "sha1": "8045fd69dedd4cca7e3373e54cf3c1b16b7e24bb",
+   "version": "124.55 KB 25.04.2026, 14:38"
+  },
+  {
+   "path": "data/apex/camp-resultsmw-01-results-2026-02-gk4/6ca07ad49ef8d744.pdf",
+   "event": "GK4 Kart Series 2026",
+   "className": "Honda Cadet",
+   "title": "03 Round 2 GK4 Genk - Heat 1",
+   "sha1": "4d84a8fc6175a9f774b28487db0bf645b51bcfff",
+   "version": "124.74 KB 25.04.2026, 12:06"
+  },
+  {
+   "path": "data/apex/camp-resultsmw-01-results-2026-02-gk4/de777048fd0e7cf3.pdf",
+   "event": "GK4 Kart Series 2026",
+   "className": "Honda Cadet",
+   "title": "03 Round 2 GK4 Genk - Qualifying",
+   "sha1": "42fa6e132b4dbff95160d6933d6a31e37bb1af6d",
+   "version": "113.58 KB 25.04.2026, 10:28"
+  },
+  {
+   "path": "data/apex/camp-resultsmw-01-results-2026-02-gk4/9cf3d057aaf9a097.pdf",
+   "event": "GK4 Kart Series 2026",
+   "className": "Mini",
+   "title": "03 Round 2 GK4 Genk - Heat 2",
+   "sha1": "af8e06dd4388e600b187222e8a86f0481eeeb9cc",
+   "version": "125.02 KB 25.04.2026, 15:11"
+  },
+  {
+   "path": "data/apex/camp-resultsmw-01-results-2026-02-gk4/00ffe925b1f38b61.pdf",
+   "event": "GK4 Kart Series 2026",
+   "className": "Mini",
+   "title": "03 Round 2 GK4 Genk - Heat 1",
+   "sha1": "973f88a7fb835edef958fc85d4232f9ca687cba8",
+   "version": "125.06 KB 25.04.2026, 12:41"
+  },
+  {
+   "path": "data/apex/camp-resultsmw-01-results-2026-02-gk4/0ce43db54f8d9056.pdf",
+   "event": "GK4 Kart Series 2026",
+   "className": "Mini",
+   "title": "03 Round 2 GK4 Genk - Qualifying",
+   "sha1": "e84997530c9fc99e1bc7e4c996518cf1b74a2ee2",
+   "version": "112.42 KB 25.04.2026, 10:53"
+  },
+  {
+   "path": "data/apex/camp-resultsmw-01-results-2026-02-gk4/74440f1432b9769a.pdf",
+   "event": "GK4 Kart Series 2026",
+   "className": "Mini Rookie",
+   "title": "03 Round 2 GK4 Genk - Heat 2",
+   "sha1": "c17b03de767909c2714d5e3088e0525299d3c504",
+   "version": "126.34 KB 25.04.2026, 14:51"
+  },
+  {
+   "path": "data/apex/camp-resultsmw-01-results-2026-02-gk4/d1ae027e7dc3bc94.pdf",
+   "event": "GK4 Kart Series 2026",
+   "className": "Mini Rookie",
+   "title": "03 Round 2 GK4 Genk - Heat 1",
+   "sha1": "dc3e9645539615a382e3ec1136df36d05be97086",
+   "version": "125.86 KB 25.04.2026, 12:28"
+  },
+  {
+   "path": "data/apex/camp-resultsmw-01-results-2026-02-gk4/9a8d7b6241416ef5.pdf",
+   "event": "GK4 Kart Series 2026",
+   "className": "Mini Rookie",
+   "title": "03 Round 2 GK4 Genk - Qualifying",
+   "sha1": "76939a13dc5a4d06ca53c2e4c6ff9d55ab5ab166",
+   "version": "112.98 KB 25.04.2026, 10:38"
+  },
+  {
+   "path": "data/apex/camp-resultsmw-01-results-2026-02-gk4/25254a98b964af38.pdf",
+   "event": "GK4 Kart Series 2026",
+   "className": "Open Shifter",
+   "title": "03 Round 2 GK4 Genk - Heat 2",
+   "sha1": "19ca05cb18c829f4c38c1f9e2e7c6d16ef378af4",
+   "version": "129.23 KB 26.04.2026, 16:22"
+  },
+  {
+   "path": "data/apex/camp-resultsmw-01-results-2026-02-gk4/2e650047219367f8.pdf",
+   "event": "GK4 Kart Series 2026",
+   "className": "Open Shifter",
+   "title": "03 Round 2 GK4 Genk - Heat 1",
+   "sha1": "4fc433e311be0746cd0a8485edbd67f87c78ac15",
+   "version": "129.45 KB 26.04.2026, 14:59"
+  },
+  {
+   "path": "data/apex/camp-resultsmw-01-results-2026-02-gk4/24a741e627122e50.pdf",
+   "event": "GK4 Kart Series 2026",
+   "className": "Open Shifter",
+   "title": "03 Round 2 GK4 Genk - Qualifying",
+   "sha1": "417de56b16d37498808edf20a27af778cf6f6978",
+   "version": "115.14 KB 26.04.2026, 13:03"
+  },
+  {
+   "path": "data/apex/camp-resultsmw-01-results-2026-02-gk4/89c2c612f4d56810.pdf",
+   "event": "GK4 Kart Series 2026",
+   "className": "Rotax Junior",
+   "title": "03 Round 2 GK4 Genk - Heat 2",
+   "sha1": "db15466ad21b2449828e65b64f91126cdb3579cc",
+   "version": "125.36 KB 26.04.2026, 15:48"
+  },
+  {
+   "path": "data/apex/camp-resultsmw-01-results-2026-02-gk4/7022508c9c9d5720.pdf",
+   "event": "GK4 Kart Series 2026",
+   "className": "Rotax Junior",
+   "title": "03 Round 2 GK4 Genk - Heat 1",
+   "sha1": "68e3be2d55ab435742b0bc876890152b9b93f557",
+   "version": "125.01 KB 26.04.2026, 14:42"
+  },
+  {
+   "path": "data/apex/camp-resultsmw-01-results-2026-02-gk4/c33bfb1602fcd712.pdf",
+   "event": "GK4 Kart Series 2026",
+   "className": "Rotax Junior",
+   "title": "03 Round 2 GK4 Genk - Qualifying",
+   "sha1": "cdc8f882e1877134b852cb2543142b130253cf9d",
+   "version": "110.99 KB 26.04.2026, 12:49"
+  },
+  {
+   "path": "data/apex/camp-resultsmw-01-results-2026-02-gk4/15b3e0fba64088d6.pdf",
+   "event": "GK4 Kart Series 2026",
+   "className": "Rotax Senior",
+   "title": "03 Round 2 GK4 Genk - Heat 2",
+   "sha1": "35d05c1af12ec431e2881d8f5bb01acd16a14881",
+   "version": "126.54 KB 26.04.2026, 16:31"
+  },
+  {
+   "path": "data/apex/camp-resultsmw-01-results-2026-02-gk4/c8ea577278bbb660.pdf",
+   "event": "GK4 Kart Series 2026",
+   "className": "Rotax Senior",
+   "title": "03 Round 2 GK4 Genk - Heat 1",
+   "sha1": "517e7f6dab3b5f26f0783db0972ae0d3c74b6a2d",
+   "version": "126.6 KB 26.04.2026, 15:15"
+  },
+  {
+   "path": "data/apex/camp-resultsmw-01-results-2026-02-gk4/74bdbaba881136e3.pdf",
+   "event": "GK4 Kart Series 2026",
+   "className": "Rotax Senior",
+   "title": "03 Round 2 GK4 Genk - Qualifying",
+   "sha1": "e5feca99484d00715285c28f8a71b87f28e49412",
+   "version": "113.27 KB 26.04.2026, 13:12"
+  },
+  {
+   "path": "data/apex/camp-resultsmw-01-results-2026-02-gk4/da5a1b867a0d7b7a.pdf",
+   "event": "GK4 Kart Series 2026",
+   "className": "X30 Junior",
+   "title": "03 Round 2 GK4 Genk - Heat 2",
+   "sha1": "8e1c80b0dd7023adb422708b96102a4e2f827932",
+   "version": "148.29 KB 25.04.2026, 16:43"
+  },
+  {
+   "path": "data/apex/camp-resultsmw-01-results-2026-02-gk4/33ee75b9cd82eeb7.pdf",
+   "event": "GK4 Kart Series 2026",
+   "className": "X30 Junior",
+   "title": "03 Round 2 GK4 Genk - Heat 1",
+   "sha1": "4a04ba544037098a064fb30a247ebca0ca93ad47",
+   "version": "126.69 KB 25.04.2026, 13:32"
+  },
+  {
+   "path": "data/apex/camp-resultsmw-01-results-2026-02-gk4/ce8c8e2226aae964.pdf",
+   "event": "GK4 Kart Series 2026",
+   "className": "X30 Junior",
+   "title": "03 Round 2 GK4 Genk - Qualifying",
+   "sha1": "203a0093d69b09d0bac6374cb9a1f61606ba9046",
+   "version": "114.01 KB 25.04.2026, 11:21"
+  },
+  {
+   "path": "data/apex/camp-resultsmw-01-results-2026-02-gk4/29330a317999f33e.pdf",
+   "event": "GK4 Kart Series 2026",
+   "className": "X30 Senior",
+   "title": "03 Round 2 GK4 Genk - Heat 2",
+   "sha1": "79385870a135e8359b678a7f2dfe26b10c8861c6",
+   "version": "125.8 KB 25.04.2026, 16:01"
+  },
+  {
+   "path": "data/apex/camp-resultsmw-01-results-2026-02-gk4/720a2ee13905f55b.pdf",
+   "event": "GK4 Kart Series 2026",
+   "className": "X30 Senior",
+   "title": "03 Round 2 GK4 Genk - Heat 1",
+   "sha1": "8c99656f9eee8af1d305bb8c205e291f3a70f907",
+   "version": "125.1 KB 25.04.2026, 13:39"
+  },
+  {
+   "path": "data/apex/camp-resultsmw-01-results-2026-02-gk4/39d6cdc9912b97cf.pdf",
+   "event": "GK4 Kart Series 2026",
+   "className": "X30 Senior",
+   "title": "03 Round 2 GK4 Genk - Qualifying",
+   "sha1": "cb61171b223479e10eeb53213289aaacd2ef3ffc",
+   "version": "112.31 KB 25.04.2026, 11:38"
+  },
+  {
+   "path": "data/apex/camp-resultsmw-01-results-2026-02-gk4/763a143c1108dbcc.pdf",
+   "event": "GK4 Kart Series 2026",
+   "className": "X30 Senior NAT",
+   "title": "03 Round 2 GK4 Genk - Heat 2",
+   "sha1": "71af922dd7dca08594d4e8349484107a73e96f6e",
+   "version": "125.02 KB 25.04.2026, 15:24"
+  },
+  {
+   "path": "data/apex/camp-resultsmw-01-results-2026-02-gk4/5606ddb298541a4c.pdf",
+   "event": "GK4 Kart Series 2026",
+   "className": "X30 Senior NAT",
+   "title": "03 Round 2 GK4 Genk - Heat 1",
+   "sha1": "103ead768faecc86bf0cea6b5248d778c964f6da",
+   "version": "126.52 KB 25.04.2026, 13:07"
+  },
+  {
+   "path": "data/apex/camp-resultsmw-01-results-2026-02-gk4/2539fa01b91f44e5.pdf",
+   "event": "GK4 Kart Series 2026",
+   "className": "X30 Senior NAT",
+   "title": "03 Round 2 GK4 Genk - Qualifying",
+   "sha1": "57102555b9cb91a1102d360d0eae415f78b10eba",
+   "version": "112.9 KB 25.04.2026, 11:05"
+  },
+  {
+   "path": "data/apex/camp-resultsmw-01-results-2026-02-gk4/06bdc6bd89b5e2a5.pdf",
+   "event": "GK4 Kart Series 2026",
+   "className": "Formula Honda",
+   "title": "04 Round 3 GK4 Spa - Heat 2",
+   "sha1": "faaee3ffdc5aed4b57d5d0e4223f53bc9266ae52",
+   "version": "124.78 KB 31.05.2026, 14:15"
+  },
+  {
+   "path": "data/apex/camp-resultsmw-01-results-2026-02-gk4/72ad74c9fdfbf35b.pdf",
+   "event": "GK4 Kart Series 2026",
+   "className": "Formula Honda",
+   "title": "04 Round 3 GK4 Spa - Heat 1",
+   "sha1": "5f0e2820444a2fda8bcf31d767faff994310368d",
+   "version": "124.78 KB 31.05.2026, 11:51"
+  },
+  {
+   "path": "data/apex/camp-resultsmw-01-results-2026-02-gk4/d04f54e913d955ff.pdf",
+   "event": "GK4 Kart Series 2026",
+   "className": "Formula Honda",
+   "title": "04 Round 3 GK4 Spa - Qualifying",
+   "sha1": "750177e17520d875108d5c6c2c77eb29e61874cc",
+   "version": "113.23 KB 31.05.2026, 10:32"
+  },
+  {
+   "path": "data/apex/camp-resultsmw-01-results-2026-02-gk4/b1dcf4c568d17a49.pdf",
+   "event": "GK4 Kart Series 2026",
+   "className": "Honda Cadet",
+   "title": "04 Round 3 GK4 Spa - Heat 2",
+   "sha1": "2afce51d1e582946047bfb544d120505faf282fa",
+   "version": "124.92 KB 30.05.2026, 17:01"
+  },
+  {
+   "path": "data/apex/camp-resultsmw-01-results-2026-02-gk4/fdf4843b76b733e5.pdf",
+   "event": "GK4 Kart Series 2026",
+   "className": "Honda Cadet",
+   "title": "04 Round 3 GK4 Spa - Heat 1",
+   "sha1": "ac34160fcb03fd906d70dcf8b4ea745b6a9486b9",
+   "version": "124.14 KB 30.05.2026, 15:11"
+  },
+  {
+   "path": "data/apex/camp-resultsmw-01-results-2026-02-gk4/0c2fb4e477f30308.pdf",
+   "event": "GK4 Kart Series 2026",
+   "className": "KA100",
+   "title": "04 Round 3 GK4 Spa - Heat 2",
+   "sha1": "ef475fc1f665a182a6fa9c72ef1db16fcf9bf2c5",
+   "version": "152.03 KB 31.05.2026, 15:50"
+  },
+  {
+   "path": "data/apex/camp-resultsmw-01-results-2026-02-gk4/d6d2ab9f1dbbc8a2.pdf",
+   "event": "GK4 Kart Series 2026",
+   "className": "KA100",
+   "title": "04 Round 3 GK4 Spa - Heat 1",
+   "sha1": "3dac4e344f4a48e5867fbc4a700b55c202c29e34",
+   "version": "150.7 KB 31.05.2026, 13:17"
+  },
+  {
+   "path": "data/apex/camp-resultsmw-01-results-2026-02-gk4/729181735fd1fdd1.pdf",
+   "event": "GK4 Kart Series 2026",
+   "className": "KA100",
+   "title": "04 Round 3 GK4 Spa - Qualifying",
+   "sha1": "a7ba85e5f0b01fcbcf040f1dcd3e533a5a7e8af5",
+   "version": "147.22 KB 31.05.2026, 11:22"
+  },
+  {
+   "path": "data/apex/camp-resultsmw-01-results-2026-02-gk4/69f535ba22045843.pdf",
+   "event": "GK4 Kart Series 2026",
+   "className": "Mini",
+   "title": "04 Round 3 GK4 Spa - Heat 3 A-B",
+   "sha1": "937a4be2e5c1747483365ce27adbd5cdaddffe2a",
+   "version": "150.56 KB 30.05.2026, 18:17"
+  },
+  {
+   "path": "data/apex/camp-resultsmw-01-results-2026-02-gk4/20a4facbafa239fc.pdf",
+   "event": "GK4 Kart Series 2026",
+   "className": "Mini",
+   "title": "04 Round 3 GK4 Spa - Heat 2 A-C",
+   "sha1": "dbae639a30d5e0778fc602c70a511c041707fcf1",
+   "version": "150.43 KB 30.05.2026, 16:27"
+  },
+  {
+   "path": "data/apex/camp-resultsmw-01-results-2026-02-gk4/3512f984d5ef70f0.pdf",
+   "event": "GK4 Kart Series 2026",
+   "className": "Mini",
+   "title": "04 Round 3 GK4 Spa - Heat 1 B-C",
+   "sha1": "6764aa6d7da4747736cae30eb4878eadb30508e3",
+   "version": "150.39 KB 30.05.2026, 12:29"
+  },
+  {
+   "path": "data/apex/camp-resultsmw-01-results-2026-02-gk4/155f80eb9b291201.pdf",
+   "event": "GK4 Kart Series 2026",
+   "className": "Mini",
+   "title": "04 Round 3 GK4 Spa - Total Qualifying Practice",
+   "sha1": "69e464d2f1edade8772cd401c07d895f95541966",
+   "version": "287.91 KB 30.05.2026, 10:51"
+  },
+  {
+   "path": "data/apex/camp-resultsmw-01-results-2026-02-gk4/38d341313f91495e.pdf",
+   "event": "GK4 Kart Series 2026",
+   "className": "Mini Rookie",
+   "title": "04 Round 3 GK4 Spa - Heat 3 A-B",
+   "sha1": "f96c81874319448e1291f8bafb69ea6a412068f2",
+   "version": "149.32 KB 30.05.2026, 19:11"
+  },
+  {
+   "path": "data/apex/camp-resultsmw-01-results-2026-02-gk4/cf032f7a1139f171.pdf",
+   "event": "GK4 Kart Series 2026",
+   "className": "Mini Rookie",
+   "title": "04 Round 3 GK4 Spa - Heat 2 A-C",
+   "sha1": "2326984a08963a3774333fe57078cfeaa9bba7ae",
+   "version": "151.09 KB 30.05.2026, 16:39"
+  },
+  {
+   "path": "data/apex/camp-resultsmw-01-results-2026-02-gk4/f01117a7adb59119.pdf",
+   "event": "GK4 Kart Series 2026",
+   "className": "Mini Rookie",
+   "title": "04 Round 3 GK4 Spa - Heat 1 B-C",
+   "sha1": "2d026c4996b4cb34cf91bd35ebca5e2d0dc34114",
+   "version": "149.52 KB 30.05.2026, 14:38"
+  },
+  {
+   "path": "data/apex/camp-resultsmw-01-results-2026-02-gk4/2fa7739bda068679.pdf",
+   "event": "GK4 Kart Series 2026",
+   "className": "Mini Rookie",
+   "title": "04 Round 3 GK4 Spa - Total Qualifying Practice",
+   "sha1": "c9ac1d5e2c018035f82e5ea513e7b5d13cbd8b59",
+   "version": "283.13 KB 30.05.2026, 10:51"
+  },
+  {
+   "path": "data/apex/camp-resultsmw-01-results-2026-02-gk4/71a76acfb1863bc9.pdf",
+   "event": "GK4 Kart Series 2026",
+   "className": "Rotax Junior",
+   "title": "04 Round 3 GK4 Spa - Heat 2",
+   "sha1": "dd7552a4dbb3e25befcad9055b60cb8026cba738",
+   "version": "122.92 KB 31.05.2026, 14:25"
+  },
+  {
+   "path": "data/apex/camp-resultsmw-01-results-2026-02-gk4/10ca19111cb3580f.pdf",
+   "event": "GK4 Kart Series 2026",
+   "className": "Rotax Junior",
+   "title": "04 Round 3 GK4 Spa - Heat 1",
+   "sha1": "a10b48f501030446377391e43539242555544064",
+   "version": "121.44 KB 31.05.2026, 12:14"
+  },
+  {
+   "path": "data/apex/camp-resultsmw-01-results-2026-02-gk4/9848c3fe5d16181d.pdf",
+   "event": "GK4 Kart Series 2026",
+   "className": "Rotax Junior",
+   "title": "04 Round 3 GK4 Spa - Qualifying",
+   "sha1": "a802d81e0cf68722869ea87c4e82e2138d727d00",
+   "version": "110.28 KB 31.05.2026, 10:48"
+  },
+  {
+   "path": "data/apex/camp-resultsmw-01-results-2026-02-gk4/918c22b448ee23be.pdf",
+   "event": "GK4 Kart Series 2026",
+   "className": "Rotax Senior",
+   "title": "04 Round 3 GK4 Spa - Heat 2",
+   "sha1": "e0fd3af226f9c1fb4d6c8930e314e2ae51dea031",
+   "version": "125.23 KB 31.05.2026, 15:04"
+  },
+  {
+   "path": "data/apex/camp-resultsmw-01-results-2026-02-gk4/d4d1423930f5fd3f.pdf",
+   "event": "GK4 Kart Series 2026",
+   "className": "Rotax Senior",
+   "title": "04 Round 3 GK4 Spa - Heat 1",
+   "sha1": "0b2de115ae9fe79d2236ded210bde0502240fbdf",
+   "version": "125.82 KB 31.05.2026, 12:27"
+  },
+  {
+   "path": "data/apex/camp-resultsmw-01-results-2026-02-gk4/c4027f49e3784dcb.pdf",
+   "event": "GK4 Kart Series 2026",
+   "className": "Rotax Senior",
+   "title": "04 Round 3 GK4 Spa - Qualifying",
+   "sha1": "9427903f427a894d978bfd433c7585473cfb6c99",
+   "version": "113.4 KB 31.05.2026, 10:50"
+  },
+  {
+   "path": "data/apex/camp-resultsmw-01-results-2026-02-gk4/5907d4f78323e7eb.pdf",
+   "event": "GK4 Kart Series 2026",
+   "className": "X30 Junior",
+   "title": "04 Round 3 GK4 Spa - Heat 2",
+   "sha1": "b8b2884f809feba6a55bb9d626cc8c0ed7816e4d",
+   "version": "125.35 KB 30.05.2026, 17:35"
+  },
+  {
+   "path": "data/apex/camp-resultsmw-01-results-2026-02-gk4/1b3a1b33d76cfef5.pdf",
+   "event": "GK4 Kart Series 2026",
+   "className": "X30 Junior",
+   "title": "04 Round 3 GK4 Spa - Heat 1",
+   "sha1": "b9910dbed4fcf180567cb04d9c37c65da79687d7",
+   "version": "126.13 KB 30.05.2026, 15:48"
+  },
+  {
+   "path": "data/apex/camp-resultsmw-01-results-2026-02-gk4/287ad47acf78ab8c.pdf",
+   "event": "GK4 Kart Series 2026",
+   "className": "X30 Masters-SC",
+   "title": "04 Round 3 GK4 Spa - Heat 2",
+   "sha1": "48777b8306dc25c072a349ee1dddbbd5215a3a2c",
+   "version": "151.37 KB 31.05.2026, 15:32"
+  },
+  {
+   "path": "data/apex/camp-resultsmw-01-results-2026-02-gk4/84d72afc7a80f3fb.pdf",
+   "event": "GK4 Kart Series 2026",
+   "className": "X30 Masters-SC",
+   "title": "04 Round 3 GK4 Spa - Heat 1",
+   "sha1": "14f9f138281b7a66771bf8ddc54bbfb99a3c1b63",
+   "version": "152.27 KB 31.05.2026, 12:52"
+  },
+  {
+   "path": "data/apex/camp-resultsmw-01-results-2026-02-gk4/125dd2e8bb06ee02.pdf",
+   "event": "GK4 Kart Series 2026",
+   "className": "X30 Masters-SC",
+   "title": "04 Round 3 GK4 Spa - Qualifying",
+   "sha1": "00bcc208fe0007172bba9bb6745ef7ce80f63d2e",
+   "version": "148.84 KB 31.05.2026, 11:11"
+  },
+  {
+   "path": "data/apex/camp-resultsmw-01-results-2026-02-gk4/478645299b86b5d8.pdf",
+   "event": "GK4 Kart Series 2026",
+   "className": "X30 Senior",
+   "title": "04 Round 3 GK4 Spa - Heat 2",
+   "sha1": "3476ea657f1b69d66cceae3766bcdd8c63fb90f2",
+   "version": "124.18 KB 30.05.2026, 17:58"
+  },
+  {
+   "path": "data/apex/camp-resultsmw-01-results-2026-02-gk4/a5326816d8240a56.pdf",
+   "event": "GK4 Kart Series 2026",
+   "className": "X30 Senior",
+   "title": "04 Round 3 GK4 Spa - Heat 1",
+   "sha1": "15d72ad9df3d1e6be8521f800393ae86121aafa5",
+   "version": "124.9 KB 30.05.2026, 15:54"
+  },
+  {
+   "path": "data/apex/camp-resultsmw-01-results-2026-02-gk4/1c67a12639dd6d8b.pdf",
+   "event": "GK4 Kart Series 2026",
+   "className": "X30 Senior NAT",
+   "title": "04 Round 3 GK4 Spa - Heat 2",
+   "sha1": "95efdeb2a872eb00e1d67f8b484954900ba6a849",
+   "version": "124.99 KB 30.05.2026, 17:08"
+  },
+  {
+   "path": "data/apex/camp-resultsmw-01-results-2026-02-gk4/f42885857a617b78.pdf",
+   "event": "GK4 Kart Series 2026",
+   "className": "X30 Senior NAT",
+   "title": "04 Round 3 GK4 Spa - Heat 1",
+   "sha1": "61a4c441dbe1a8862ca89a3da14a58cb745c4e66",
+   "version": "125.63 KB 30.05.2026, 15:20"
+  },
+  {
+   "path": "data/apex/camp-resultsmw-01-results-2026-02-gk4/817a10335c2a0e97.pdf",
+   "event": "GK4 Kart Series 2026",
+   "className": "Honda 9PK Jun-Sen",
+   "title": "05 Round 4 GK4 Mariembourg - Heat 2",
+   "sha1": "a2c246c558272519c277b661d2ea230e3c8b07af",
+   "version": "125.06 KB 05.07.2026, 14:49"
+  },
+  {
+   "path": "data/apex/camp-resultsmw-01-results-2026-02-gk4/2458c3ecabd332d7.pdf",
+   "event": "GK4 Kart Series 2026",
+   "className": "Honda 9PK Jun-Sen",
+   "title": "05 Round 4 GK4 Mariembourg - Heat 1",
+   "sha1": "cd937473aacd0270eed264e5e69c23510e8e6ff1",
+   "version": "125.72 KB 05.07.2026, 13:31"
+  },
+  {
+   "path": "data/apex/camp-resultsmw-01-results-2026-02-gk4/d79ae50550280209.pdf",
+   "event": "GK4 Kart Series 2026",
+   "className": "Honda 9PK Jun-Sen",
+   "title": "05 Round 4 GK4 Mariembourg - Qualifying",
+   "sha1": "962971a47e5fba329c19f47b746de78038831624",
+   "version": "112.86 KB 05.07.2026, 11:23"
+  },
+  {
+   "path": "data/apex/camp-resultsmw-01-results-2026-02-gk4/b3ab2d1f4be260f4.pdf",
+   "event": "GK4 Kart Series 2026",
+   "className": "Honda Cadet",
+   "title": "05 Round 4 GK4 Mariembourg - Heat 2",
+   "sha1": "34e5efe81ef44d32f90b6fd01ce10ef3491fc187",
+   "version": "124.76 KB 04.07.2026, 14:33"
+  },
+  {
+   "path": "data/apex/camp-resultsmw-01-results-2026-02-gk4/bfb189a86bfd6d9c.pdf",
+   "event": "GK4 Kart Series 2026",
+   "className": "Honda Cadet",
+   "title": "05 Round 4 GK4 Mariembourg - Heat 1",
+   "sha1": "a502a6f00289defbe7188a171316289952aa4dfc",
+   "version": "124.88 KB 04.07.2026, 12:07"
+  },
+  {
+   "path": "data/apex/camp-resultsmw-01-results-2026-02-gk4/5c402705ca18f587.pdf",
+   "event": "GK4 Kart Series 2026",
+   "className": "Honda Cadet",
+   "title": "05 Round 4 GK4 Mariembourg - Qualifying",
+   "sha1": "476970577e4edd7a21e85f2b2c62baa51eaf8e6e",
+   "version": "112 KB 04.07.2026, 10:17"
+  },
+  {
+   "path": "data/apex/camp-resultsmw-01-results-2026-02-gk4/be209a264615310d.pdf",
+   "event": "GK4 Kart Series 2026",
+   "className": "KA 100 145-155",
+   "title": "05 Round 4 GK4 Mariembourg - Heat 2",
+   "sha1": "553d43f3b5a21884b3e6edd01998b90f2f59ed24",
+   "version": "124.51 KB 05.07.2026, 16:11"
+  },
+  {
+   "path": "data/apex/camp-resultsmw-01-results-2026-02-gk4/91a811edc43e2636.pdf",
+   "event": "GK4 Kart Series 2026",
+   "className": "KA 100 145-155",
+   "title": "05 Round 4 GK4 Mariembourg - Heat 1",
+   "sha1": "a89603bc668c8fc213e8e9c6b66206b555d3bd0d",
+   "version": "124.07 KB 05.07.2026, 14:12"
+  },
+  {
+   "path": "data/apex/camp-resultsmw-01-results-2026-02-gk4/7d93752ea876acf1.pdf",
+   "event": "GK4 Kart Series 2026",
+   "className": "KA 100 145-155",
+   "title": "05 Round 4 GK4 Mariembourg - Qualifying",
+   "sha1": "4c499d61d8b0094a05c1da82b04fed9394ca0a11",
+   "version": "110.13 KB 05.07.2026, 12:27"
+  },
+  {
+   "path": "data/apex/camp-resultsmw-01-results-2026-02-gk4/1471eb2a96872927.pdf",
+   "event": "GK4 Kart Series 2026",
+   "className": "Mini",
+   "title": "05 Round 4 GK4 Mariembourg - Heat 2",
+   "sha1": "fae4d69749380f8f0ab3933302d83f34ff35a4a0",
+   "version": "124.73 KB 04.07.2026, 15:15"
+  },
+  {
+   "path": "data/apex/camp-resultsmw-01-results-2026-02-gk4/40055123a5357678.pdf",
+   "event": "GK4 Kart Series 2026",
+   "className": "Mini",
+   "title": "05 Round 4 GK4 Mariembourg - Heat 1",
+   "sha1": "f1655ac70761210f2279a686e6889617569d1649",
+   "version": "124.62 KB 04.07.2026, 12:40"
+  },
+  {
+   "path": "data/apex/camp-resultsmw-01-results-2026-02-gk4/a3df07ba05757e2f.pdf",
+   "event": "GK4 Kart Series 2026",
+   "className": "Mini",
+   "title": "05 Round 4 GK4 Mariembourg - Qualifying",
+   "sha1": "6f5fe77cef4a6891c758745881c39249c0e671bd",
+   "version": "112.1 KB 04.07.2026, 10:40"
+  },
+  {
+   "path": "data/apex/camp-resultsmw-01-results-2026-02-gk4/f8149e59f2da81b2.pdf",
+   "event": "GK4 Kart Series 2026",
+   "className": "Mini Rookie",
+   "title": "05 Round 4 GK4 Mariembourg - Heat 2",
+   "sha1": "56a4aaf7fda3104be6cad3448c036a57886587de",
+   "version": "125.62 KB 04.07.2026, 15:30"
+  },
+  {
+   "path": "data/apex/camp-resultsmw-01-results-2026-02-gk4/e909a36ebcb0c968.pdf",
+   "event": "GK4 Kart Series 2026",
+   "className": "Mini Rookie",
+   "title": "05 Round 4 GK4 Mariembourg - Heat 1",
+   "sha1": "20a15f6d2ef9eb44f4b735442d03797bde3435db",
+   "version": "125.49 KB 04.07.2026, 15:28"
+  },
+  {
+   "path": "data/apex/camp-resultsmw-01-results-2026-02-gk4/0f796c8155f1d5c7.pdf",
+   "event": "GK4 Kart Series 2026",
+   "className": "Mini Rookie",
+   "title": "05 Round 4 GK4 Mariembourg - Qualifying",
+   "sha1": "b0486419e50cb84606344902fef53507df26ada9",
+   "version": "112.27 KB 04.07.2026, 10:30"
+  },
+  {
+   "path": "data/apex/camp-resultsmw-01-results-2026-02-gk4/08648ba0bd46d2c3.pdf",
+   "event": "GK4 Kart Series 2026",
+   "className": "Open Shifter",
+   "title": "05 Round 4 GK4 Mariembourg - Heat 2",
+   "sha1": "0bae4b333a57c690dd3c840edff4250a9f5f8927",
+   "version": "126.98 KB 05.07.2026, 15:52"
+  },
+  {
+   "path": "data/apex/camp-resultsmw-01-results-2026-02-gk4/a11eeddae41fd500.pdf",
+   "event": "GK4 Kart Series 2026",
+   "className": "Open Shifter",
+   "title": "05 Round 4 GK4 Mariembourg - Heat 1",
+   "sha1": "f8899fba15a4a10d5439c5abc01fc86081183060",
+   "version": "126.98 KB 05.07.2026, 13:58"
+  },
+  {
+   "path": "data/apex/camp-resultsmw-01-results-2026-02-gk4/773411761f29ddb5.pdf",
+   "event": "GK4 Kart Series 2026",
+   "className": "Open Shifter",
+   "title": "05 Round 4 GK4 Mariembourg - Qualifying",
+   "sha1": "00d91c309af81a452041b48e5955635e4a4d7d26",
+   "version": "114.08 KB 05.07.2026, 12:21"
+  },
+  {
+   "path": "data/apex/camp-resultsmw-01-results-2026-02-gk4/0b5f2bd3eed56a55.pdf",
+   "event": "GK4 Kart Series 2026",
+   "className": "Rotax Max Junior",
+   "title": "05 Round 4 GK4 Mariembourg - Heat 2",
+   "sha1": "368b3230dc8be54079397803162ed19224ba632d",
+   "version": "121.97 KB 05.07.2026, 15:07"
+  },
+  {
+   "path": "data/apex/camp-resultsmw-01-results-2026-02-gk4/3561360be5c483c8.pdf",
+   "event": "GK4 Kart Series 2026",
+   "className": "Rotax Max Junior",
+   "title": "05 Round 4 GK4 Mariembourg - Heat 1",
+   "sha1": "daec1af3ec7c90105342c5b8749a7b4d8753aab9",
+   "version": "122.86 KB 05.07.2026, 13:16"
+  },
+  {
+   "path": "data/apex/camp-resultsmw-01-results-2026-02-gk4/887312bec03e1086.pdf",
+   "event": "GK4 Kart Series 2026",
+   "className": "Rotax Max Junior",
+   "title": "05 Round 4 GK4 Mariembourg - Qualifying",
+   "sha1": "87ed93f54866c21f04ef03d851d143089826aebe",
+   "version": "110.5 KB 05.07.2026, 11:35"
+  },
+  {
+   "path": "data/apex/camp-resultsmw-01-results-2026-02-gk4/b470aec6c21cc5b8.pdf",
+   "event": "GK4 Kart Series 2026",
+   "className": "Rotax Max Senior",
+   "title": "05 Round 4 GK4 Mariembourg - Heat 2",
+   "sha1": "9730a791313ecdfed8375b534f1756e80ce182d1",
+   "version": "125.19 KB 05.07.2026, 15:28"
+  },
+  {
+   "path": "data/apex/camp-resultsmw-01-results-2026-02-gk4/5efba3704f8c58ce.pdf",
+   "event": "GK4 Kart Series 2026",
+   "className": "Rotax Max Senior",
+   "title": "05 Round 4 GK4 Mariembourg - Heat 1",
+   "sha1": "c90202a45dbc7dc813db457aedd5c752a6086b4f",
+   "version": "125.52 KB 05.07.2026, 13:40"
+  },
+  {
+   "path": "data/apex/camp-resultsmw-01-results-2026-02-gk4/3a66457f8f143ba2.pdf",
+   "event": "GK4 Kart Series 2026",
+   "className": "Rotax Max Senior",
+   "title": "05 Round 4 GK4 Mariembourg - Qualifying",
+   "sha1": "54957a79ec6f44a76708f78abca72ddde9ee3d67",
+   "version": "113.22 KB 05.07.2026, 11:48"
+  },
+  {
+   "path": "data/apex/camp-resultsmw-01-results-2026-02-gk4/76662d629d5195aa.pdf",
+   "event": "GK4 Kart Series 2026",
+   "className": "X30 Junior",
+   "title": "05 Round 4 GK4 Mariembourg - Heat 2",
+   "sha1": "6aa85cd96cc4950b83e5252267c3c3ef44fa6898",
+   "version": "126.75 KB 04.07.2026, 16:04"
+  },
+  {
+   "path": "data/apex/camp-resultsmw-01-results-2026-02-gk4/5d7d27a395ab5cab.pdf",
+   "event": "GK4 Kart Series 2026",
+   "className": "X30 Junior",
+   "title": "05 Round 4 GK4 Mariembourg - Heat 1",
+   "sha1": "34205cdc1bb746eb32090108ff21ed5d6181318d",
+   "version": "148.08 KB 04.07.2026, 13:27"
+  },
+  {
+   "path": "data/apex/camp-resultsmw-01-results-2026-02-gk4/74dbedc0b2d3570c.pdf",
+   "event": "GK4 Kart Series 2026",
+   "className": "X30 Junior",
+   "title": "05 Round 4 GK4 Mariembourg - Qualifying",
+   "sha1": "a94bd5bc9266b02504f53049db8521e3a19a813e",
+   "version": "113.44 KB 04.07.2026, 11:24"
+  },
+  {
+   "path": "data/apex/camp-resultsmw-01-results-2026-02-gk4/451a92e613254c0c.pdf",
+   "event": "GK4 Kart Series 2026",
+   "className": "X30 Senior",
+   "title": "05 Round 4 GK4 Mariembourg - Heat 2",
+   "sha1": "971caa6e320958c30cd53ed63e0cc7c901e2cdf7",
+   "version": "124.91 KB 04.07.2026, 16:12"
+  },
+  {
+   "path": "data/apex/camp-resultsmw-01-results-2026-02-gk4/04000d75c5cbf41a.pdf",
+   "event": "GK4 Kart Series 2026",
+   "className": "X30 Senior",
+   "title": "05 Round 4 GK4 Mariembourg - Heat 1",
+   "sha1": "27339a8c3303151a586b89f1fb2b71adefe7310a",
+   "version": "124.4 KB 04.07.2026, 13:42"
+  },
+  {
+   "path": "data/apex/camp-resultsmw-01-results-2026-02-gk4/ce59e6315290b735.pdf",
+   "event": "GK4 Kart Series 2026",
+   "className": "X30 Senior",
+   "title": "05 Round 4 GK4 Mariembourg - Qualifying",
+   "sha1": "b7685ac29f630b5b633150b90dcd91eaf965839f",
+   "version": "111.82 KB 04.07.2026, 11:28"
+  },
+  {
+   "path": "data/apex/camp-resultsmw-01-results-2026-02-gk4/3fd9d03e724c1801.pdf",
+   "event": "GK4 Kart Series 2026",
+   "className": "X30 Senior Nat",
+   "title": "05 Round 4 GK4 Mariembourg - Heat 2",
+   "sha1": "997253e678da9f9bb36cd076e54760487045ee6a",
+   "version": "124.88 KB 04.07.2026, 15:41"
+  },
+  {
+   "path": "data/apex/camp-resultsmw-01-results-2026-02-gk4/ccad933f78c96f3d.pdf",
+   "event": "GK4 Kart Series 2026",
+   "className": "X30 Senior Nat",
+   "title": "05 Round 4 GK4 Mariembourg - Heat 1",
+   "sha1": "b66fa49d492f424be3ceab654808550574f4cb9c",
+   "version": "125.05 KB 04.07.2026, 12:54"
+  },
+  {
+   "path": "data/apex/camp-resultsmw-01-results-2026-02-gk4/9e0612ff9b4c1805.pdf",
+   "event": "GK4 Kart Series 2026",
+   "className": "X30 Senior Nat",
+   "title": "05 Round 4 GK4 Mariembourg - Qualifying",
+   "sha1": "85e1c155cd79553834a2df5f81827391235faf3c",
+   "version": "112.12 KB 04.07.2026, 10:57"
+  },
+  {
+   "path": "data/apex/camp-resultsmw-01-results-2026-02-gk4/27039343d5a5bd3c.pdf",
+   "event": "GK4 Kart Series 2026",
+   "className": "Formula Honda Junior-Senior",
+   "title": "06 Round 5 GK4 Kerpen - Heat 2",
+   "sha1": "33777c16ad0b470b0c6df5f567b4ae3a9664edee",
+   "version": "125.68 KB 06.09.2026, 14:27"
+  },
+  {
+   "path": "data/apex/camp-resultsmw-01-results-2026-02-gk4/bc3ea6a16c47cc75.pdf",
+   "event": "GK4 Kart Series 2026",
+   "className": "Formula Honda Junior-Senior",
+   "title": "06 Round 5 GK4 Kerpen - Heat 1",
+   "sha1": "78296ecaed3159cd1f36029adcd44288cdee8e78",
+   "version": "125.93 KB 06.09.2026, 12:20"
+  },
+  {
+   "path": "data/apex/camp-resultsmw-01-results-2026-02-gk4/5b35564f0d122f2c.pdf",
+   "event": "GK4 Kart Series 2026",
+   "className": "Formula Honda Junior-Senior",
+   "title": "06 Round 5 GK4 Kerpen - Qualifying",
+   "sha1": "40eefb0b36988b1127d3dc20e178d98bb9a7290b",
+   "version": "112.82 KB 06.09.2026, 10:45"
+  },
+  {
+   "path": "data/apex/camp-resultsmw-01-results-2026-02-gk4/e2253230b71a71ce.pdf",
+   "event": "GK4 Kart Series 2026",
+   "className": "Honda Cadet",
+   "title": "06 Round 5 GK4 Kerpen - Heat 2",
+   "sha1": "f583a1d84c28a5f929268f104a451d6dbd8af733",
+   "version": "123.3 KB 05.09.2026, 14:24"
+  },
+  {
+   "path": "data/apex/camp-resultsmw-01-results-2026-02-gk4/a09a00cc337c8d78.pdf",
+   "event": "GK4 Kart Series 2026",
+   "className": "Honda Cadet",
+   "title": "06 Round 5 GK4 Kerpen - Heat 1",
+   "sha1": "4ee15142276ba62760af42cbe8e8cbdb18218dd0",
+   "version": "124.65 KB 05.09.2026, 12:20"
+  },
+  {
+   "path": "data/apex/camp-resultsmw-01-results-2026-02-gk4/abad28b6ae0a4e73.pdf",
+   "event": "GK4 Kart Series 2026",
+   "className": "Honda Cadet",
+   "title": "06 Round 5 GK4 Kerpen - Qualifying",
+   "sha1": "1c319340e3a1a790fb236167367d247f6099739d",
+   "version": "110.07 KB 05.09.2026, 10:16"
+  },
+  {
+   "path": "data/apex/camp-resultsmw-01-results-2026-02-gk4/470a60be5703ccbf.pdf",
+   "event": "GK4 Kart Series 2026",
+   "className": "KA100",
+   "title": "06 Round 5 GK4 Kerpen - Heat 2",
+   "sha1": "5b9f6aa4437194f4f29790d6dd11d867ea7a6f81",
+   "version": "124 KB 06.09.2026, 15:56"
+  },
+  {
+   "path": "data/apex/camp-resultsmw-01-results-2026-02-gk4/5b9b0425f61789b4.pdf",
+   "event": "GK4 Kart Series 2026",
+   "className": "KA100",
+   "title": "06 Round 5 GK4 Kerpen - Heat 1",
+   "sha1": "68bafbfe0255d873869995b3d3c47b44e831d477",
+   "version": "124.49 KB 06.09.2026, 13:36"
+  },
+  {
+   "path": "data/apex/camp-resultsmw-01-results-2026-02-gk4/92ce9c2cd1305296.pdf",
+   "event": "GK4 Kart Series 2026",
+   "className": "KA100",
+   "title": "06 Round 5 GK4 Kerpen - Qualifying",
+   "sha1": "90299d3890a18630a0a00299c924d25479d02c8e",
+   "version": "109.89 KB 06.09.2026, 11:46"
+  },
+  {
+   "path": "data/apex/camp-resultsmw-01-results-2026-02-gk4/5c9732a8795a2815.pdf",
+   "event": "GK4 Kart Series 2026",
+   "className": "Mini",
+   "title": "06 Round 5 GK4 Kerpen - Heat 2",
+   "sha1": "df50998807e13cf79852feded8697f1a625d43f2",
+   "version": "123.17 KB 05.09.2026, 15:06"
+  },
+  {
+   "path": "data/apex/camp-resultsmw-01-results-2026-02-gk4/da5afbe8342942e9.pdf",
+   "event": "GK4 Kart Series 2026",
+   "className": "Mini",
+   "title": "06 Round 5 GK4 Kerpen - Heat 1",
+   "sha1": "856ee0e70b02a4290a81ddc0fa447430130e91f7",
+   "version": "122.95 KB 05.09.2026, 12:40"
+  },
+  {
+   "path": "data/apex/camp-resultsmw-01-results-2026-02-gk4/3b6a74d4abee0623.pdf",
+   "event": "GK4 Kart Series 2026",
+   "className": "Mini",
+   "title": "06 Round 5 GK4 Kerpen - Qualifying",
+   "sha1": "9297512a81ab9fdd2511b8357245775d0d745710",
+   "version": "109.57 KB 05.09.2026, 10:37"
+  },
+  {
+   "path": "data/apex/camp-resultsmw-01-results-2026-02-gk4/c36f51e61905b741.pdf",
+   "event": "GK4 Kart Series 2026",
+   "className": "Mini Rookie",
+   "title": "06 Round 5 GK4 Kerpen - Heat 2",
+   "sha1": "57cc29eb228c4f22c6912a2b136c6385a4e4ad3a",
+   "version": "138.76 KB 05.09.2026, 14:54"
+  },
+  {
+   "path": "data/apex/camp-resultsmw-01-results-2026-02-gk4/521b93ff21489549.pdf",
+   "event": "GK4 Kart Series 2026",
+   "className": "Mini Rookie",
+   "title": "06 Round 5 GK4 Kerpen - Heat 1",
+   "sha1": "0c73c768089fb60aebed604d83258284d8664f8e",
+   "version": "139.11 KB 05.09.2026, 12:33"
+  },
+  {
+   "path": "data/apex/camp-resultsmw-01-results-2026-02-gk4/118a396056c65b5d.pdf",
+   "event": "GK4 Kart Series 2026",
+   "className": "Mini Rookie",
+   "title": "06 Round 5 GK4 Kerpen - Qualifying",
+   "sha1": "d40db8f6aa34bf7a931fc1024bfa8981b1f50de1",
+   "version": "126.21 KB 05.09.2026, 10:29"
+  },
+  {
+   "path": "data/apex/camp-resultsmw-01-results-2026-02-gk4/dbd9361bad47ffb6.pdf",
+   "event": "GK4 Kart Series 2026",
+   "className": "Open Shifter",
+   "title": "06 Round 5 GK4 Kerpen - Qualifying",
+   "sha1": "543af16def0f211e1ecd14939de5cb6d74aad2fe",
+   "version": "113.8 KB 06.09.2026, 16:27"
+  },
+  {
+   "path": "data/apex/camp-resultsmw-01-results-2026-02-gk4/0af6f7d650587502.pdf",
+   "event": "GK4 Kart Series 2026",
+   "className": "Open Shifter",
+   "title": "06 Round 5 GK4 Kerpen - Heat 2",
+   "sha1": "f13c36259af240cf37f72305999b0507f3d79f32",
+   "version": "127.19 KB 06.09.2026, 16:03"
+  },
+  {
+   "path": "data/apex/camp-resultsmw-01-results-2026-02-gk4/b308b443a1cb573f.pdf",
+   "event": "GK4 Kart Series 2026",
+   "className": "Open Shifter",
+   "title": "06 Round 5 GK4 Kerpen - Heat 1",
+   "sha1": "dc8ca47bbcad207d0f5730d36444aad70b16c9ae",
+   "version": "127.05 KB 06.09.2026, 15:39"
+  },
+  {
+   "path": "data/apex/camp-resultsmw-01-results-2026-02-gk4/bc6ae9a898deffa8.pdf",
+   "event": "GK4 Kart Series 2026",
+   "className": "Rotax Max Junior",
+   "title": "06 Round 5 GK4 Kerpen - Heat 2",
+   "sha1": "26d08e98b974fcfeb488a8d9f63a86032c0071bd",
+   "version": "123.11 KB 06.09.2026, 14:43"
+  },
+  {
+   "path": "data/apex/camp-resultsmw-01-results-2026-02-gk4/08b17e79fb966946.pdf",
+   "event": "GK4 Kart Series 2026",
+   "className": "Rotax Max Junior",
+   "title": "06 Round 5 GK4 Kerpen - Heat 1",
+   "sha1": "84199ea9730fe9c9c331e387b5ad67fbaeaebf0a",
+   "version": "123.14 KB 06.09.2026, 12:45"
+  },
+  {
+   "path": "data/apex/camp-resultsmw-01-results-2026-02-gk4/abd2e3e1f7ef793d.pdf",
+   "event": "GK4 Kart Series 2026",
+   "className": "Rotax Max Junior",
+   "title": "06 Round 5 GK4 Kerpen - Qualifying",
+   "sha1": "49742a9344470cc0996ccf2647f15e2a986e8a37",
+   "version": "110.12 KB 06.09.2026, 10:52"
+  },
+  {
+   "path": "data/apex/camp-resultsmw-01-results-2026-02-gk4/21f3557f7e2f60f6.pdf",
+   "event": "GK4 Kart Series 2026",
+   "className": "Rotax Max Senior",
+   "title": "06 Round 5 GK4 Kerpen - Heat 2",
+   "sha1": "b2736116815ba3a49ead9b14f401682038a0af02",
+   "version": "124.72 KB 06.09.2026, 15:30"
+  },
+  {
+   "path": "data/apex/camp-resultsmw-01-results-2026-02-gk4/78864ae2fb3c4ebd.pdf",
+   "event": "GK4 Kart Series 2026",
+   "className": "Rotax Max Senior",
+   "title": "06 Round 5 GK4 Kerpen - Heat 1",
+   "sha1": "6bc40af0364899463d2b7c154bff56cbb7634c25",
+   "version": "125.4 KB 06.09.2026, 13:06"
+  },
+  {
+   "path": "data/apex/camp-resultsmw-01-results-2026-02-gk4/3356dca693f2f97d.pdf",
+   "event": "GK4 Kart Series 2026",
+   "className": "Rotax Max Senior",
+   "title": "06 Round 5 GK4 Kerpen - Qualifying",
+   "sha1": "aff5f5052e4e7723bccb8a0571ba0ece9d2c33d8",
+   "version": "111.38 KB 06.09.2026, 11:14"
+  },
+  {
+   "path": "data/apex/camp-resultsmw-01-results-2026-02-gk4/0bcf9babd07b3a14.pdf",
+   "event": "GK4 Kart Series 2026",
+   "className": "X30 Junior",
+   "title": "06 Round 5 GK4 Kerpen - Heat 2",
+   "sha1": "d25c1996b1a25dc2b41e433cfb2c213af0ba5d66",
+   "version": "125.59 KB 05.09.2026, 15:53"
+  },
+  {
+   "path": "data/apex/camp-resultsmw-01-results-2026-02-gk4/ae75d01445ca3544.pdf",
+   "event": "GK4 Kart Series 2026",
+   "className": "X30 Junior",
+   "title": "06 Round 5 GK4 Kerpen - Heat 1",
+   "sha1": "9b10093b38a506910c11ae5156cac02d021ac262",
+   "version": "125.4 KB 05.09.2026, 13:18"
+  },
+  {
+   "path": "data/apex/camp-resultsmw-01-results-2026-02-gk4/9f23c938492482fa.pdf",
+   "event": "GK4 Kart Series 2026",
+   "className": "X30 Junior",
+   "title": "06 Round 5 GK4 Kerpen - Qualifying",
+   "sha1": "1830d2d18ab1d749fb11ad5033b0a21d37b01217",
+   "version": "112.73 KB 05.09.2026, 11:15"
+  },
+  {
+   "path": "data/apex/camp-resultsmw-01-results-2026-02-gk4/df90fd58ba737bd9.pdf",
+   "event": "GK4 Kart Series 2026",
+   "className": "X30 Senior",
+   "title": "06 Round 5 GK4 Kerpen - Heat 2",
+   "sha1": "b85bdb3d590adf72776cf778c1cbcd7b041c5723",
+   "version": "124.85 KB 05.09.2026, 16:46"
+  },
+  {
+   "path": "data/apex/camp-resultsmw-01-results-2026-02-gk4/47aa75d60663f23b.pdf",
+   "event": "GK4 Kart Series 2026",
+   "className": "X30 Senior",
+   "title": "06 Round 5 GK4 Kerpen - Heat 1",
+   "sha1": "50a67758480813c45e9f99ad40cee6b39eb8b542",
+   "version": "124.27 KB 05.09.2026, 13:38"
+  },
+  {
+   "path": "data/apex/camp-resultsmw-01-results-2026-02-gk4/56c54240f3b6672f.pdf",
+   "event": "GK4 Kart Series 2026",
+   "className": "X30 Senior",
+   "title": "06 Round 5 GK4 Kerpen - Qualifying",
+   "sha1": "b79ec6aed58f66de95a4fbdbe016ca42827685c3",
+   "version": "111.51 KB 05.09.2026, 11:27"
+  },
+  {
+   "path": "data/apex/camp-resultsmw-01-results-2026-02-gk4/dddc0f1f01f66984.pdf",
+   "event": "GK4 Kart Series 2026",
+   "className": "X30 Senior Nationaal",
+   "title": "06 Round 5 GK4 Kerpen - Heat 2",
+   "sha1": "0d6c9421da35d6dfa81033ab6502b11751ce649a",
+   "version": "124.64 KB 05.09.2026, 15:44"
+  },
+  {
+   "path": "data/apex/camp-resultsmw-01-results-2026-02-gk4/5b872a81dcf7bb28.pdf",
+   "event": "GK4 Kart Series 2026",
+   "className": "X30 Senior Nationaal",
+   "title": "06 Round 5 GK4 Kerpen - Heat 1",
+   "sha1": "e28354b7778208fed5cc7721a140fd33f26d719d",
+   "version": "126.12 KB 05.09.2026, 13:09"
+  },
+  {
+   "path": "data/apex/camp-resultsmw-01-results-2026-02-gk4/bdde1f71c8389fcf.pdf",
+   "event": "GK4 Kart Series 2026",
+   "className": "X30 Senior Nationaal",
+   "title": "06 Round 5 GK4 Kerpen - Qualifying",
+   "sha1": "0aeb4ecee860cc04a3e70c85012c0976b1ccee7c",
+   "version": "110.18 KB 05.09.2026, 11:01"
+  },
+  {
+   "path": "data/apex/camp-resultsmw-01-results-2026-02-gk4/650d99898e8cc2bb.pdf",
+   "event": "GK4 Kart Series 2026",
+   "className": "Formula Honda Junior-Senior",
+   "title": "07 Round 6 GK4 Mariembourg - Heat 2",
+   "sha1": "9efd8f1536f28718afa7627c7fb18611f5b9fc36",
+   "version": "125.34 KB 04.10.2026, 15:00"
+  },
+  {
+   "path": "data/apex/camp-resultsmw-01-results-2026-02-gk4/2f7b2885cd7a34bb.pdf",
+   "event": "GK4 Kart Series 2026",
+   "className": "Formula Honda Junior-Senior",
+   "title": "07 Round 6 GK4 Mariembourg - Heat 1",
+   "sha1": "48abfff52830229235112a968599fadcc42e9678",
+   "version": "125.3 KB 04.10.2026, 12:50"
+  },
+  {
+   "path": "data/apex/camp-resultsmw-01-results-2026-02-gk4/4482aa193cd11a3b.pdf",
+   "event": "GK4 Kart Series 2026",
+   "className": "Formula Honda Junior-Senior",
+   "title": "07 Round 6 GK4 Mariembourg - Qualifying",
+   "sha1": "0237fdfa119bf1376325917cabec10057f1af3b6",
+   "version": "112.86 KB 04.10.2026, 11:28"
+  },
+  {
+   "path": "data/apex/camp-resultsmw-01-results-2026-02-gk4/ecc6da3720e6b65c.pdf",
+   "event": "GK4 Kart Series 2026",
+   "className": "Honda Cadet",
+   "title": "07 Round 6 GK4 Mariembourg - Heat 2",
+   "sha1": "e7d6808ecf60859d42b3458d8b462bd7ccd0fbb3",
+   "version": "125.5 KB 03.10.2026, 14:44"
+  },
+  {
+   "path": "data/apex/camp-resultsmw-01-results-2026-02-gk4/4b3653bfed71e8f9.pdf",
+   "event": "GK4 Kart Series 2026",
+   "className": "Honda Cadet",
+   "title": "07 Round 6 GK4 Mariembourg - Heat 1",
+   "sha1": "b8dc44fe6a45ba3ef883c002420d3b7f368295a0",
+   "version": "124.49 KB 03.10.2026, 12:16"
+  },
+  {
+   "path": "data/apex/camp-resultsmw-01-results-2026-02-gk4/cf47d8a93da3a6bc.pdf",
+   "event": "GK4 Kart Series 2026",
+   "className": "Honda Cadet",
+   "title": "07 Round 6 GK4 Mariembourg - Qualifying",
+   "sha1": "1b601010ad86fb6aa557cb49dc4d9e6668a38c12",
+   "version": "112.84 KB 03.10.2026, 10:14"
+  },
+  {
+   "path": "data/apex/camp-resultsmw-01-results-2026-02-gk4/53f58b2c77aaf688.pdf",
+   "event": "GK4 Kart Series 2026",
+   "className": "KA100",
+   "title": "07 Round 6 GK4 Mariembourg - Heat 2",
+   "sha1": "7415f225e84240b1a99bd88c1ee041968b5fd560",
+   "version": "123.61 KB 04.10.2026, 16:11"
+  },
+  {
+   "path": "data/apex/camp-resultsmw-01-results-2026-02-gk4/b401d4e3f6286d97.pdf",
+   "event": "GK4 Kart Series 2026",
+   "className": "KA100",
+   "title": "07 Round 6 GK4 Mariembourg - Heat 1",
+   "sha1": "24b6e70811d0586dfeb6f2c57b103a7a250aad2c",
+   "version": "123.68 KB 04.10.2026, 14:19"
+  },
+  {
+   "path": "data/apex/camp-resultsmw-01-results-2026-02-gk4/df104f346885e3ca.pdf",
+   "event": "GK4 Kart Series 2026",
+   "className": "KA100",
+   "title": "07 Round 6 GK4 Mariembourg - Qualifying",
+   "sha1": "c5732d392c00cf467e50eb21fae5889b08c1fa51",
+   "version": "110.05 KB 04.10.2026, 12:26"
+  },
+  {
+   "path": "data/apex/camp-resultsmw-01-results-2026-02-gk4/662f290908c914ac.pdf",
+   "event": "GK4 Kart Series 2026",
+   "className": "Mini",
+   "title": "07 Round 6 GK4 Mariembourg - Heat 2",
+   "sha1": "e30a56890105c6527a3b1ff9a65b9facc19ad1b8",
+   "version": "122.38 KB 03.10.2026, 15:07"
+  },
+  {
+   "path": "data/apex/camp-resultsmw-01-results-2026-02-gk4/805c23bd50d622ab.pdf",
+   "event": "GK4 Kart Series 2026",
+   "className": "Mini",
+   "title": "07 Round 6 GK4 Mariembourg - Heat 1",
+   "sha1": "052d016472174faff98fa80c35bcef70086b1fc0",
+   "version": "122.64 KB 03.10.2026, 12:54"
+  },
+  {
+   "path": "data/apex/camp-resultsmw-01-results-2026-02-gk4/ae81ee2654c62881.pdf",
+   "event": "GK4 Kart Series 2026",
+   "className": "Mini",
+   "title": "07 Round 6 GK4 Mariembourg - Qualifying",
+   "sha1": "27fddf153d63bafd9c2f38528c5a5871dbe5ad2f",
+   "version": "110.42 KB 03.10.2026, 11:02"
+  },
+  {
+   "path": "data/apex/camp-resultsmw-01-results-2026-02-gk4/9d45c6205dadb699.pdf",
+   "event": "GK4 Kart Series 2026",
+   "className": "Mini Rookie",
+   "title": "07 Round 6 GK4 Mariembourg - Heat 2",
+   "sha1": "81765c6dfee9f2caac214c13cdedf4215e0a1db3",
+   "version": "125.08 KB 03.10.2026, 14:59"
+  },
+  {
+   "path": "data/apex/camp-resultsmw-01-results-2026-02-gk4/fe8df5806e8030b2.pdf",
+   "event": "GK4 Kart Series 2026",
+   "className": "Mini Rookie",
+   "title": "07 Round 6 GK4 Mariembourg - Heat 1",
+   "sha1": "dac9ee94431ac7b890e85f2b3ce4bdee4349ccbf",
+   "version": "124.6 KB 03.10.2026, 12:26"
+  },
+  {
+   "path": "data/apex/camp-resultsmw-01-results-2026-02-gk4/2639086227ff11ac.pdf",
+   "event": "GK4 Kart Series 2026",
+   "className": "Mini Rookie",
+   "title": "07 Round 6 GK4 Mariembourg - Qualifying",
+   "sha1": "15b1d31b3cc43df08e94539507315794b06ae94f",
+   "version": "112.43 KB 03.10.2026, 10:28"
+  },
+  {
+   "path": "data/apex/camp-resultsmw-01-results-2026-02-gk4/c4e689a6cab54391.pdf",
+   "event": "GK4 Kart Series 2026",
+   "className": "Open Shifter",
+   "title": "07 Round 6 GK4 Mariembourg - Heat 2",
+   "sha1": "2365b5166f955fa22310ac0493bfa4c3baf6a950",
+   "version": "125.45 KB 04.10.2026, 15:47"
+  },
+  {
+   "path": "data/apex/camp-resultsmw-01-results-2026-02-gk4/9906971e8f34222c.pdf",
+   "event": "GK4 Kart Series 2026",
+   "className": "Open Shifter",
+   "title": "07 Round 6 GK4 Mariembourg - Heat 1",
+   "sha1": "db20c778d1fb45102bf1f2538188e83db2f24bcf",
+   "version": "125.91 KB 04.10.2026, 13:53"
+  },
+  {
+   "path": "data/apex/camp-resultsmw-01-results-2026-02-gk4/ca0429a9d7ceb0d6.pdf",
+   "event": "GK4 Kart Series 2026",
+   "className": "Open Shifter",
+   "title": "07 Round 6 GK4 Mariembourg - Qualifying",
+   "sha1": "448e7a2c9e7521de33d33815af96eff72512233d",
+   "version": "113.18 KB 04.10.2026, 12:16"
+  },
+  {
+   "path": "data/apex/camp-resultsmw-01-results-2026-02-gk4/a3f2a54f6b86ed10.pdf",
+   "event": "GK4 Kart Series 2026",
+   "className": "Rotax Max Junior",
+   "title": "07 Round 6 GK4 Mariembourg - Heat 2",
+   "sha1": "50f0ba5fc7705bea993638f43abed3d2bb961993",
+   "version": "122.21 KB 04.10.2026, 15:07"
+  },
+  {
+   "path": "data/apex/camp-resultsmw-01-results-2026-02-gk4/21869024162a7aa3.pdf",
+   "event": "GK4 Kart Series 2026",
+   "className": "Rotax Max Junior",
+   "title": "07 Round 6 GK4 Mariembourg - Heat 1",
+   "sha1": "4d1dbf68c6015f412cb9036e8f2a2376c686bd6b",
+   "version": "121.56 KB 04.10.2026, 13:09"
+  },
+  {
+   "path": "data/apex/camp-resultsmw-01-results-2026-02-gk4/1424422950854d05.pdf",
+   "event": "GK4 Kart Series 2026",
+   "className": "Rotax Max Junior",
+   "title": "07 Round 6 GK4 Mariembourg - Qualifying",
+   "sha1": "43b2d77f8ac396271ecf1c59ed575a1eb376bca0",
+   "version": "109.69 KB 04.10.2026, 11:30"
+  },
+  {
+   "path": "data/apex/camp-resultsmw-01-results-2026-02-gk4/5a851ae38035697e.pdf",
+   "event": "GK4 Kart Series 2026",
+   "className": "Rotax Max Senior",
+   "title": "07 Round 6 GK4 Mariembourg - Heat 2",
+   "sha1": "32b40364163506c00f6a2d0c8c2db540d7c6b9aa",
+   "version": "124.83 KB 04.10.2026, 15:30"
+  },
+  {
+   "path": "data/apex/camp-resultsmw-01-results-2026-02-gk4/b5a41f8d2cbe8b12.pdf",
+   "event": "GK4 Kart Series 2026",
+   "className": "Rotax Max Senior",
+   "title": "07 Round 6 GK4 Mariembourg - Heat 1",
+   "sha1": "ebb249f82819052e7d5af1f0e45b993417c2b6a6",
+   "version": "124.32 KB 04.10.2026, 13:51"
+  },
+  {
+   "path": "data/apex/camp-resultsmw-01-results-2026-02-gk4/67596cc13f732b1f.pdf",
+   "event": "GK4 Kart Series 2026",
+   "className": "Rotax Max Senior",
+   "title": "07 Round 6 GK4 Mariembourg - Qualifying",
+   "sha1": "0605e684fc7c748e547fefde5acdf63978d356e6",
+   "version": "112.73 KB 04.10.2026, 11:53"
+  },
+  {
+   "path": "data/apex/camp-resultsmw-01-results-2026-02-gk4/5bab0d5590cf4964.pdf",
+   "event": "GK4 Kart Series 2026",
+   "className": "X30 Junior",
+   "title": "07 Round 6 GK4 Mariembourg - Heat 2",
+   "sha1": "22c89b1dcd408643451c00ad5c30ffa43d9eca02",
+   "version": "126.52 KB 03.10.2026, 15:54"
+  },
+  {
+   "path": "data/apex/camp-resultsmw-01-results-2026-02-gk4/003f236212cf5175.pdf",
+   "event": "GK4 Kart Series 2026",
+   "className": "X30 Junior",
+   "title": "07 Round 6 GK4 Mariembourg - Heat 1",
+   "sha1": "fc6ecdc4faab449ea612b00070acf4d9e8b484f9",
+   "version": "126.94 KB 03.10.2026, 13:29"
+  },
+  {
+   "path": "data/apex/camp-resultsmw-01-results-2026-02-gk4/0d05628a0e08ba92.pdf",
+   "event": "GK4 Kart Series 2026",
+   "className": "X30 Junior",
+   "title": "07 Round 6 GK4 Mariembourg - Qualifying",
+   "sha1": "3eef5e92b084044d9cc840c2642a7e602d6546c5",
+   "version": "114.7 KB 03.10.2026, 11:12"
+  },
+  {
+   "path": "data/apex/camp-resultsmw-01-results-2026-02-gk4/cadcdf3c08e9a7dc.pdf",
+   "event": "GK4 Kart Series 2026",
+   "className": "X30 Senior",
+   "title": "07 Round 6 GK4 Mariembourg - Heat 2",
+   "sha1": "fb03a87f2a0c6ed3881d9005913e33b006339e35",
+   "version": "123.89 KB 03.10.2026, 16:03"
+  },
+  {
+   "path": "data/apex/camp-resultsmw-01-results-2026-02-gk4/22eff80ec3b29345.pdf",
+   "event": "GK4 Kart Series 2026",
+   "className": "X30 Senior",
+   "title": "07 Round 6 GK4 Mariembourg - Heat 1",
+   "sha1": "6cc4e35bcc3d4a38894c16c3cce96eea7948825d",
+   "version": "124.09 KB 03.10.2026, 13:58"
+  },
+  {
+   "path": "data/apex/camp-resultsmw-01-results-2026-02-gk4/fe008918ece39d5f.pdf",
+   "event": "GK4 Kart Series 2026",
+   "className": "X30 Senior",
+   "title": "07 Round 6 GK4 Mariembourg - Qualifying",
+   "sha1": "e30246ec99db518316f9aa415abcbd0a33ea54f4",
+   "version": "110.86 KB 03.10.2026, 11:27"
+  },
+  {
+   "path": "data/apex/camp-resultsmw-01-results-2026-02-gk4/ccb15f41362506c3.pdf",
+   "event": "GK4 Kart Series 2026",
+   "className": "X30 Senior Nationaal",
+   "title": "07 Round 6 GK4 Mariembourg - Heat 2",
+   "sha1": "08fd11c2213c57bcfbc942a7613e5ec20c6eafd4",
+   "version": "124.05 KB 03.10.2026, 15:35"
+  },
+  {
+   "path": "data/apex/camp-resultsmw-01-results-2026-02-gk4/417fd44d70e5d509.pdf",
+   "event": "GK4 Kart Series 2026",
+   "className": "X30 Senior Nationaal",
+   "title": "07 Round 6 GK4 Mariembourg - Heat 1",
+   "sha1": "6b5ba051fac96cd7a95ffd5ff297f35d1ad0d915",
+   "version": "124.64 KB 03.10.2026, 13:01"
+  },
+  {
+   "path": "data/apex/camp-resultsmw-01-results-2026-02-gk4/9e70f63513568bf8.pdf",
+   "event": "GK4 Kart Series 2026",
+   "className": "X30 Senior Nationaal",
+   "title": "07 Round 6 GK4 Mariembourg - Qualifying",
+   "sha1": "bcee426baa9c71c4f4359cb4f73d6919e848c94c",
+   "version": "112.3 KB 03.10.2026, 11:04"
   }
  ]
 }
