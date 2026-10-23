@@ -1110,6 +1110,7 @@ const resetBtn = document.getElementById("resetBtn");
 const refreshBtn = document.getElementById("refreshBtn");
 const importLog = document.getElementById("importLog");
 const eventPicker = document.getElementById("eventPicker");
+const eventPickerBtn = document.getElementById("eventPickerBtn");
 const searchInput = document.getElementById("searchInput");
 const searchResults = document.getElementById("searchResults");
 const toggleHeatsBtn = document.getElementById("toggleHeatsBtn");
@@ -2599,20 +2600,25 @@ function rememberEvents(files) {
   renderEventPicker();
 }
 
+// A small "⚙ Events 2/3" button with the checkboxes in a dropdown - out of
+// the way, since it's set once per device and rarely touched after.
 function renderEventPicker() {
   const events = Object.keys(loadKnownEvents());
   if (!events.length) {
+    eventPickerBtn.hidden = true;
     eventPicker.hidden = true;
     return;
   }
   const excluded = loadExcludedEvents();
+  const on = events.filter((e) => !excluded.has(e)).length;
   const esc = (t) => String(t).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/"/g, "&quot;");
-  eventPicker.hidden = false;
-  eventPicker.innerHTML = `<span class="event-picker-title">📡 Automatisch ophalen:</span>${events
+  eventPickerBtn.hidden = false;
+  eventPickerBtn.textContent = `⚙ Events ${on}/${events.length}`;
+  eventPicker.innerHTML = `<p class="event-picker-title">Automatisch ophalen van</p>${events
     .map(
-      (e) => `<label class="show-heats-toggle"><input type="checkbox" data-event="${esc(e)}" ${excluded.has(e) ? "" : "checked"} /> ${esc(e)}</label>`
+      (e) => `<label class="event-picker-item"><input type="checkbox" data-event="${esc(e)}" ${excluded.has(e) ? "" : "checked"} /> ${esc(e)}</label>`
     )
-    .join("")}`;
+    .join("")}<p class="event-picker-hint">Uitgevinkte events worden niet ingeladen en niet getoond (op dit toestel).</p>`;
   eventPicker.querySelectorAll("input").forEach((box) => box.addEventListener("change", () => setEventIncluded(box.dataset.event, box.checked)));
 }
 
@@ -2751,6 +2757,20 @@ async function runAutoImport(manual) {
 }
 
 refreshBtn.addEventListener("click", () => autoImport(true));
+
+function setEventPickerOpen(open) {
+  eventPicker.hidden = !open;
+  eventPickerBtn.setAttribute("aria-expanded", String(open));
+}
+eventPickerBtn.addEventListener("click", (e) => {
+  e.stopPropagation();
+  setEventPickerOpen(eventPicker.hidden);
+});
+eventPicker.addEventListener("click", (e) => e.stopPropagation());
+document.addEventListener("click", () => setEventPickerOpen(false));
+document.addEventListener("keydown", (e) => {
+  if (e.key === "Escape") setEventPickerOpen(false);
+});
 renderEventPicker();
 autoImport();
 setInterval(() => autoImport(), AUTO_IMPORT_INTERVAL_MS);

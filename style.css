@@ -251,16 +251,33 @@ main {
 .import-log-tag { color: var(--red-soft); font-size: .8em; font-weight: 600; }
 .import-log-more { font-size: .8rem; opacity: .7; }
 
+.event-picker-wrap { position: relative; }
 .event-picker {
-  display: flex;
-  flex-wrap: wrap;
-  justify-content: center;
-  align-items: center;
-  gap: 4px 16px;
-  margin-top: 10px;
+  position: absolute;
+  right: 0;
+  top: calc(100% + 6px);
+  z-index: 20;
+  min-width: 260px;
+  max-width: min(360px, calc(100vw - 48px));
+  padding: 10px 14px;
+  background: var(--panel1);
+  border: 1px solid rgba(245, 66, 66, 0.6);
+  border-radius: 8px;
+  box-shadow: 0 8px 24px var(--panel-shadow);
+  text-align: left;
   font-size: .9rem;
 }
-.event-picker-title { font-weight: 600; }
+.event-picker-title { margin: 0 0 6px; font-weight: 700; }
+.event-picker-item { display: flex; align-items: center; gap: 8px; padding: 4px 0; cursor: pointer; }
+.event-picker-item input { accent-color: var(--brand-text); }
+.event-picker-hint { margin: 6px 0 0; font-size: .78rem; color: var(--text-dim); }
+/* On a phone the button sits mid-row - drop the menu across the full row
+   instead, so it can't run off the left edge. */
+@media (max-width: 600px) {
+  .heats-toggle-row { position: relative; }
+  .event-picker-wrap { position: static; }
+  .event-picker { left: 0; right: 0; min-width: 0; max-width: none; }
+}
 
 .class-remaining { font-size: .9rem; margin: 6px 0; }
 .class-remaining .next-tag,
