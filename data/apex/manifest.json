@@ -71,6 +71,13 @@
    "sha1": "00dc38a6c4de0837f73d1f9856dc66a44d41e6b2"
   },
   {
+   "path": "data/apex/rgmmc-2026-iwf/x30mini_150.pdf",
+   "event": "IAME Finals IWF26",
+   "className": "X30 MINI",
+   "title": "Qualifying Heat B-E",
+   "sha1": "17d3ea6f07d893c2016c89d09d03df2b1a25d72e"
+  },
+  {
    "path": "data/apex/rgmmc-2026-iwf/x30junior_368.pdf",
    "event": "IAME Finals IWF26",
    "className": "X30 JUNIOR",
@@ -1999,11 +2006,6 @@
   }
  ],
  "pending": [
-  {
-   "event": "IAME Finals IWF26",
-   "className": "X30 MINI",
-   "title": "Qualifying Heat B-E"
-  },
   {
    "event": "IAME Finals IWF26",
    "className": "X30 MINI",
