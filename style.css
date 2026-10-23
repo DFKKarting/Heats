@@ -251,6 +251,17 @@ main {
 .import-log-tag { color: var(--red-soft); font-size: .8em; font-weight: 600; }
 .import-log-more { font-size: .8rem; opacity: .7; }
 
+.event-picker {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  align-items: center;
+  gap: 4px 16px;
+  margin-top: 10px;
+  font-size: .9rem;
+}
+.event-picker-title { font-weight: 600; }
+
 .class-remaining { font-size: .9rem; margin: 6px 0; }
 .class-remaining .next-tag,
 .heats-left {

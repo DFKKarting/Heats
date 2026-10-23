@@ -1109,6 +1109,7 @@ const classificationsContainer = document.getElementById("classificationsContain
 const resetBtn = document.getElementById("resetBtn");
 const refreshBtn = document.getElementById("refreshBtn");
 const importLog = document.getElementById("importLog");
+const eventPicker = document.getElementById("eventPicker");
 const searchInput = document.getElementById("searchInput");
 const searchResults = document.getElementById("searchResults");
 const toggleHeatsBtn = document.getElementById("toggleHeatsBtn");
@@ -2566,6 +2567,79 @@ function renderImportLog(loaded) {
   );
 }
 
+// Which events the automatic import fetches, chosen per device. Stored as the
+// ones switched OFF, so an event added to the sources later shows up by
+// default. Unticking also removes that event's imported heats/qualifyings.
+const EXCLUDED_EVENTS_KEY = "kartingExcludedEvents.v1";
+const KNOWN_EVENTS_KEY = "kartingKnownEvents.v1";
+
+function loadExcludedEvents() {
+  try {
+    return new Set(JSON.parse(localStorage.getItem(EXCLUDED_EVENTS_KEY)) || []);
+  } catch {
+    return new Set();
+  }
+}
+
+// event name -> the file names (as stored in a record's fileName) it has, so
+// unticking an event can find what to remove.
+function loadKnownEvents() {
+  try {
+    return JSON.parse(localStorage.getItem(KNOWN_EVENTS_KEY)) || {};
+  } catch {
+    return {};
+  }
+}
+
+function rememberEvents(files) {
+  const events = {};
+  for (const f of files) (events[f.event] ||= []).push(f.path);
+  const json = JSON.stringify(events);
+  if (localStorage.getItem(KNOWN_EVENTS_KEY) !== json) localStorage.setItem(KNOWN_EVENTS_KEY, json);
+  renderEventPicker();
+}
+
+function renderEventPicker() {
+  const events = Object.keys(loadKnownEvents());
+  if (!events.length) {
+    eventPicker.hidden = true;
+    return;
+  }
+  const excluded = loadExcludedEvents();
+  const esc = (t) => String(t).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/"/g, "&quot;");
+  eventPicker.hidden = false;
+  eventPicker.innerHTML = `<span class="event-picker-title">📡 Automatisch ophalen:</span>${events
+    .map(
+      (e) => `<label class="show-heats-toggle"><input type="checkbox" data-event="${esc(e)}" ${excluded.has(e) ? "" : "checked"} /> ${esc(e)}</label>`
+    )
+    .join("")}`;
+  eventPicker.querySelectorAll("input").forEach((box) => box.addEventListener("change", () => setEventIncluded(box.dataset.event, box.checked)));
+}
+
+function setEventIncluded(event, included) {
+  const excluded = loadExcludedEvents();
+  const paths = loadKnownEvents()[event] || [];
+  if (included) {
+    excluded.delete(event);
+  } else {
+    excluded.add(event);
+    // Drop what this event brought in, and forget it was imported, so
+    // ticking it again later imports it afresh.
+    const fileNames = new Set(paths.map((p) => p.split("/").pop()));
+    heats = heats.filter((h) => !fileNames.has(h.fileName));
+    qualifying = qualifying.filter((q) => !fileNames.has(q.fileName));
+    const seen = loadAutoImported();
+    for (const p of paths) delete seen[p];
+    localStorage.setItem(AUTO_IMPORT_KEY, JSON.stringify(seen));
+    saveHeats(heats);
+    saveQualifying(qualifying);
+    render();
+  }
+  localStorage.setItem(EXCLUDED_EVENTS_KEY, JSON.stringify([...excluded]));
+  setStatus(included ? `${event} wordt weer opgehaald...` : `${event} wordt niet meer opgehaald en is uit de app gehaald.`, "ok");
+  if (included) autoImport(true);
+}
+
 // `manual`: started with the "Nu ophalen" button, so always report back. A
 // click while a run is already going (e.g. the one at startup) just waits for
 // that run instead of being silently ignored.
@@ -2603,8 +2677,10 @@ async function runAutoImport(manual) {
       localStorage.setItem(PENDING_KEY, pendingJson);
       render();
     }
+    rememberEvents(manifest.files || []);
+    const excluded = loadExcludedEvents();
     const seen = loadAutoImported();
-    const todo = (manifest.files || []).filter((f) => seen[f.path] !== f.sha1);
+    const todo = (manifest.files || []).filter((f) => !excluded.has(f.event) && seen[f.path] !== f.sha1);
     if (!todo.length) {
       if (manual) setStatus("Geen nieuwe resultaten — alles is al ingeladen.", "ok");
       return;
@@ -2675,5 +2751,6 @@ async function runAutoImport(manual) {
 }
 
 refreshBtn.addEventListener("click", () => autoImport(true));
+renderEventPicker();
 autoImport();
 setInterval(() => autoImport(), AUTO_IMPORT_INTERVAL_MS);
