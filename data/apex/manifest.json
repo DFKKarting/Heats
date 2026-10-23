@@ -323,6 +323,13 @@
    "sha1": "7a952ce031368888a0b687761912c789067fc3da"
   },
   {
+   "path": "data/apex/rgmmc-2026-iwf/x30senior_543.pdf",
+   "event": "IAME Finals IWF26",
+   "className": "X30 SENIOR",
+   "title": "Qualifying Heat A-F",
+   "sha1": "878577e09049468e7af97343b0b25233f4e51319"
+  },
+  {
    "path": "data/apex/rgmmc-2026-iwf/s125junior_575.pdf",
    "event": "IAME Finals IWF26",
    "className": "S125 JUNIOR",
@@ -2151,11 +2158,6 @@
    "event": "IAME Finals IWF26",
    "className": "X30 JUNIOR",
    "title": "Super Heat 2"
-  },
-  {
-   "event": "IAME Finals IWF26",
-   "className": "X30 SENIOR",
-   "title": "Qualifying Heat A-F"
   },
   {
    "event": "IAME Finals IWF26",
