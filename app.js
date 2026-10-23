@@ -2660,8 +2660,10 @@ refreshBtn.addEventListener("click", () => autoImport(true));
 
 // Turns the GitHub Action that fetches the results on or off. Reading its
 // state is public; changing it needs a GitHub token (fine-grained, only this
-// repository, "Actions: Read and write"), which is asked once and kept only
-// in this browser - never in the code.
+// repository, "Actions: Read and write"). It's read from config.local.js when
+// that file exists (local only, in .gitignore - see config.local.example.js),
+// otherwise asked once and kept in this browser. Never in the code itself:
+// the repository is public.
 const FETCH_WORKFLOW_URL = `https://api.github.com/repos/${AUTO_IMPORT_REPO}/actions/workflows/fetch-results.yml`;
 const GITHUB_TOKEN_KEY = "kartingGithubToken.v1";
 let fetchWorkflowActive = null;
@@ -2701,7 +2703,8 @@ function askGithubToken() {
 }
 
 async function toggleFetchWorkflow() {
-  const token = localStorage.getItem(GITHUB_TOKEN_KEY) || askGithubToken();
+  const configToken = (window.HEATS_CONFIG && window.HEATS_CONFIG.githubToken) || "";
+  const token = configToken || localStorage.getItem(GITHUB_TOKEN_KEY) || askGithubToken();
   if (!token) return;
   const turnOn = !fetchWorkflowActive;
   const headers = { Authorization: `Bearer ${token}`, Accept: "application/vnd.github+json" };
@@ -2709,8 +2712,12 @@ async function toggleFetchWorkflow() {
   try {
     const resp = await fetch(`${FETCH_WORKFLOW_URL}/${turnOn ? "enable" : "disable"}`, { method: "PUT", headers });
     if (resp.status === 401 || resp.status === 403 || resp.status === 404) {
-      localStorage.removeItem(GITHUB_TOKEN_KEY);
-      setStatus("Het GitHub-token werd geweigerd (verlopen of onvoldoende rechten). Klik opnieuw om een ander token te plakken.", "err");
+      if (configToken) {
+        setStatus("Het GitHub-token in config.local.js werd geweigerd (verlopen of onvoldoende rechten). Zet er een nieuw token in.", "err");
+      } else {
+        localStorage.removeItem(GITHUB_TOKEN_KEY);
+        setStatus("Het GitHub-token werd geweigerd (verlopen of onvoldoende rechten). Klik opnieuw om een ander token te plakken.", "err");
+      }
       return;
     }
     if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
