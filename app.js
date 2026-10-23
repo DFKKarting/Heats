@@ -2613,7 +2613,13 @@ async function runAutoImport(manual) {
     let heatCount = 0;
     let qualiCount = 0;
     const loaded = [];
+    // A first visit has to read hundreds of PDFs (minutes on a phone) - say
+    // so instead of showing an empty page until the very end.
+    const showProgress = manual || todo.length > 5;
+    let done = 0;
     for (const f of todo) {
+      done++;
+      if (showProgress) setStatus(`Resultaten inladen... ${done} van ${todo.length}`);
       let blob;
       try {
         const resp = await fetch(`${base}${f.path}`, { cache: "no-store" });
@@ -2644,10 +2650,12 @@ async function runAutoImport(manual) {
       seen[f.path] = f.sha1;
       // A first import can be hundreds of files - save progress along the
       // way so an interrupted run doesn't start over from scratch.
-      if (Object.keys(seen).length % 20 === 0) {
+      // Also show what's in so far, so the standings fill in along the way.
+      if (done % 20 === 0) {
         saveHeats(heats);
         saveQualifying(qualifying);
         localStorage.setItem(AUTO_IMPORT_KEY, JSON.stringify(seen));
+        render();
       }
     }
     saveHeats(heats);
