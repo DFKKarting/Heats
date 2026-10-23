@@ -1105,6 +1105,7 @@ const classificationsContainer = document.getElementById("classificationsContain
 const resetBtn = document.getElementById("resetBtn");
 const refreshBtn = document.getElementById("refreshBtn");
 const importLog = document.getElementById("importLog");
+const fetchToggleBtn = document.getElementById("fetchToggleBtn");
 const searchInput = document.getElementById("searchInput");
 const searchResults = document.getElementById("searchResults");
 const toggleHeatsBtn = document.getElementById("toggleHeatsBtn");
@@ -2654,5 +2655,89 @@ async function runAutoImport(manual) {
 }
 
 refreshBtn.addEventListener("click", () => autoImport(true));
+
+/* ---------------- Automatic fetching on/off ---------------- */
+
+// Turns the GitHub Action that fetches the results on or off. Reading its
+// state is public; changing it needs a GitHub token (fine-grained, only this
+// repository, "Actions: Read and write"), which is asked once and kept only
+// in this browser - never in the code.
+const FETCH_WORKFLOW_URL = `https://api.github.com/repos/${AUTO_IMPORT_REPO}/actions/workflows/fetch-results.yml`;
+const GITHUB_TOKEN_KEY = "kartingGithubToken.v1";
+let fetchWorkflowActive = null;
+
+function renderFetchToggle() {
+  if (fetchWorkflowActive === null) {
+    fetchToggleBtn.hidden = true;
+    return;
+  }
+  fetchToggleBtn.hidden = false;
+  fetchToggleBtn.textContent = fetchWorkflowActive ? "⏸ Ophalen staat aan" : "▶ Ophalen staat uit";
+  fetchToggleBtn.title = fetchWorkflowActive
+    ? "Resultaten worden elke minuut automatisch opgehaald. Klik om het automatisch ophalen stil te leggen (bv. na een wedstrijdweekend)."
+    : "Automatisch ophalen ligt stil. Klik om het weer te starten (bv. voor een wedstrijdweekend).";
+}
+
+async function loadFetchWorkflowState() {
+  try {
+    const resp = await fetch(FETCH_WORKFLOW_URL, { cache: "no-store" });
+    if (!resp.ok) return;
+    fetchWorkflowActive = (await resp.json()).state === "active";
+  } catch {
+    // offline - leave the button hidden
+  }
+  renderFetchToggle();
+}
+
+function askGithubToken() {
+  const token = prompt(
+    "Om het automatisch ophalen aan of uit te zetten is een GitHub-token nodig " +
+      "(fine-grained, enkel voor de repository DFKKarting/Heats, met 'Actions: Read and write'). " +
+      "Het wordt alleen in deze browser bewaard.\n\nPlak je token:"
+  );
+  if (!token || !token.trim()) return null;
+  localStorage.setItem(GITHUB_TOKEN_KEY, token.trim());
+  return token.trim();
+}
+
+async function toggleFetchWorkflow() {
+  const token = localStorage.getItem(GITHUB_TOKEN_KEY) || askGithubToken();
+  if (!token) return;
+  const turnOn = !fetchWorkflowActive;
+  const headers = { Authorization: `Bearer ${token}`, Accept: "application/vnd.github+json" };
+  fetchToggleBtn.disabled = true;
+  try {
+    const resp = await fetch(`${FETCH_WORKFLOW_URL}/${turnOn ? "enable" : "disable"}`, { method: "PUT", headers });
+    if (resp.status === 401 || resp.status === 403 || resp.status === 404) {
+      localStorage.removeItem(GITHUB_TOKEN_KEY);
+      setStatus("Het GitHub-token werd geweigerd (verlopen of onvoldoende rechten). Klik opnieuw om een ander token te plakken.", "err");
+      return;
+    }
+    if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
+    if (turnOn) {
+      // Enabling alone waits for GitHub's (unreliable) schedule - start a run now.
+      await fetch(`${FETCH_WORKFLOW_URL}/dispatches`, {
+        method: "POST",
+        headers,
+        body: JSON.stringify({ ref: "master" }),
+      });
+    }
+    fetchWorkflowActive = turnOn;
+    renderFetchToggle();
+    setStatus(
+      turnOn
+        ? "Automatisch ophalen staat aan — de eerste resultaten komen binnen een paar minuten binnen."
+        : "Automatisch ophalen staat uit. Een run die nog bezig is, maakt zijn ronde nog af.",
+      "ok"
+    );
+  } catch (e) {
+    setStatus(`Kon het automatisch ophalen niet ${turnOn ? "aanzetten" : "uitzetten"}: ${e.message}`, "err");
+  } finally {
+    fetchToggleBtn.disabled = false;
+  }
+}
+
+fetchToggleBtn.addEventListener("click", toggleFetchWorkflow);
+loadFetchWorkflowState();
 autoImport();
 setInterval(() => autoImport(), AUTO_IMPORT_INTERVAL_MS);
