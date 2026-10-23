@@ -1877,6 +1877,61 @@ function needCell(d, key) {
   return `<td class="a-need a-required" title="${needTip}">${text}</td>`;
 }
 
+// The upcoming heats of a class, in running order when known:
+// - Apex Timing (IAME Finals) lists its not-yet-raced sessions itself; the
+//   automatic import keeps that schedule (incl. super heats) - see
+//   scripts/fetch_apex.py.
+// - Otherwise, with qualifying groups (A, B, C, ...) every group races every
+//   other group once, so all group pairs minus the raced ones remain.
+// Each entry: { label, pair } with pair the two group letters (or null, e.g.
+// for a super heat).
+const PENDING_KEY = "kartingPending.v1";
+function loadPending() {
+  try {
+    return JSON.parse(localStorage.getItem(PENDING_KEY)) || [];
+  } catch {
+    return [];
+  }
+}
+
+function heatPair(label) {
+  const m = label.match(/\b([A-Z])-([A-Z])\b/);
+  return m ? [m[1], m[2]].sort() : null;
+}
+
+function computeRemainingHeats(raceKey, className, heatCols, higherIsBetter) {
+  const raced = heatCols.map((h) => h.heatLabel);
+  const racedPairs = new Set(raced.map(heatPair).filter(Boolean).map((p) => p.join("-")));
+  const isRaced = (label) => {
+    const pair = heatPair(label);
+    return pair ? racedPairs.has(pair.join("-")) : raced.some((r) => r.toLowerCase() === label.toLowerCase());
+  };
+
+  if (higherIsBetter) {
+    const scheduled = loadPending().filter((p) => p.className.toLowerCase() === className.toLowerCase());
+    if (scheduled.length) {
+      return scheduled
+        .filter((p) => !isRaced(p.title))
+        .map((p) => {
+          const pair = heatPair(p.title);
+          return { label: pair ? pair.join("-") : p.title.replace(/^Qualifying\s+/i, ""), pair, scheduled: true };
+        });
+    }
+  }
+
+  const q = findQualifyingFor(raceKey, className);
+  const groups = q ? [...new Set(q.entries.map((e) => e.group).filter(Boolean))].sort() : [];
+  if (groups.length < 2) return null;
+  const remaining = [];
+  for (let i = 0; i < groups.length; i++) {
+    for (let j = i + 1; j < groups.length; j++) {
+      const pair = [groups[i], groups[j]];
+      if (!racedPairs.has(pair.join("-"))) remaining.push({ label: pair.join("-"), pair });
+    }
+  }
+  return remaining;
+}
+
 function computeClassifications(heatsSubset) {
   const raceKey = heatsSubset.length ? heatsSubset[0].raceKey || deriveRaceKey(heatsSubset[0].eventName) : activeRace;
 
@@ -2003,6 +2058,19 @@ function computeClassifications(heatsSubset) {
     }
     const superFormat = higherIsBetter ? computeSuperHeatFormat(drivers, heatCols, raceKey, className, qualiMap) : null;
 
+    const remainingHeats = computeRemainingHeats(raceKey, className, heatCols, higherIsBetter);
+    if (remainingHeats) {
+      const q = findQualifyingFor(raceKey, className);
+      const groupOf = new Map((q ? q.entries : []).map((e) => [driverId(e), e.group]));
+      // Without groups (a small field) everyone races every heat together.
+      const grouped = [...groupOf.values()].some(Boolean);
+      for (const d of drivers) {
+        const group = groupOf.get(d.id);
+        if (group) d.remainingHeats = remainingHeats.filter((r) => r.pair && r.pair.includes(group)).map((r) => r.label);
+        else if (!grouped) d.remainingHeats = remainingHeats.filter((r) => !r.pair && !/super/i.test(r.label)).map((r) => r.label);
+      }
+    }
+
     classifications.push({
       className,
       heatCols,
@@ -2018,6 +2086,7 @@ function computeClassifications(heatsSubset) {
       noFinalSplit: noFinalSplit || higherIsBetter,
       higherIsBetter,
       superFormat,
+      remainingHeats,
     });
   }
 
@@ -2075,13 +2144,29 @@ function computeClassifications(heatsSubset) {
   return classifications;
 }
 
+// "2 +3": raced heats, plus how many this driver still has to race (with the
+// list as tooltip) when that's known.
+function heatsCountCell(d) {
+  if (!d.remainingHeats || !d.remainingHeats.length) return `${d.heatsCount}`;
+  return `${d.heatsCount} <span class="heats-left" title="Nog te rijden: ${d.remainingHeats.join(", ")}">+${d.remainingHeats.length}</span>`;
+}
+
+function remainingHeatsText(remaining) {
+  if (!remaining.length) return "✓ Alle heats van deze klasse zijn gereden.";
+  const [next, ...rest] = remaining;
+  // Only an actual published schedule tells which heat is next; group pairs
+  // derived from the qualifying are just the ones left, in no particular order.
+  if (!next.scheduled) return `⏭ Nog te rijden (${remaining.length}): ${remaining.map((r) => r.label).join(" · ")}`;
+  return `⏭ Nog te rijden (${remaining.length}), in volgorde: <strong>${next.label}</strong> <span class="next-tag">volgende</span>${rest.length ? " · " + rest.map((r) => r.label).join(" · ") : ""}`;
+}
+
 function renderClassifications(classifications) {
   classificationsContainer.innerHTML = "";
   if (!classifications.length) return;
 
   {
     const selected = classifications.find((c) => c.className === activeClass) || classifications[0];
-    const { className, heatCols, drivers, hasQualifying, qualiOnly, totalHeats, projectedACutoff, projectedBCutoff, projectedSampleSize, projectedSampleNeeded, hasMultipleSubClasses, subClassOrder, noFinalSplit, higherIsBetter, superFormat } =
+    const { className, heatCols, drivers, hasQualifying, qualiOnly, totalHeats, projectedACutoff, projectedBCutoff, projectedSampleSize, projectedSampleNeeded, hasMultipleSubClasses, subClassOrder, noFinalSplit, higherIsBetter, superFormat, remainingHeats } =
       selected;
     // IAME Finals / Eurocup: own cutoff (top 72 to the super heats, then top
     // 36 to the final) instead of the national-series A/B-final split.
@@ -2143,7 +2228,7 @@ function renderClassifications(classifications) {
           </td>
           ${resultsCell}
           <td class="num total">${d.total !== null ? d.total : "–"}</td>
-          <td class="num">${d.heatsCount}</td>
+          <td class="num">${heatsCountCell(d)}</td>
           ${showANeed ? (sf ? superNeedCell(d, sf.cutoffN) : needCell(d, "aNeed")) : ""}
         </tr>`;
       if (sf && sf.cutoffN && d.pos === sf.cutoffN && drivers.length > sf.cutoffN) {
@@ -2178,6 +2263,7 @@ function renderClassifications(classifications) {
             : `Klassement over ${heatCols.length} heat(s) — punten opgeteld, ${higherIsBetter ? "hoogste" : "laagste"} totaal bovenaan. Klik de ster om een rijder te highlighten.${hasQualifying ? " Bij gelijke punten beslist de qualifying (snelste tijd wint)." : ""}`
         }</p>
         ${unevenHeats ? '<p class="class-warning">⚠ Niet alle rijders hebben evenveel heats gereden — dit klassement is nog niet volledig.</p>' : ""}
+        ${!qualiOnly && remainingHeats ? `<p class="class-remaining">${remainingHeatsText(remainingHeats)}</p>` : ""}
         ${sf ? `<p class="class-projection">${superHeatProjectionText(sf, hasQualifying)}</p>` : ""}
         ${
           suppressFinals
@@ -2306,6 +2392,7 @@ function renderHighlighted(classifications) {
 
   followed.sort((a, b) => a.pos - b.pos);
   const showANeed = showANeedPref && followed.some((d) => d.aNeed);
+  const showRemaining = followed.some((d) => d.remainingHeats);
   const allHeatsDone = !!selected.totalHeats && selected.drivers.every((d) => d.heatsCount >= selected.totalHeats);
 
   const bodyRows = followed
@@ -2333,8 +2420,9 @@ function renderHighlighted(classifications) {
         </td>
         <td class="num pos ${d.pos === 1 ? "pos-first" : ""}" title="${posTitle}">${displayPos}</td>
         <td class="num total">${d.total}</td>
-        <td class="num">${d.heatsCount}</td>
-        ${showANeed ? needCell(d, "aNeed") : ""}
+        <td class="num">${heatsCountCell(d)}</td>
+        ${showRemaining ? `<td class="remaining-cell">${d.remainingHeats ? (d.remainingHeats.length ? d.remainingHeats.join(" · ") : "✓ klaar") : "–"}</td>` : ""}
+        ${showANeed ? (selected.superFormat ? superNeedCell(d, selected.superFormat.cutoffN) : needCell(d, "aNeed")) : ""}
       </tr>`;
     })
     .join("");
@@ -2348,7 +2436,8 @@ function renderHighlighted(classifications) {
             <th class="num">Positie</th>
             <th class="num">Punten</th>
             <th class="num">Heats</th>
-            ${showANeed ? '<th title="Wat je in de resterende heats nog nodig hebt voor de A-finale, o.b.v. de geschatte grens">Nodig voor A</th>' : ""}
+            ${showRemaining ? '<th title="Heats die deze rijder nog moet rijden, in rijvolgorde">Nog te rijden</th>' : ""}
+            ${showANeed ? `<th title="Wat je in de resterende heats nog nodig hebt, o.b.v. de geschatte grens">${selected.superFormat ? "Nodig voor super heat" : "Nodig voor A"}</th>` : ""}
           </tr>
         </thead>
         <tbody>${bodyRows}</tbody>
@@ -2485,6 +2574,13 @@ async function runAutoImport(manual) {
     } catch {
       if (manual) setStatus("Kon de resultaten niet ophalen — ben je online?", "err");
       return;
+    }
+    // The schedule of upcoming sessions can change without any new result
+    // (e.g. a start list published) - keep it current on every check.
+    const pendingJson = JSON.stringify(manifest.pending || []);
+    if (localStorage.getItem(PENDING_KEY) !== pendingJson) {
+      localStorage.setItem(PENDING_KEY, pendingJson);
+      render();
     }
     const seen = loadAutoImported();
     const todo = (manifest.files || []).filter((f) => seen[f.path] !== f.sha1);

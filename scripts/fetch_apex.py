@@ -46,7 +46,9 @@ def fetch(url):
 
 
 def list_apex(source):
-    """Result PDFs on an Apex Timing results page, across every class."""
+    """Result PDFs on an Apex Timing results page, across every class - plus
+    the wanted sessions that have no result yet, in the page's (= running)
+    order, so the app can show which heats are still to come."""
     path = source["path"]
     _, raw = fetch(f"{BASE}results.php?path={urllib.parse.quote(path)}&group=1")
     page = raw.decode("utf-8", "replace")
@@ -59,13 +61,17 @@ def list_apex(source):
         for m in re.finditer(r'data-id="([^"]+)">\s*<span data-image="([^"]*)" class="title">([^<]*)</span>', block):
             sessions.append({"className": g.group(2).strip(), "id": m.group(1), "type": m.group(2), "title": m.group(3).strip()})
     docs = []
+    pending = []
     for s in sessions:
+        if not WANTED.match(s["title"]) or SKIPPED.search(s["title"]):
+            continue
         # "list" is a start list (not raced yet), "" not published at all.
-        if not s["type"].startswith("result") or not WANTED.match(s["title"]) or SKIPPED.search(s["title"]):
+        if not s["type"].startswith("result"):
+            pending.append({"className": s["className"], "title": s["title"]})
             continue
         s["url"] = f"{BASE}results_download.php?pdf=" + urllib.parse.quote(f"results{path}{s['id']}.pdf", safe="")
         docs.append(s)
-    return docs
+    return docs, pending
 
 
 # Sportity document titles carry their posting time ("Heat 3 A-B 25 Sep 2026
@@ -98,7 +104,7 @@ def list_sportity(source):
         # Each upload gets its own UUID prefix in the file name - stable id.
         doc_id = urllib.parse.unquote(url.rsplit("/", 1)[-1])[:36]
         docs.append({"className": class_name, "id": doc_id, "title": title, "url": url.replace(" ", "%20")})
-    return docs
+    return docs, []
 
 
 # File names in a camp results folder look like "06 Heat 1.pdf".
@@ -138,7 +144,7 @@ def list_camp(source):
             })
 
     walk(root, 0)
-    return docs
+    return docs, []
 
 
 LISTERS = {"apex": list_apex, "sportity": list_sportity, "camp": list_camp}
@@ -161,14 +167,18 @@ def main():
     known = {f["path"]: f for f in previous.get("files", [])}
 
     files = []
+    pending = []
     for source in sources:
         slug = source_slug(source)
+        event = source.get("name", slug)
         try:
-            docs = LISTERS[source.get("type", "apex")](source)
+            docs, source_pending = LISTERS[source.get("type", "apex")](source)
         except Exception as e:  # keep what we had for this event if the page is down
             print(f"{slug}: kon resultatenpagina niet ophalen: {e}", file=sys.stderr)
             files.extend(f for f in known.values() if f["path"].startswith(f"data/apex/{slug}/"))
+            pending.extend(p for p in previous.get("pending", []) if p["event"] == event)
             continue
+        pending.extend({"event": event, **p} for p in source_pending)
 
         for s in docs:
             rel = f"data/apex/{slug}/{s['id']}.pdf"
@@ -195,15 +205,15 @@ def main():
                 print(f"bijgewerkt: {rel} ({s['className']} - {s['title']})")
             files.append({
                 "path": rel,
-                "event": source.get("name", slug),
+                "event": event,
                 "className": s["className"],
                 "title": s["title"],
                 "sha1": hashlib.sha1(body).hexdigest(),
                 **({"version": s["version"]} if s.get("version") else {}),
             })
 
-    manifest = {"files": files}
-    if manifest != {"files": previous.get("files", [])}:
+    manifest = {"files": files, "pending": pending}
+    if manifest != {"files": previous.get("files", []), "pending": previous.get("pending", [])}:
         manifest_path.write_text(json.dumps(manifest, indent=1, ensure_ascii=False) + "\n")
 
     # Drop downloads that are no longer listed (e.g. a source removed from

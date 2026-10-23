@@ -251,6 +251,16 @@ main {
 .import-log-tag { color: var(--red-soft); font-size: .8em; font-weight: 600; }
 .import-log-more { font-size: .8rem; opacity: .7; }
 
+.class-remaining { font-size: .9rem; margin: 6px 0; }
+.class-remaining .next-tag,
+.heats-left {
+  font-size: .75em;
+  font-weight: 700;
+  color: var(--red-soft);
+}
+.heats-left { cursor: help; }
+.remaining-cell { font-size: .85em; white-space: nowrap; }
+
 .btn-outline, .btn-danger {
   background: #242424;
   color: #ffffff;
