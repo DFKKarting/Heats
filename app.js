@@ -1737,7 +1737,12 @@ function computeSuperHeatFormat(drivers, heatCols, raceKey, className, qualiMap)
 
   if (twoSuperHeats) {
     for (const d of drivers) {
-      if (d.pos <= SUPER_HEAT_CUTOFF) d.superHeat = d.pos % 2 === 1 ? "A" : "B";
+      // Apex calls them "Super Heat 1" and "Super Heat 2". Grid fills
+      // alternately: P1 -> SH 1 1st, P2 -> SH 2 1st, P3 -> SH 1 2nd, ...
+      if (d.pos <= SUPER_HEAT_CUTOFF) {
+        d.superHeat = d.pos % 2 === 1 ? "1" : "2";
+        d.superHeatGrid = Math.ceil(d.pos / 2);
+      }
     }
   }
 
@@ -1820,7 +1825,7 @@ function superHeatProjectionText(sf, hasQualifying) {
       : `🏁 Super heat(s) gereden — iedereen (${sf.fieldSize} rijders) start in de finale.`;
   }
   const split = sf.twoSuperHeats
-    ? ` Daar worden ze verdeeld over super heat A (P1, P3, P5, …) en B (P2, P4, P6, …); de badge toont waar je nu zou starten.`
+    ? ` Daar worden ze verdeeld over Super Heat 1 (P1, P3, P5, …) en Super Heat 2 (P2, P4, P6, …); de badge toont in welke super heat en op welke startplek je nu zou starten.`
     : ` Met ${FINAL_CUTOFF} of minder rijders is er één super heat met iedereen.`;
   const afterwards = ` Na de super heat(s) gaat de top ${FINAL_CUTOFF} (heats + super heat opgeteld) naar de finale.`;
   if (!sf.cutoffN) {
@@ -2214,7 +2219,7 @@ function renderClassifications(classifications) {
       if (d.qualiPos !== undefined) posTitleParts.push(`Qualifying P${d.qualiPos}`);
       const superHeatBadge =
         sf && d.superHeat
-          ? `<span class="sub-class-badge" style="${subClassStyle(d.superHeat, ["A", "B"])}" title="Zou nu in super heat ${d.superHeat} starten (oneven posities in A, even in B)">SH ${d.superHeat}</span>`
+          ? `<span class="sub-class-badge" style="${subClassStyle(d.superHeat, ["1", "2"])}" title="Zou nu in Super Heat ${d.superHeat} starten op startplek ${d.superHeatGrid} (oneven posities in SH 1, even in SH 2)">SH ${d.superHeat} · P${d.superHeatGrid}</span>`
           : "";
       const weightBadge =
         hasMultipleSubClasses && d.subClass
@@ -2247,7 +2252,10 @@ function renderClassifications(classifications) {
     // only appears in the heat numbers matching their own group, so comparing
     // against the total number of uploaded heat files is wrong. What matters is
     // whether drivers have raced a different number of heats *from each other*.
-    const unevenHeats = new Set(drivers.map((d) => d.heatsCount)).size > 1;
+    // Super heats don't count here: drivers outside their cutoff race one
+    // less by design.
+    const regularHeats = heatCols.filter((h) => !isSuperHeat(h));
+    const unevenHeats = new Set(drivers.map((d) => regularHeats.filter((h) => d.perHeat[h.id]).length)).size > 1;
 
     const isCollapsed = collapsedClasses.has(className);
     block.innerHTML = `
