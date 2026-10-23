@@ -626,9 +626,12 @@ function parseTitleBlockApex(items) {
   // There's no "Printed:" stamp - use the session start date with the latest
   // posting time instead, so a re-posted (revised) result still sorts newer.
   let printedAt = null;
-  const start = items.map((it) => it.text.match(/Start(?: Time)?\s*:\s*(\d{2})\/(\d{2})\s*-\s*(\d{2}):(\d{2})/)).find(Boolean);
+  let startedAt = null;
+  const start = items.map((it) => it.text.match(/Start(?: Time)?\s*:\s*(\d{2})\/(\d{2})\s*-\s*(\d{2}):(\d{2})(?::(\d{2}))?/)).find(Boolean);
   if (start && year) {
-    const [, dd, mm, hh, min] = start;
+    const [, dd, mm, hh, min, sec] = start;
+    // When the session itself started - the order heats were actually run in.
+    startedAt = `${year}-${mm}-${dd}T${hh}:${min}:${sec || "00"}`;
     const postingLabel = items.find((it) => /^Posting Time/i.test(it.text));
     const postingTimes = postingLabel
       ? items
@@ -641,7 +644,7 @@ function parseTitleBlockApex(items) {
     const time = postingTimes.length ? postingTimes[postingTimes.length - 1] : `${hh}:${min}`;
     printedAt = `${year}-${mm}-${dd}T${time}:00`;
   }
-  return { eventName, className, heatLabel, printedAt };
+  return { eventName, className, heatLabel, printedAt, startedAt };
 }
 
 // The sheet normally prints a non-finisher's points itself (often negative),
@@ -677,7 +680,7 @@ async function buildApexHeatRecord(file, pdf, items1) {
   rows.forEach((r, idx) => (r.rank = idx + 1));
   fillMissingApexPoints(rows);
 
-  const { eventName, className, heatLabel, printedAt } = parseTitleBlockApex(items1);
+  const { eventName, className, heatLabel, printedAt, startedAt } = parseTitleBlockApex(items1);
   const raceKey = deriveRaceKey(eventName);
   return {
     id: `${raceKey}::${className}::${heatLabel}`,
@@ -689,6 +692,7 @@ async function buildApexHeatRecord(file, pdf, items1) {
     fileName: file.name,
     uploadedAt: new Date().toISOString(),
     printedAt,
+    startedAt,
     scoring: "high",
     rows,
   };
@@ -1937,6 +1941,14 @@ function computeRemainingHeats(raceKey, className, heatCols, higherIsBetter) {
   return remaining;
 }
 
+// Heats in the order they were run. Numbered heats ("Heat 3 A-C", "Heat 1")
+// sort right by their name, but Apex Timing's are only named by the groups
+// ("Qualifying Heat E-F") - those carry their start time instead.
+function compareHeatsRunOrder(a, b) {
+  if (a.startedAt && b.startedAt && a.startedAt !== b.startedAt) return a.startedAt.localeCompare(b.startedAt);
+  return a.heatLabel.localeCompare(b.heatLabel, undefined, { numeric: true });
+}
+
 function computeClassifications(heatsSubset) {
   const raceKey = heatsSubset.length ? heatsSubset[0].raceKey || deriveRaceKey(heatsSubset[0].eventName) : activeRace;
 
@@ -1950,7 +1962,7 @@ function computeClassifications(heatsSubset) {
   for (const [className, classHeats] of [...byClass.entries()].sort((a, b) => a[0].localeCompare(b[0]))) {
     const heatCols = classHeats
       .slice()
-      .sort((a, b) => a.heatLabel.localeCompare(b.heatLabel, undefined, { numeric: true }));
+      .sort(compareHeatsRunOrder);
 
     // IAME Finals (Apex Timing) heats give the winner the most points.
     const higherIsBetter = classHeats.some((h) => h.scoring === "high");
@@ -2498,7 +2510,8 @@ render();
 // for ~5 minutes - so look up the latest commit first (GitHub API, cached
 // ~1 minute, 60 requests/hour) and read that exact, always-fresh version.
 const AUTO_IMPORT_REPO = "DFKKarting/Heats";
-const AUTO_IMPORT_KEY = "kartingAutoImported.v1";
+// v2: re-import everything once, so heats stored before startedAt existed get it.
+const AUTO_IMPORT_KEY = "kartingAutoImported.v2";
 const AUTO_IMPORT_INTERVAL_MS = 2 * 60 * 1000;
 let autoImportRunning = null; // the in-flight run's promise, if any
 
