@@ -463,6 +463,13 @@
    "sha1": "1f16049b926a69b71644177175483b1c96871876"
   },
   {
+   "path": "data/apex/rgmmc-2026-iwf/x30master_570.pdf",
+   "event": "IAME Finals IWF26",
+   "className": "X30 MASTER",
+   "title": "Super Heat",
+   "sha1": "88a1d72d1be2d6aca43785d82e8115571ea9266a"
+  },
+  {
    "path": "data/apex/sportity-isb2026-4cbbd0c4/5bd1643f-c326-44d2-9315-8b248959a174.pdf",
    "event": "IAME Series Benelux - Final Round Mariembourg",
    "className": "X30 Junior",
@@ -2205,11 +2212,6 @@
   {
    "event": "IAME Finals IWF26",
    "className": "S125 SENIOR",
-   "title": "Super Heat"
-  },
-  {
-   "event": "IAME Finals IWF26",
-   "className": "X30 MASTER",
    "title": "Super Heat"
   }
  ]
