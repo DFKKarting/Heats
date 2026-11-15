@@ -12,6 +12,6 @@
     "name": "GK4 Kart Series 2026",
     "type": "camp",
     "url": "https://motorsport-events.se/camp/?dir=resultsmw%2F01%20results%202026%2F02%20GK4",
-    "match": "GK4"
+    "match": "GK4|Round \\d+"
   }
 ]

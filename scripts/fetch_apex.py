@@ -11,8 +11,9 @@ Supported sources ("type" in sources.json):
   Benelux) - its "<Class> Results + Groups" sections link the timing PDFs.
 - "camp": a motorsport-events.se/camp results folder, by its "url" (e.g. a
   GK4 season: one folder per round, one subfolder per class). Optional
-  "match": only round folders whose name contains it (e.g. "GK4", to skip
-  other championships filed in the same season folder).
+  "match": a regular expression (case-insensitive) a round folder's name
+  must contain, to skip other championships filed in the same season folder
+  (e.g. "GK4|Round \\d+" keeps "Round 8 Genk" even without "GK4" in it).
 
 Run by .github/workflows/fetch-results.yml on a schedule; can also be run by
 hand: python3 scripts/fetch_apex.py
@@ -124,7 +125,7 @@ def list_camp(source):
             sub = urllib.parse.unquote(html.unescape(m.group(1)))
             if not sub.startswith(folder + "/") or depth >= 2:
                 continue
-            if depth == 0 and source.get("match") and source["match"].lower() not in sub.rsplit("/", 1)[-1].lower():
+            if depth == 0 and source.get("match") and not re.search(source["match"], sub.rsplit("/", 1)[-1], re.I):
                 continue
             walk(sub, depth + 1)
         # A file row: link, then size and modification date - which together
